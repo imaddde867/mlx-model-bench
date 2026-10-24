@@ -1,27 +1,64 @@
-# Nemotron 3.5 Bolt E4B 4GB on MLX — benchmark design
+# MLX model bench on M4 / 16 GB — design
 
 2026-10-24 · Apple M4 (10-core, 4P+6E), 16 GB unified, macOS 27.0.1
 
+Started as `nemotron-bolt-bench`: one model, four arms, five metrics. It keeps that
+record as the baseline and extends the same rigor — fixed prompts, bloat-free
+controls, provenance in every row — to a roster of models that fit in 16 GB.
+
 ## Intent
 
-Pick a runtime for this model on this machine, and know what each candidate
-costs in speed, TTFT, accuracy, quality, and memory. Not a leaderboard, not a
-comparison against other models or other hardware.
+Pick the runtime *and* the model for this machine, and know what each candidate
+costs in speed, TTFT, accuracy, quality and memory. Not a leaderboard: no
+cross-hardware extrapolation, no single-number score, no model that does not run
+here.
 
-## The four questions
+## The four questions (baseline)
 
 1. How much of the speed gap is the **engine**, and how much is the **checkpoint**?
 2. Is the OptiQ mixed 4/8-bit checkpoint's quality distinguishable from plain 4-bit?
 3. What does optiq's application layer cost in TTFT, measured like-for-like?
 4. Does the assistant drafter earn its keep?
 
+## The three questions (roster)
+
+5. For each model, **which checkpoint does it wear best** — is the OptiQ premium in
+   bits bought back in accuracy or quality, and at what cost in decode tps?
+6. **Does a smaller model beat a larger one per GB?** MiniCPM5-2B at 1.43 GB
+   against the 4.11–7.46B dense rows is the specific test; the answer is per task
+   domain, not a single number.
+7. **Does architecture show up in the numbers?** Spark's 3:1 sliding attention and
+   LFM's 18-of-24 conv layers both predict a *different prefill curve* from a dense
+   transformer. Same prompts, same harness: if the curves are identical, that is
+   itself the finding.
+
+Questions 1–4 are asked of every model in the roster, in the same order, so the
+baseline is not a special case but the first row.
+
 ## Arms
+
+Per model, three arms — the same shape for every row of the roster, so a
+difference between rows is a difference between models, not between harnesses:
+
+| Arm | Engine | Checkpoint | Transport |
+|---|---|---|---|
+| *n*.1 | `mlx_lm` 0.32.2 | plain 4-bit (vendor / mlx-community / third-party, see `MODELS.md`) | in-process |
+| *n*.2 | `mlx_lm` 0.32.2 | same | HTTP (`mlx_lm.server`) |
+| *n*.3 | `mlx_lm` 0.32.2 | OptiQ mixed 4/8-bit for the same model | in-process |
+
+Arm *n*.2 exists so HTTP overhead is never mistaken for engine cost.
+
+### The baseline's historical arms
+
+These are kept by name because `RESULTS.md` and `P0.md` refer to them; the
+harness now addresses the same things as `--model nemotron-3.5-bolt
+--checkpoint mlx-4bit|optiq-4bit --transport inproc|http`.
 
 | # | Engine | Checkpoint | Transport |
 |---|--------|-----------|-----------|
-| 1 | `mlx_lm` 0.32.2 | `rapid-mlx/…-MLX-4bit` (4.2 GB, affine 4-bit) | in-process |
+| 1 | `mlx_lm` 0.32.2 | `rapid-mlx/…-MLX-4bit` (4.20 GB, affine 4-bit) | in-process |
 | 2 | `mlx_lm` 0.32.2 | same | HTTP (`mlx_lm.server`) |
-| 3 | `mlx_lm` 0.32.2 | `mlx-community/…OptiQ-4bit` (7.5 GB, mixed 4/8) | in-process |
+| 3 | `mlx_lm` 0.32.2 | `mlx-community/…OptiQ-4bit` (6.53 GB loaded / 7.49 GB download, mixed 4/8) | in-process |
 | 4 | `mlx-optiq` 0.7.3 | `mlx-community/…OptiQ-4bit` | HTTP (`optiq serve`) |
 | 5 | `mlx-optiq` 0.7.3 | OptiQ + Gemma-4 assistant drafter | HTTP |
 
@@ -56,16 +93,21 @@ claims a voice-assistant use case where short-prompt TTFT dominates.
 - Greedy decoding everywhere, so runs are reproducible. Model card recommends
   temp 1.0 / top_p 0.95; noted as a deviation, spot-checked once.
 - 1 discarded warm-up run (Metal kernel compile + first-touch page faults).
-- 3 trials, **median** reported. Range shown alongside, never median alone.
+- 5 trials, **median** reported. Range shown alongside, never median alone.
 - Fixed `max_tokens`, fixed prompt files, identical across arms.
 - `caffeinate` for the duration; nothing else running; plugged in.
 - Each arm in its own `uv` venv, versions pinned and recorded in the output.
 - Thinking off for the primary table; thinking on reported as a separate row,
   because it changes decode volume, not TTFT.
-- The chat template has three controls, not one: `enable_thinking`,
-  `thinking_token_budget`, `conversational_mode`. Primary table runs
-  `conversational_mode=True` (it is the intended voice-assistant mode) and
-  `thinking_token_budget` fixed, so "thinking on" cannot run unbounded.
+- Chat template controls are **per model** and pinned in `registry.py`: the
+  template has two variables for the baseline (`enable_thinking`,
+  `conversational_mode`), one for MiniCPM5 (`enable_thinking`), one for
+  Spark-X2.5 (`enable_thinking`, default true), one for LFM2.5
+  (`preserve_thinking`). `thinking_token_budget` is a serving-API parameter, not
+  a template variable (P0.md). Primary table runs `conversational_mode=True` for
+  the baseline, thinking off everywhere.
+- Every row records its own prompt-token count. Tokenizers differ across the
+  roster, so prompt length is a property of the row, never of the prompt file.
 
 ## Prompt sets
 
@@ -79,17 +121,31 @@ claims a voice-assistant use case where short-prompt TTFT dominates.
 
 ## Non-goals
 
-Other models; other hardware; llama.cpp or GGUF; 64K-context behavior (KV
-cache would not fit 16 GB); quantization tuning; anything needing the vision
-tower; serving under concurrency; **DFlash** (GGUF + NVIDIA GPUs only).
+Other hardware; llama.cpp or GGUF; 64K-context behavior (KV cache would not fit
+16 GB); quantization tuning (we compare published checkpoints, we do not produce
+them); anything needing the vision tower; serving under concurrency; **DFlash**
+(GGUF + NVIDIA GPUs only). Models enter the roster only if they load in
+`mlx_lm` 0.32.2 at 4-bit and fit 16 GB with room for a KV cache.
 
 ## Phases
+
+Baseline (complete):
 
 - **P0 · load test** — does each checkpoint load in each engine. ~10 min. Gates
   arm 3.
 - **P1 · harness** — `bench.py`, one file, writes per-run JSON.
 - **P2 · runs** — arms × trials. ~1 h of wall clock, mostly unattended.
 - **P3 · report** — `RESULTS.md` + raw JSON + 8 outputs for blind scoring.
+
+Roster (repeated per model, in this order):
+
+- **R0 · generalize** — registry, model-agnostic harness, per-model results
+  directories, cross-model blind scoring. Done.
+- **R*n* · one model end to end** — fetch → P0 gate → P2 → P3. Stop at the gate if
+  it does not load, does not fit, or answers nonsense; a blocked row keeps its
+  error record.
+- **R4 · cross-model report** — one table, every row carrying bpw, publisher,
+  prompt tokens, generation length and peak memory; blind quality round r1.
 
 ## What the technical report changes
 

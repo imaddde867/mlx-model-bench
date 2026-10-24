@@ -7,10 +7,12 @@ Greedy decoding, `conversational_mode=True`, `enable_thinking=False`. Plugged in
 ![P2 chart](p2_visual.png)
 
 Arms:
-- **Arm 1**: `rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit` (4.20 GB, affine 4-bit), `mlx_lm` in-process.
+- **Arm 1** (= `--model nemotron-3.5-bolt --checkpoint mlx-4bit`): `rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit` (4.20 GB, 4.50 bpw, affine 4-bit), `mlx_lm` in-process.
 - **Arm 2**: Same checkpoint served via `mlx_lm.server` (HTTP).
-- **Arm 3**: `mlx-community/NVIDIA-Nemotron-3.5-Bolt-E4B-OptiQ-4bit` (7.49 GB, mixed 4/8-bit), `mlx_lm` in-process.
+- **Arm 3** (= `--checkpoint optiq-4bit`): `mlx-community/NVIDIA-Nemotron-3.5-Bolt-E4B-OptiQ-4bit` (6.53 GB loaded / 7.49 GB download, 7.00 bpw, mixed 4/8-bit), `mlx_lm` in-process.
 - **Arm 4 / 5**: `mlx-optiq` 0.7.3 (`optiq serve`) — blocked on 16 GB machines due to a hardcoded 10.5 GiB Metal buffer allocation (see `P0.md`).
+
+This model is the **baseline row** of the roster (`MODELS.md`). Its parameter count is 7.46B, not 4B: "E4B" is the effective/active label. Raw results live in `results/nemotron-3.5-bolt/`.
 
 ---
 
@@ -121,7 +123,7 @@ Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into
 ### 4. Does the assistant drafter earn its keep?
 - **No on this architecture.**
   - **MTP speculation**: Nemotron 3.5 Bolt does **not** ship an MTP head. `OptiqEngine` automatically falls back to autoregressive decode (`mode='AR', depth=0`). Speculative multi-token decoding cannot run natively on this checkpoint.
-  - **Assistant drafting**: Loading a secondary drafter model (Gemma-4-E4B-it) consumes an extra 3.5 GB VRAM ($6.5 + 3.5 + 3.5 \text{ GB OS} = 13.5 \text{ GB}$ total), leaving virtually zero headroom on a 16 GB unified RAM machine and risking SSD swap degradation.
+  - **Assistant drafting**: Loading a secondary drafter model (Gemma-4-E4B-it) consumes an extra ~3.5 GB, so 6.5 GB of weights + 3.5 GB of drafter + ~3.5 GB of OS leaves virtually zero headroom on a 16 GB unified machine and risks SSD swap degradation.
   - **DFlash**: NVIDIA's DFlash drafter requires GGUF and CUDA mid-layer tensor access unsupported by MLX. In addition, the NVIDIA technical report showed DFlash provides negligible TTFT improvement (<100 ms) and only modest decode acceleration over MTP on edge hardware.
 
 ---
