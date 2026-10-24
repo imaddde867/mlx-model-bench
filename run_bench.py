@@ -39,6 +39,27 @@ import registry
 ROOT = Path(__file__).resolve().parent
 
 
+def optiq_exe():
+    for cand in (ROOT / ".venv-optiq/bin/optiq", ROOT / ".venv-optiq/bin/python"):
+        if cand.exists():
+            return cand
+    return None
+
+
+def optiq_version():
+    py = ROOT / ".venv-optiq/bin/python"
+    if not py.exists():
+        return "mlx-optiq not installed"
+    try:
+        out = subprocess.run(
+            [str(py), "-c", "import importlib.metadata as m; print(m.version('mlx-optiq'))"],
+            capture_output=True, text=True, timeout=60,
+        )
+        return f"mlx-optiq {out.stdout.strip()}" if out.returncode == 0 else "mlx-optiq unknown"
+    except Exception:
+        return "mlx-optiq unknown"
+
+
 def free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -172,11 +193,20 @@ def phase_fetch(cfg, out):
     return ok
 
 
-def phase_p0(cfg, out):
+def local(selected):
+    """Selected checkpoints that are actually on disk. A phase with nothing to do
+    must fail, not print 'done'."""
+    return [c for c in selected if c.available]
+
+
+def phase_p0(cfg, out, selected):
     p0_dir = out / cfg.id / "p0"
     p0_dir.mkdir(parents=True, exist_ok=True)
+    if not local(selected):
+        print(f"  none of the selected tiers are downloaded ({cfg.id}) — run --phase fetch")
+        return False
     all_ok = True
-    for ckpt in cfg.available_checkpoints:
+    for ckpt in local(selected):
         log = out / cfg.id / "logs" / f"p0-{ckpt.tag}.log"
         rc = run(
             [sys.executable, str(ROOT / "p0_load.py"), str(ckpt.local_path),
@@ -219,9 +249,12 @@ def wait_for_server(url, timeout=240):
     return False
 
 
-def phase_p2(cfg, out, trials, prompts, max_tokens, server_version):
+def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
     ok = True
-    for ckpt in cfg.available_checkpoints:
+    if not local(selected):
+        print(f"  none of the selected tiers are downloaded ({cfg.id}) — run --phase fetch")
+        return False
+    for ckpt in local(selected):
         # --out must be on every call: without it a smoke run overwrites the real
         # results directory, which is how a 1-trial check once ate a 5-trial set.
         args = [sys.executable, str(ROOT / "bench.py"),
@@ -272,8 +305,73 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version):
     return ok
 
 
-def phase_p3(cfg, out):
-    tags = [c.tag for c in cfg.available_checkpoints]
+def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
+    """The engine arm: mlx-optiq serving an OptiQ checkpoint.
+
+    For the baseline this arm was unmeasurable (P0.md: an 11.27 GB single Metal
+    allocation). Attempting it per model keeps the roster honest: either the arm
+    produces a number, or it records why it cannot. An unmeasurable arm is a
+    result, not an error, so it does not fail the run.
+    """
+    targets = [c for c in local(selected) if "mlx-optiq" in c.engines]
+    if not targets:
+        print("  no OptiQ checkpoint selected — engine arm skipped")
+        return True
+    exe = optiq_exe()
+    if exe is None:
+        print("  .venv-optiq not present — engine arm unmeasurable here")
+        return True
+
+    version = optiq_version()
+    for ckpt in targets:
+        port = free_port()
+        run_dir = out / cfg.id / f"{ckpt.tag}-optiq-engine"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        print(f"  {ckpt.tag}: {exe.name} serve on :{port} ({version})")
+        slog = out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine.log"
+        slog.parent.mkdir(parents=True, exist_ok=True)
+        cmd = [str(exe), "serve", "--model", str(ckpt.local_path), "--port", str(port)]
+        if exe.name == "python":
+            cmd = [str(exe), "-m", "mlx_optiq", "serve", "--model", str(ckpt.local_path),
+                   "--port", str(port)]
+        server = subprocess.Popen(cmd, stdout=open(slog, "w"), stderr=subprocess.STDOUT)
+        try:
+            if not wait_for_server(f"http://127.0.0.1:{port}"):
+                print(f"    server never became ready; recorded as unmeasurable ({slog})")
+                (run_dir / "unmeasurable.json").write_text(json.dumps({
+                    "model_id": cfg.id, "checkpoint": ckpt.tag, "engine": version,
+                    "reason": "server did not answer /v1/models", "log": str(slog),
+                }, indent=2))
+                continue
+            rc = run([sys.executable, str(ROOT / "bench.py"),
+                      "--model", cfg.id, "--checkpoint", ckpt.tag, "--transport", "http",
+                      "--base-url", f"http://127.0.0.1:{port}", "--server-pid", str(server.pid),
+                      "--server-version", version, "--trials", str(trials),
+                      "--max-tokens", str(max_tokens), "--out", str(out),
+                      "--prompts", *prompts],
+                     out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine-bench.log")
+            if rc != 0:
+                tail = (out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine-bench.log") \
+                    .read_text().strip().splitlines()[-3:]
+                print(f"    engine arm failed ({rc}); recorded as unmeasurable")
+                (run_dir / "unmeasurable.json").write_text(json.dumps({
+                    "model_id": cfg.id, "checkpoint": ckpt.tag, "engine": version,
+                    "reason": "bench exited non-zero", "tail": tail,
+                }, indent=2))
+        finally:
+            server.terminate()
+            try:
+                server.wait(timeout=20)
+            except subprocess.TimeoutExpired:
+                server.kill()
+    return True
+
+
+def phase_p3(cfg, out, selected):
+    tags = [c.tag for c in local(selected)]
+    if not tags:
+        print(f"  none of the selected tiers are downloaded ({cfg.id}) — run --phase fetch")
+        return False
     log = out / cfg.id / "logs" / "p3.log"
     rc = run([sys.executable, str(ROOT / "run_p3.py"), "--model", cfg.id,
               "--checkpoints", *tags, "--out", str(out)], log, timeout=3600)
@@ -293,7 +391,11 @@ def server_version_string():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="registry id")
-    ap.add_argument("--phase", choices=("fetch", "p0", "p2", "p3", "all"), default="all")
+    ap.add_argument("--phase", choices=("fetch", "p0", "p2", "p2-optiq", "p3", "all"),
+                    default="all")
+    ap.add_argument("--tiers", nargs="+", default=["4bit", "optiq-4bit", "8bit"],
+                    choices=("4bit", "optiq-4bit", "8bit"),
+                    help="checkpoint tiers to run; 8bit is a reference tier")
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--max-tokens", type=int, default=256)
     ap.add_argument("--prompts", nargs="+", default=["short", "medium", "long", "decode-short", "decode-long"])
@@ -301,6 +403,7 @@ def main():
     args = ap.parse_args()
 
     cfg = registry.get_model(args.model)
+    selected = [c for c in cfg.checkpoints.values() if c.tier in args.tiers]
     out = Path(args.out)
     print(f"\n{cfg.id} · {cfg.name} · template {json.dumps(cfg.template_kwargs)}")
     print(f"engine {server_version_string()} · python {sys.version.split()[0]}")
@@ -308,19 +411,21 @@ def main():
         print(f"warning: --trials {args.trials} breaks the median-of-5 reporting rule; "
               f"this row cannot be published as a result (fine for a smoke test)")
 
-    phases = ["fetch", "p0", "p2", "p3"] if args.phase == "all" else [args.phase]
+    phases = ["fetch", "p0", "p2", "p2-optiq", "p3"] if args.phase == "all" else [args.phase]
     ok = True
     for ph in phases:
-        print(f"\n[{ph}]")
+        print(f"\n[{ph}]")   
         if ph == "fetch":
             ok = phase_fetch(cfg, out)
         elif ph == "p0":
-            ok = phase_p0(cfg, out)
+            ok = phase_p0(cfg, out, selected)
         elif ph == "p2":
             ok = phase_p2(cfg, out, args.trials, args.prompts, args.max_tokens,
-                          server_version_string())
+                          server_version_string(), selected)
+        elif ph == "p2-optiq":
+            ok = phase_p2_optiq(cfg, out, args.trials, args.prompts, args.max_tokens, selected)
         elif ph == "p3":
-            ok = phase_p3(cfg, out)
+            ok = phase_p3(cfg, out, selected)
         if not ok:
             print(f"\n[{ph}] did not complete cleanly — stopping here so the failure is cheap.")
             return 1

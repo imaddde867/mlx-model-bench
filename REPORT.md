@@ -1,10 +1,32 @@
-# Benchmark Results: Speed, TTFT, Memory, Accuracy, and Quality
+# Four local models on a 16 GB M4 — speed, memory, accuracy, quality
 
-`nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB` on Apple Silicon MLX.  
-Apple M4 (10-core, 4P+6E), 16 GB unified memory, macOS 27.0.1, `mlx` 0.32.4, `mlx-lm` 0.32.2, Python 3.12.10.  
-Greedy decoding, `conversational_mode=True`, `enable_thinking=False`. Plugged in, `caffeinate`.
+Apple M4 (10-core, 4P+6E), 16 GB unified memory, macOS 27.0.1, `mlx` 0.32.4, `mlx-lm` 0.32.2,
+Python 3.12.10. Greedy decoding, thinking off per model's own template, plugged in, `caffeinate`.
+
+This report covers four models that fit in 16 GB, each at the same three quantization tiers,
+through the same harness. One of them is complete; the other three are pending. A section that
+has no numbers yet says so rather than showing a blank row.
+
+| Section | Model | Weights (4-bit / OptiQ / 8-bit) | Status |
+|---|---|---|---|
+| 1 | NVIDIA Nemotron 3.5 Bolt E4B | 4.20 / 6.53 / 7.96 GB | **complete** (4-bit, OptiQ) · 8-bit pending |
+| 2 | OpenBMB MiniCPM5-2B | 1.43 / 1.94 / 2.68 GB | pending |
+| 3 | XHToken Spark-X2.5-4B | 2.32 / 3.05 / 4.38 GB | pending |
+| 4 | Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 / 9.02 GB | pending |
+| 5 | Cross-model comparison | — | pending |
+
+Method, controls and comparability rules: [`MODELS.md`](MODELS.md). Machine-readable
+model/checkpoint metadata: [`registry.py`](registry.py). Every row in this report is produced
+by one of the commands in the README, and the raw JSON sits beside it under `results/`.
 
 ![P2 chart](p2_visual.png)
+
+---
+
+## 1. NVIDIA Nemotron 3.5 Bolt E4B — complete
+
+`nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB` on Apple Silicon MLX. Arms below are the historical
+names; the harness addresses them as `--model nemotron-3.5-bolt --checkpoint <tag>`.
 
 Arms:
 - **Arm 1** (= `--model nemotron-3.5-bolt --checkpoint mlx-4bit`): `rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit` (4.20 GB, 4.50 bpw, affine 4-bit), `mlx_lm` in-process.
@@ -16,7 +38,7 @@ This model is the **baseline row** of the roster (`MODELS.md`). Its parameter co
 
 ---
 
-## 1. Speed, TTFT, and Memory (P2)
+### 1.1 Speed, TTFT, and Memory (P2)
 
 Speed runs conducted with 1 discarded warm-up + 5 trials; reported as **median [min–max]**. Prompt cache busted with random nonces, except for `Arm 2 cached` which measures warm prefix reuse.
 
@@ -47,7 +69,7 @@ Prefill throughput saturates near 570–630 tok/s across all arms.
 
 ---
 
-## 2. Objective Accuracy (P3 — 30 Prompts)
+### 1.2 Objective Accuracy (P3 — 30 Prompts)
 
 Evaluated on 30 fixed prompts in the **Machine Learning & Data Engineering** domain:
 - **12 Arithmetic & Quantitative ML Problems**: Convolution spatial dims, parameter counts, memory bytes, linear decay schedules, precision/recall, Kafka partition throughput, gradient accumulation steps, and quantization storage. Checked against exact ground truth.
@@ -69,7 +91,7 @@ Evaluated on 30 fixed prompts in the **Machine Learning & Data Engineering** dom
 
 ---
 
-## 3. Qualitative Evaluation (P3 — 8 Prompts Blind Scored)
+### 1.3 Qualitative Evaluation (P3 — 8 Prompts Blind Scored)
 
 Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into **Model A** and **Model B** per prompt, scored independently across 3 rubrics (1–5 scale each, 15 max per prompt):
 1. **Accuracy / Technical Fidelity** (1–5)
@@ -102,25 +124,25 @@ Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into
 
 ---
 
-## 4. Synthesis: Answering the Four Benchmark Questions
+### 1.4 Synthesis: Answering the Four Benchmark Questions
 
-### 1. How much of the speed gap is the engine, and how much is the checkpoint?
+#### 1. How much of the speed gap is the engine, and how much is the checkpoint?
 - **Engine**: Virtually zero TTFT penalty (~0.195 s in-process vs 0.161 s HTTP) and only a **~5% decode penalty** (34.4 tok/s vs 32.5 tok/s). `mlx_lm.server` adds negligible transport overhead.
 - **Checkpoint**: Massive difference. OptiQ mixed 4/8-bit causes a **25% decode slowdown** (34.4 → 25.7 tok/s) and requires **+2.33 GB VRAM** (4.20 GB → 6.53 GB).
 
-### 2. Is the OptiQ mixed 4/8-bit checkpoint's quality distinguishable from plain 4-bit?
+#### 2. Is the OptiQ mixed 4/8-bit checkpoint's quality distinguishable from plain 4-bit?
 - **Yes, measurably.**
   - **Objective Accuracy**: 83.3% vs 80.0% (+3.3%). OptiQ shows superior retention of large-number arithmetic and multi-step reasoning.
   - **Subjective Quality**: 4.67 vs 4.29 out of 5.0 (+0.38 points, winning 6 out of 8 categories). OptiQ produces more detailed, structured, and technically complete responses, while plain 4-bit occasionally collapses into overly terse one-liners.
 
-### 3. What does OptiQ's application layer cost in TTFT, measured like-for-like?
+#### 3. What does OptiQ's application layer cost in TTFT, measured like-for-like?
 - `optiq serve` crashes out-of-the-box due to eager evaluation of the unquantized dummy `embed_tokens_per_layer` weight (`vocab 262,144 × layers 42 × dim 512 × 2 bytes = 11,274,289,152 bytes = 10.5 GiB`) in `optiq/mlx_lm_patches/_chunked_quantize.py#L72`, exceeding Metal's 8.88 GiB max allocation limit.
 - When `_chunked_quantize`'s eager eval is bypassed:
   - `OptiqEngine` short-prompt TTFT is **0.218 s** (matching `mlx_lm`'s 0.217 s on the same weights).
   - Autoregressive decode throughput is **21.3 tok/s**, which is **~17% slower** than `mlx_lm` in-process (**25.7 tok/s**) and **38% slower** than plain 4-bit (**34.4 tok/s**).
 - When loaded via `mlx_lm`, the OptiQ weights add **+0.022 s TTFT** on short prompts (0.217 s vs 0.195 s) over plain 4-bit, while prefill throughput remains virtually identical (~570 tok/s).
 
-### 4. Does the assistant drafter earn its keep?
+#### 4. Does the assistant drafter earn its keep?
 - **No on this architecture.**
   - **MTP speculation**: Nemotron 3.5 Bolt does **not** ship an MTP head. `OptiqEngine` automatically falls back to autoregressive decode (`mode='AR', depth=0`). Speculative multi-token decoding cannot run natively on this checkpoint.
   - **Assistant drafting**: Loading a secondary drafter model (Gemma-4-E4B-it) consumes an extra ~3.5 GB, so 6.5 GB of weights + 3.5 GB of drafter + ~3.5 GB of OS leaves virtually zero headroom on a 16 GB unified machine and risks SSD swap degradation.
@@ -128,10 +150,75 @@ Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into
 
 ---
 
-## 5. Deployment Recommendations
+### 1.5 Deployment Recommendations
 
 | Target Workload | Recommended Arm | Rationale |
 |---|---|---|
 | **Voice Assistant / Low Latency UI** | **Arm 1 / Arm 2 (rapid-mlx 4-bit)** | 34.4 tok/s decode, sub-200ms TTFT, only 4.2 GB VRAM. Fast and lightweight. |
 | **Technical Copilot / Complex RAG** | **Arm 3 (OptiQ mixed 4/8-bit)** | Higher reasoning fidelity (83.3% acc, 4.67/5 quality), superior formatting, fits easily in 16 GB (6.5 GB peak). 25.7 tok/s is still fast. |
 | **Multi-turn Conversational Service** | **Arm 2 (`mlx_lm.server`)** | Prefix caching delivers **0.068–0.094 s TTFT** across all context lengths (150× faster than 14 s cold prefill on 8k prompts). |
+
+These recommendations are **within this model only**. Whether the 4-bit Nemotron is the right
+pick for any of those workloads is decided in section 5, against rows that have not run yet.
+
+---
+
+## 2. OpenBMB MiniCPM5-2B — pending
+
+2.52B dense Llama, 42 layers, 2 KV heads, 131k vocab. The cheapest complete row in the study:
+1.43 GB at 4-bit, and still only 2.68 GB at 8-bit.
+
+| Tier | Weights | bpw | Publisher | P0 | P2 | P3 |
+|---|---|---|---|---|---|---|
+| 4-bit (`mlx-4bit`) | 1.43 GB | 4.55 | vendor (`openbmb`) | — | — | — |
+| OptiQ 4/8 (`optiq-4bit`) | 1.94 GB | 6.17 | mlx-community | — | — | — |
+| 8-bit (reference) | 2.68 GB | 8.52 | mlx-community | — | — | — |
+
+Open question this row is designed to answer: does a 2.5B model at 1.43 GB hold tool-calling and
+constraint-following parity with a 7.46B model at 4.20 GB, and at what TTFT.
+
+## 3. XHToken Spark-X2.5-4B — pending
+
+4.11B dense with 3:1 sliding:full attention, head_dim 256, 1M-token trained context.
+
+| Tier | Weights | bpw | Publisher | P0 | P2 | P3 |
+|---|---|---|---|---|---|---|
+| 4-bit (`mlx-4bit`) | 2.32 GB | 4.51 | **third-party** (`abenzerps`) | — | — | — |
+| OptiQ 4/8 (`optiq-4bit`) | 3.05 GB | 5.93 | mlx-community | — | — | — |
+| 8-bit (reference) | 4.38 GB | 8.52 | **third-party** (`abenzerps`) | — | — | — |
+
+Fairness caveat that cannot be engineered away: no vendor MLX conversion is published, so both
+non-OptiQ tiers are community quants. Every table carrying this model must repeat that.
+
+## 4. Liquid AI LFM2.5-8B-A1B — pending
+
+8.47B hybrid conv+attention MoE, 18 of 24 layers convolutional, 32 experts top-4.
+
+| Tier | Weights | bpw | Publisher | P0 | P2 | P3 |
+|---|---|---|---|---|---|---|
+| 4-bit (`mlx-4bit`) | 4.85 GB | 4.58 | vendor | — | — | — |
+| OptiQ 4/8 (`optiq-4bit`) | 5.47 GB | 5.17 | mlx-community | — | — | — |
+| 8-bit (reference) | 9.02 GB | 8.52 | vendor | — | — | — |
+
+The speed hypothesis: 8.5B of weights but ~1.3B active per token should out-decode every dense
+row here. The 9.02 GB 8-bit tier may not survive the P0 memory gate on 16 GB; if it does not,
+that is recorded rather than dropped.
+
+---
+
+## 5. Cross-model comparison — pending
+
+Fills in as each section completes. The table below is the shape, not a result.
+
+| Model | Tier | Decode tok/s | TTFT 68 / 1k / 8k | Peak GB | Accuracy /30 | Quality /5 |
+|---|---|---|---|---|---|---|
+| Nemotron 3.5 Bolt | 4-bit | 34.4 | 0.195 / 1.62 / 14.3 | 5.09 | 24 (80.0%) | 4.29 |
+| Nemotron 3.5 Bolt | OptiQ | 25.7 | 0.217 / 1.68 / 14.6 | 7.42 | 25 (83.3%) | 4.67 |
+| Nemotron 3.5 Bolt | 8-bit | — | — | — | — | — |
+| MiniCPM5-2B | all | — | — | — | — | — |
+| Spark-X2.5-4B | all | — | — | — | — | — |
+| LFM2.5-8B-A1B | all | — | — | — | — | — |
+
+What this table will **not** claim: a single "best model". 30 checkable prompts separate 50%
+from 100%; they do not separate 83% from 87%, and a blind score from one rater over 8 prompts is
+a preference signal. Differences smaller than a row's own min–max range are not differences.

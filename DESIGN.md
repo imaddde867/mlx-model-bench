@@ -37,20 +37,28 @@ baseline is not a special case but the first row.
 
 ## Arms
 
-Per model, three arms — the same shape for every row of the roster, so a
-difference between rows is a difference between models, not between harnesses:
+Per model and per **tier** (4-bit, OptiQ mixed 4/8-bit, 8-bit reference), the same
+three arms — so a difference between rows is a difference between models, not
+between harnesses:
 
 | Arm | Engine | Checkpoint | Transport |
 |---|---|---|---|
-| *n*.1 | `mlx_lm` 0.32.2 | plain 4-bit (vendor / mlx-community / third-party, see `MODELS.md`) | in-process |
+| *n*.1 | `mlx_lm` 0.32.2 | the tier's checkpoint (vendor / mlx-community / third-party, see `MODELS.md`) | in-process |
 | *n*.2 | `mlx_lm` 0.32.2 | same | HTTP (`mlx_lm.server`) |
-| *n*.3 | `mlx_lm` 0.32.2 | OptiQ mixed 4/8-bit for the same model | in-process |
+| *n*.3 | `mlx-optiq` 0.7.3 | OptiQ tier only | HTTP (`optiq serve`) |
 
-Arm *n*.2 exists so HTTP overhead is never mistaken for engine cost.
+Arm *n*.2 exists so HTTP overhead is never mistaken for engine cost. Arm *n*.3
+is attempted for every OptiQ checkpoint and recorded as unmeasurable when it
+fails — for the baseline it does (`P0.md`), and "the engine cannot serve this" is
+a result the comparison needs, not a gap to hide.
+
+The three tiers exist because all four models publish all three. 8-bit is a
+reference: it prices the quantization, and it is the reason the baseline is
+re-run at 8-bit even though the original study stopped at 4-bit vs OptiQ.
 
 ### The baseline's historical arms
 
-These are kept by name because `RESULTS.md` and `P0.md` refer to them; the
+These are kept by name because `REPORT.md` and `P0.md` refer to them; the
 harness now addresses the same things as `--model nemotron-3.5-bolt
 --checkpoint mlx-4bit|optiq-4bit --transport inproc|http`.
 
@@ -135,7 +143,7 @@ Baseline (complete):
   arm 3.
 - **P1 · harness** — `bench.py`, one file, writes per-run JSON.
 - **P2 · runs** — arms × trials. ~1 h of wall clock, mostly unattended.
-- **P3 · report** — `RESULTS.md` + raw JSON + 8 outputs for blind scoring.
+- **P3 · report** — `REPORT.md` section 1 + raw JSON + 8 outputs for blind scoring.
 
 Roster (repeated per model, in this order):
 

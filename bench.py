@@ -281,6 +281,8 @@ def main():
         "model_name": cfg.name,
         "hf_repo": ckpt.hf_repo,
         "checkpoint": ckpt.tag,
+        "tier": ckpt.tier,
+        "official": ckpt.official,
         "weights_gb": ckpt.weights_gb,
         "bits_per_weight": ckpt.bits_per_weight,
         "publisher": ckpt.publisher,
@@ -366,8 +368,9 @@ def main():
 
     kept = [r for r in rows if not r["discarded"]]
     summary = {
-        **{k: base[k] for k in ("model_id", "model_name", "hf_repo", "checkpoint", "weights_gb",
-                                "bits_per_weight", "publisher", "params_total", "params_active",
+        **{k: base[k] for k in ("model_id", "model_name", "hf_repo", "checkpoint", "tier",
+                                "official", "weights_gb", "bits_per_weight", "publisher",
+                                "params_total", "params_active",
                                 "run_id", "transport", "engine", "model", "host", "versions",
                                 "server_version", "max_tokens", "template_kwargs",
                                 "temperature", "top_p", "greedy", "trials")},

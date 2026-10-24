@@ -23,13 +23,18 @@ in the roster. Check `mlx_lm.models` before adding a fourth.
 ## The registry
 
 `registry.py` is the single source of truth: models, checkpoints, Hub repos,
-weight sizes, bits-per-weight, publisher, and **per-model chat template
-controls**. No harness may hardcode a model. If a number appears in a report, it
-came from a result row, and the row's metadata came from the registry.
+tiers, weight sizes, bits-per-weight, publisher, engines, and **per-model chat
+template controls**. No harness may hardcode a model. If a number appears in a
+report, it came from a result row, and the row's metadata came from the registry.
 
-A model is a *Model* with one or more *Checkpoints*. Plain 4-bit and OptiQ
-mixed 4/8-bit are two checkpoints of the same model, not two models — that is
-what makes "which checkpoint does this model wear best" answerable.
+A model is a *Model* with one *Checkpoint* per tier. The tiers are the same for
+every model — `4bit`, `optiq-4bit`, `8bit` — because that is the largest set all
+four publish. A missing tier is a documented absence, never a silent omission:
+see the option matrix in `MODELS.md`.
+
+`publisher` and `official` are part of a checkpoint's identity. Two models use
+vendor conversions, one has no vendor MLX conversion at all, one is entirely
+third-party. That distinction goes in every table the row appears in.
 
 ## Rules that make the numbers comparable
 
@@ -88,13 +93,15 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 
 - [x] P0 — load tests, baseline. Arms 1–3 load; arm 4 blocked by an optiq prefill buffer. See `P0.md`.
 - [x] P1 — `bench.py` — verified arms 1, 2, 3 produce valid JSON with all metrics.
-- [x] P2 — speed/TTFT/memory runs, arms 1–3, valid after cache-bust fix. See `RESULTS.md`.
-- [x] P3 — accuracy (30) + quality (8) prompt sets, blind evaluation, final report in `RESULTS.md`.
+- [x] P2 — speed/TTFT/memory runs, arms 1–3, valid after cache-bust fix. See `REPORT.md` §1.1.
+- [x] P3 — accuracy (30) + quality (8) prompt sets, blind evaluation, report in `REPORT.md` §1.2–1.5.
 - [x] R0 — harness generalized: registry-driven `bench.py`/`run_p3.py`/`run_bench.py`, multi-model chart, cross-model `blind.py` + `score_quality.py`, results moved to `results/<model>/`.
-- [ ] R1 — MiniCPM5-2B: fetch, P0 gate, P2, P3.
-- [ ] R2 — Spark-X2.5-4B: same.
-- [ ] R3 — LFM2.5-8B-A1B: same.
-- [ ] R4 — cross-model report: one table, each row carrying bpw, publisher, prompt tokens, peak memory; blind quality round r1 across all four.
+- [x] R0.5 — tier matrix: every model at `4bit` / `optiq-4bit` / `8bit` (reference), three arms each (`inproc`, `http`, `optiq` engine attempted), `run_bench.py --tiers` to select. Fairness ledger in `MODELS.md`.
+- [ ] R1 — MiniCPM5-2B: fetch (sha256 gate), P0 (determinism gate), P2, P2-optiq, P3.
+- [ ] R2 — Spark-X2.5-4B: same. Remember: its 4-bit and 8-bit tiers are community quants, no vendor conversion exists.
+- [ ] R3 — LFM2.5-8B-A1B: same. The 9.02 GB 8-bit tier may fail the P0 memory gate on 16 GB — record that, do not drop the row.
+- [ ] R3b — baseline 8-bit reference row: `--model nemotron-3.5-bolt --tiers 8bit`. Retrofit parity; the original study omitted it.
+- [ ] R4 — cross-model report: one table, each row carrying tier, bpw, publisher, prompt tokens, peak memory; blind quality round r1 across all four.
 
 ## Known traps
 

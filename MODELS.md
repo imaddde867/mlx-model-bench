@@ -21,16 +21,40 @@ for file bytes and parameter counts, `<repo>/resolve/main/config.json` for
 architecture), not from a model card or a blog post. `bpw` is bytes × 8 ÷
 parameters over the tensors the engine actually loads.
 
-| Model | Vendor | Params (total / active) | Checkpoint | Weights | bpw | Publisher |
-|---|---|---|---|---|---|---|
-| **Nemotron 3.5 Bolt E4B** (baseline) | NVIDIA | 7.46B / 4B label | `rapid-mlx/…MLX-4bit` | 4.20 GB | 4.50 | third-party |
-| | | | `mlx-community/…OptiQ-4bit` | 6.53 GB (7.49 dl) | 7.00 | mlx-community |
-| **MiniCPM5-2B** | OpenBMB | 2.52B / 2.52B | `mlx-community/MiniCPM5-2B-mlx-4Bit` | 1.43 GB | 4.55 | mlx-community |
-| | | | `mlx-community/MiniCPM5-2B-OptiQ-4bit` | 1.94 GB | 6.17 | mlx-community |
-| **Spark-X2.5-4B** | XHToken | 4.11B / 4.11B | `abenzerps/Spark-X2.5-4B-MLX-4bit` | 2.32 GB | 4.51 | **third-party** |
-| | | | `mlx-community/Spark-X2.5-4B-OptiQ-4bit` | 3.05 GB | 5.93 | mlx-community |
-| **LFM2.5-8B-A1B** | Liquid AI | 8.47B / ~1.3B label | `LiquidAI/LFM2.5-8B-A1B-MLX-4bit` | 4.85 GB | 4.58 | vendor |
-| | | | `mlx-community/LFM2.5-8B-A1B-OptiQ-4bit` | 5.47 GB | 5.17 | mlx-community |
+| Model | Params (total / active) | Tier | Checkpoint | Weights | bpw | Publisher | Engine arm |
+|---|---|---|---|---|---|---|---|
+| **Nemotron 3.5 Bolt E4B** | 7.46B / 4B label | 4-bit | `rapid-mlx/…-MLX-4bit` | 4.20 GB | 4.50 | third-party | mlx_lm |
+| | | OptiQ | `mlx-community/…-OptiQ-4bit` | 6.53 GB (7.49 dl) | 7.00 | mlx-community | mlx_lm + optiq |
+| | | 8-bit | `rapid-mlx/…-MLX-8bit` | 7.96 GB | 8.53 | third-party | mlx_lm |
+| **MiniCPM5-2B** | 2.52B / 2.52B | 4-bit | `openbmb/MiniCPM5-2B-MLX` | 1.43 GB | 4.55 | **vendor** | mlx_lm |
+| | | OptiQ | `mlx-community/…-OptiQ-4bit` | 1.94 GB | 6.17 | mlx-community | mlx_lm + optiq |
+| | | 8-bit | `mlx-community/MiniCPM5-2B-8bit` | 2.68 GB | 8.52 | mlx-community | mlx_lm |
+| **Spark-X2.5-4B** | 4.11B / 4.11B | 4-bit | `abenzerps/Spark-X2.5-4B-MLX-4bit` | 2.32 GB | 4.51 | **third-party** | mlx_lm |
+| | | OptiQ | `mlx-community/…-OptiQ-4bit` | 3.05 GB | 5.93 | mlx-community | mlx_lm + optiq |
+| | | 8-bit | `abenzerps/Spark-X2.5-4B-MLX-8bit` | 4.38 GB | 8.52 | **third-party** | mlx_lm |
+| **LFM2.5-8B-A1B** | 8.47B / ~1.3B label | 4-bit | `LiquidAI/LFM2.5-8B-A1B-MLX-4bit` | 4.85 GB | 4.58 | **vendor** | mlx_lm |
+| | | OptiQ | `mlx-community/…-OptiQ-4bit` | 5.47 GB | 5.17 | mlx-community | mlx_lm + optiq |
+| | | 8-bit | `LiquidAI/LFM2.5-8B-A1B-MLX-8bit` | 9.02 GB | 8.52 | **vendor** | mlx_lm |
+
+### Why these three tiers, and not others
+
+Every model is run at 4-bit, OptiQ mixed 4/8-bit, and 8-bit. That set is chosen because it is
+the largest matrix that **all four models actually publish**, which is the only way the rows
+stay comparable.
+
+- **8-bit is a reference tier, not a recommendation.** It answers "how much is quantization
+  costing this model" — the one question a 4-bit-only roster cannot answer. The baseline is
+  re-run at 8-bit for this reason, even though its original study did not.
+- **The baseline's 8-bit omission is a finding about the original study**, not a gap in the
+  model: `rapid-mlx` publishes the file, it is 7.96 GB, and it fits.
+- **`openbmb` publishes its own MLX 4-bit** for MiniCPM5, so the plain tier uses the vendor
+  conversion the way LFM does, rather than a community quant. `mlx-community`'s 4-bit of the
+  same weights is a free second opinion if the two ever disagree.
+- **Excluded on purpose:** 5/6-bit tiers (published for LFM and several community repos, but
+  not for every model, so they would break the even matrix); `DSpark` variants (published for
+  MiniCPM5 and LFM, but not for the baseline — and a speculative-decoding checkpoint changes
+  decode semantics, not just quality); GGUF (different engine, explicit non-goal); bf16
+  (30 GB+ for LFM, does not fit, and answers nothing the 8-bit tier does not).
 
 Architecture, in the terms that change what the numbers mean:
 

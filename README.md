@@ -1,66 +1,98 @@
-# MLX model bench — Apple Silicon, 16 GB
+# Local model bench — 16 GB Apple Silicon
 
-Speed, TTFT, memory, accuracy and blind quality for the sub-5 GB quantized models
-that actually fit on an Apple Silicon laptop — measured on Apple M4 / 16 GB, MLX,
-one model at a time, with the same prompts, the same controls and the same
-provenance for every row.
+Speed, TTFT, memory, accuracy and blind quality for the models that actually fit on a
+16 GB Apple Silicon laptop, measured under one harness, one prompt set and one set of
+controls. Apple M4 (10-core), macOS 27.0.1, MLX, `mlx-lm` 0.32.2.
 
-![P2 chart](p2_visual.png)
+Not a leaderboard. Every row carries its model, checkpoint, bits-per-weight, publisher,
+prompt-token count and generation length, because none of those numbers mean anything
+without them. What the study can and cannot conclude is written down in
+[`MODELS.md`](MODELS.md#what-this-roster-cannot-tell-you).
 
-**Headline (baseline, complete):** for Nemotron 3.5 Bolt E4B the server adds ~no
-TTFT cost; the OptiQ mixed-bit checkpoint decodes ~25% slower and uses ~2.3 GB
-more than plain 4-bit; a fresh 8k-token prompt takes ~14 s to first token, a
-prefix-cache hit ~0.09 s. Full tables and caveats: [RESULTS.md](RESULTS.md).
+## Roster
 
-**Roster:** the baseline above plus three challengers, chosen to cover the range
-that fits in 16 GB — [MODELS.md](MODELS.md) has the verified metadata, the
-template-control traps per model, and the rules that keep the comparison honest.
+Four models, each at the **same three quantization tiers**, so a difference between rows is
+a difference between models rather than between quantization budgets.
 
-| Model | Weights (plain / OptiQ) | Why it is here | Status |
-|---|---|---|---|
-| NVIDIA Nemotron 3.5 Bolt E4B | 4.20 / 6.53 GB | the baseline, 7.46B dense | **complete** — P0–P3 |
-| OpenBMB MiniCPM5-2B | 1.43 / 1.94 GB | best compact intelligence per GB | queued |
-| XHToken Spark-X2.5-4B | 2.32 / 3.05 GB | 4B-class coding and tool use | queued |
-| Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 GB | hybrid MoE; speed at 1.3B active | queued |
+| Model | Params | 4-bit | OptiQ 4/8-bit | 8-bit (reference) | Status |
+|---|---|---|---|---|---|
+| NVIDIA Nemotron 3.5 Bolt E4B | 7.46B | 4.20 GB | 6.53 GB | 7.96 GB | 4-bit + OptiQ complete · 8-bit pending |
+| OpenBMB MiniCPM5-2B | 2.52B | 1.43 GB | 1.94 GB | 2.68 GB | pending |
+| XHToken Spark-X2.5-4B | 4.11B | 2.32 GB | 3.05 GB | 4.38 GB | pending |
+| Liquid AI LFM2.5-8B-A1B | 8.47B | 4.85 GB | 5.47 GB | 9.02 GB | pending |
 
-Each model runs in two checkpoints — plain 4-bit and OptiQ mixed 4/8-bit — so the
-two questions the baseline answers (engine cost, checkpoint cost) get asked of
-every model, and a third appears: which checkpoint a model wears best.
+Per checkpoint there are three arms: `mlx_lm` in-process, `mlx_lm.server` over HTTP, and an
+`mlx-optiq` engine arm attempted for every OptiQ checkpoint (it is unmeasurable for the
+baseline — see [`P0.md`](P0.md) — and is recorded as unmeasurable rather than omitted when
+it fails for a new model).
+
+Three fairness notes, because they are the difference between a comparison and a collage:
+
+- **Publisher provenance is part of the row.** Two models have vendor MLX conversions
+  (MiniCPM5, LFM2.5); Spark has none at all, so two of its three tiers are community quants;
+  Nemotron's are third-party. That is stated in every table those rows appear in.
+- **The 8-bit tier exists because the baseline omitted it.** Nemotron publishes an 8-bit
+  MLX file that the original study never ran. Comparing four models at 4-bit while testing
+  whether only one of them gains from a wider quant would not be a fair test of the
+  quantizer, so the baseline gets an 8-bit row too.
+- **The tiers are not the same number of bits.** Bits-per-weight runs 4.50 → 8.53; OptiQ's
+  premium over plain 4-bit ranges from +13% (LFM) to +56% (Nemotron). Any "OptiQ is better"
+  claim has to survive that.
+
+Full metadata, template-control traps and the comparability protocol:
+[`MODELS.md`](MODELS.md). The registry that everything reads: [`registry.py`](registry.py).
 
 ## Files
 
 | File | What |
 |---|---|
-| `registry.py` | **the source of truth**: models, checkpoints, sizes, template controls, provenance |
-| `MODELS.md` | roster, verified metadata, fairness protocol, what the numbers cannot say |
+| `REPORT.md` | the report: methodology, per-model results, cross-model comparison |
+| `MODELS.md` | roster, verified metadata, option matrix, fairness protocol, limits |
 | `DESIGN.md` | questions, arms, controls |
-| `P0.md` | per-model load tests; why `optiq serve` can't run on 16 GB |
-| `RESULTS.md` | the baseline report: speed, TTFT, memory, accuracy (30), blind quality (8) |
-| `run_bench.py` | one model, end to end: fetch → p0 → p2 → p3 |
-| `bench.py` | the speed/TTFT/memory harness, one JSON per run |
-| `p0_load.py` | load test: does this checkpoint run here, and what does it cost |
-| `p3_suite.py`, `run_p3.py` | the fixed 30 accuracy + 8 quality prompts and the runner |
-| `blind.py`, `score_quality.py` | cross-model blind set and its scoring summary |
-| `visualize_p2.py` | the chart, every model on the same axes |
+| `P0.md` | load tests; why `optiq serve` cannot run the baseline on 16 GB |
+| `registry.py` | single source of truth: models, checkpoints, sizes, template controls |
+| `run_bench.py` | one model end to end: fetch → p0 gate → p2 → p2-optiq → p3 |
+| `bench.py` | speed/TTFT/memory harness, one JSON per run |
+| `p0_load.py` | load gate: does this checkpoint run here, deterministically, at what cost |
+| `p3_suite.py`, `run_p3.py` | the fixed 30 accuracy + 8 quality prompts and their runner |
+| `blind.py`, `score_quality.py` | cross-model blind set (balanced slots) and scoring summary |
+| `visualize_p2.py` | the chart: every model on the same axes |
 | `results/` | raw per-run JSON, one directory per model |
 
 ## Reproduce
 
-Needs the checkpoints under `models/` (see `registry.py` for the exact repos) and
-a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib`:
+Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib` (and `mlx-optiq==0.7.3` in a
+separate venv to attempt the engine arm). No model is vendored: `registry.py` names every Hub
+repo, and `--phase fetch` downloads and verifies them.
 
 ```bash
-# one model, all phases, in the order that keeps failures cheap
+# inspect the matrix: tiers, sizes, bpw, publisher, what is already on disk
+.venv-mlxlm/bin/python registry.py
+.venv-mlxlm/bin/python bench.py --list
+
+# one model, in order: fetch+sha256 gate, P0 gate, speed, engine arm, accuracy/quality
+caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase fetch
+caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase p0
+caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase p2
+caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase p2-optiq
+caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase p3
+
+# or everything, stopping at the first gate that fails
 caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase all
 
-# chart everything with results
-.venv-mlxlm/bin/python visualize_p2.py
-
-# blind quality across whatever is on disk
-.venv-mlxlm/bin/python blind.py --round r1     # then score scores.json by hand
+# restrict tiers: --tiers 4bit optiq-4bit   (8bit is the reference tier)
+# chart, and the cross-model blind quality round
+.venv-mlxlm/bin/python visualize_p2.py --include-http
+.venv-mlxlm/bin/python blind.py --round r1
+# fill results/blind-r1/scores.json from the template, score blind, then:
 .venv-mlxlm/bin/python score_quality.py --round r1
 ```
 
-Status: the baseline (P0 loads, P1 harness, P2 speed/memory, P3 accuracy/quality)
-is complete. The three-model roster is set up and verified on the Hub; its runs
-start one model at a time, plain checkpoint first.
+The repository directory keeps its historical name (`nemotron-bolt-bench`); it began as a
+single-model study and that record is now section 1 of the report.
+
+## Pins
+
+`mlx-lm` 0.32.2 · `mlx` 0.32.4 · `mlx-optiq` 0.7.3 (requires `mlx-lm <0.33`) · Python 3.12.10.
+One venv per engine so neither can silently upgrade the other. Versions are recorded inside
+each result row, never only in prose.

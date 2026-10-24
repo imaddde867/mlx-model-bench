@@ -35,13 +35,16 @@ ROOT = Path(__file__).resolve().parent
 class Checkpoint:
     """One downloadable, loadable file set for a model."""
 
-    tag: str            # short label used in paths: "mlx-4bit", "optiq-4bit"
+    tag: str            # short label used in paths: "4bit", "optiq-4bit", "8bit"
     hf_repo: str        # what to fetch
     local_dir: str      # where fetch puts it, relative to the repo root
     weights_gb: float   # bytes the engine actually loads, GB decimal
     params: float       # total parameters, billions
     quant: str          # human description of the quantization
     publisher: str      # "vendor" | "mlx-community" | "third-party:<user>"
+    tier: str = "4bit"  # "4bit" | "optiq-4bit" | "8bit" — the same three per model
+    official: bool = False    # converted and published by the model's own vendor
+    engines: tuple = ("mlx_lm",)  # runtimes this checkpoint can be loaded in
     download_gb: float = 0.0  # Hub file total; > weights_gb when the repo carries dead weight
     sha_verified: bool = False
     notes: str = ""
@@ -98,6 +101,8 @@ class Model:
 # the pinned repo, not from documentation.
 # -----------------------------------------------------------------------------
 
+TIER_ORDER = ("4bit", "optiq-4bit", "8bit")
+
 MODELS: Dict[str, Model] = {
     # =========================================================================
     # Baseline (P0-P3 complete): the model this repo was built around.
@@ -128,6 +133,7 @@ MODELS: Dict[str, Model] = {
                 params=7.463,
                 quant="affine 4-bit, group 64",
                 publisher="third-party:rapid-mlx",
+                tier="4bit",
                 sha_verified=True,
                 notes="Text-only by construction: vision/audio tensors excluded.",
             ),
@@ -140,6 +146,8 @@ MODELS: Dict[str, Model] = {
                 params=7.463,
                 quant="mixed 4/8-bit (OptiQ), per-module 8-bit overrides",
                 publisher="mlx-community",
+                tier="optiq-4bit",
+                engines=("mlx_lm", "mlx-optiq"),
                 sha_verified=True,
                 notes=(
                     "Ships optiq_vision.safetensors (0.96 GB) that mlx_lm never loads: "
@@ -148,10 +156,28 @@ MODELS: Dict[str, Model] = {
                     "allocation was transferred from gemma-4-e4b-it, not measured."
                 ),
             ),
+            "mlx-8bit": Checkpoint(
+                tag="mlx-8bit",
+                hf_repo="rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-8bit",
+                local_dir="models/rapid-mlx-8bit",
+                weights_gb=7.96,
+                download_gb=7.96,
+                params=7.463,
+                quant="affine 8-bit, group 64",
+                publisher="third-party:rapid-mlx",
+                tier="8bit",
+                notes=(
+                    "Reference tier, not measured in the original study. Its existence is the "
+                    "reason the baseline gets re-run: comparing four models at 4-bit while only "
+                    "checking whether one of them gains from a wider quant is not a fair test of "
+                    "the quantizer. lmstudio-community publishes the same 8-bit file at the same "
+                    "size if a second publisher is wanted."
+                ),
+            ),
         },
         role="Baseline. The only model with a full P0-P3 record; parity check for the roster.",
         source="https://huggingface.co/rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit",
-        notes="See RESULTS.md and P0.md. Arm 4 (optiq serve) is dead on 16 GB: P0.md.",
+        notes="See REPORT.md section 1 and P0.md. Arm 4 (optiq serve) is dead on 16 GB: P0.md.",
     ),
     # =========================================================================
     # Candidate 1: compact intelligence per GB.
@@ -174,13 +200,21 @@ MODELS: Dict[str, Model] = {
         checkpoints={
             "mlx-4bit": Checkpoint(
                 tag="mlx-4bit",
-                hf_repo="mlx-community/MiniCPM5-2B-mlx-4Bit",
+                hf_repo="openbmb/MiniCPM5-2B-MLX",
                 local_dir="models/minicpm5-2b-4bit",
                 weights_gb=1.43,
                 download_gb=1.43,
                 params=2.517,
                 quant="affine 4-bit, group 64",
-                publisher="mlx-community",
+                publisher="vendor",
+                tier="4bit",
+                official=True,
+                notes=(
+                    "OpenBMB publishes this MLX 4-bit itself, so the plain tier uses the "
+                    "vendor conversion the way LFM does. mlx-community/MiniCPM5-2B-mlx-4Bit "
+                    "is a second, independently produced 4-bit of the same weights — a free "
+                    "consistency check if the two ever disagree."
+                ),
             ),
             "optiq-4bit": Checkpoint(
                 tag="optiq-4bit",
@@ -191,6 +225,20 @@ MODELS: Dict[str, Model] = {
                 params=2.517,
                 quant="mixed 4/8-bit (OptiQ): embed + early-layer projections at 8-bit",
                 publisher="mlx-community",
+                tier="optiq-4bit",
+                engines=("mlx_lm", "mlx-optiq"),
+            ),
+            "mlx-8bit": Checkpoint(
+                tag="mlx-8bit",
+                hf_repo="mlx-community/MiniCPM5-2B-8bit",
+                local_dir="models/minicpm5-2b-8bit",
+                weights_gb=2.68,
+                download_gb=2.68,
+                params=2.517,
+                quant="affine 8-bit, group 64",
+                publisher="mlx-community",
+                tier="8bit",
+                notes="Reference tier: at 2.68 GB this is still smaller than three of the four 4-bit rows.",
             ),
         },
         role="Best compact-intelligence candidate: 2.5B at 1.43 GB is the cheapest full tool-use row.",
@@ -228,6 +276,7 @@ MODELS: Dict[str, Model] = {
                 params=4.112,
                 quant="affine 4-bit, group 64",
                 publisher="third-party:abenzerps",
+                tier="4bit",
                 notes=(
                     "No vendor or mlx-community plain 4-bit MLX conversion exists. This is a "
                     "third-party quant of the confirmed 4.11B BF16 weights, unvetted beyond "
@@ -243,6 +292,24 @@ MODELS: Dict[str, Model] = {
                 params=4.112,
                 quant="mixed 4/8-bit (OptiQ), 8-bit on embed + per-layer projections",
                 publisher="mlx-community",
+                tier="optiq-4bit",
+                engines=("mlx_lm", "mlx-optiq"),
+            ),
+            "mlx-8bit": Checkpoint(
+                tag="mlx-8bit",
+                hf_repo="abenzerps/Spark-X2.5-4B-MLX-8bit",
+                local_dir="models/spark-x2.5-4b-8bit",
+                weights_gb=4.38,
+                download_gb=4.38,
+                params=4.112,
+                quant="affine 8-bit, group 64",
+                publisher="third-party:abenzerps",
+                tier="8bit",
+                notes=(
+                    "Third-party like the 4-bit; hermitdave publishes 4/6/8-bit too. Spark is the "
+                    "one model here with no vendor MLX conversion at all, which is a fairness "
+                    "caveat that cannot be engineered away — only stated."
+                ),
             ),
         },
         role="Best direct 4B-class challenger: coding, tool use, instruction following at 2.3-3.1 GB.",
@@ -280,6 +347,8 @@ MODELS: Dict[str, Model] = {
                 params=8.468,
                 quant="affine 4-bit, group 64; embed_tokens at 6-bit",
                 publisher="vendor",
+                tier="4bit",
+                official=True,
                 notes="Official Liquid AI MLX conversion. Embedding is 6-bit, not 4 — unlike every other row here.",
             ),
             "optiq-4bit": Checkpoint(
@@ -291,6 +360,25 @@ MODELS: Dict[str, Model] = {
                 params=8.468,
                 quant="mixed 4/8-bit (OptiQ), 8-bit on embed + conv projections",
                 publisher="mlx-community",
+                tier="optiq-4bit",
+                engines=("mlx_lm", "mlx-optiq"),
+            ),
+            "mlx-8bit": Checkpoint(
+                tag="mlx-8bit",
+                hf_repo="LiquidAI/LFM2.5-8B-A1B-MLX-8bit",
+                local_dir="models/lfm2.5-8b-a1b-8bit",
+                weights_gb=9.02,
+                download_gb=9.02,
+                params=8.468,
+                quant="affine 8-bit, group 64",
+                publisher="vendor",
+                tier="8bit",
+                official=True,
+                notes=(
+                    "9.02 GB is the largest row here; with KV it may brush 10-11 GB on a 16 GB "
+                    "box at 8k context. The P0 gate decides whether it is measurable, not "
+                    "whether it is interesting. Liquid also publishes 5- and 6-bit MLX."
+                ),
             ),
         },
         role="Speed row: 8.5B of weights, ~1.3B active per token. Tests whether MoE wins decode tps on M4.",
@@ -369,9 +457,11 @@ def dump_catalog_json(out_path: Optional[Path] = None) -> Path:
 def _fmt_row(m: Model, c: Checkpoint) -> str:
     have = "local" if c.available else "     "
     dl = f" dl{c.download_gb:.2f}" if c.download_gb and abs(c.download_gb - c.weights_gb) > 0.01 else ""
+    src = "vendor" if c.official else "third-party"
+    engines = "+".join("optiq" if e == "mlx-optiq" else "mlx_lm" for e in c.engines)
     return (
         f"  {c.tag:11s} {c.weights_gb:5.2f}GB{dl:9s} {c.bits_per_weight:4.2f}bpw "
-        f"{c.params:5.3f}B {have:5s} {c.publisher:22s} {c.hf_repo}"
+        f"{have:5s} {src:11s} {engines:12s} {c.hf_repo}"
     )
 
 
@@ -394,7 +484,9 @@ def main(argv=None):
               + f" · ctx {m.context_train} · template {json.dumps(m.template_kwargs)}")
         print(f"  {m.role}")
         for c in m.checkpoints.values():
-            print("  " + _fmt_row(m, c))
+            print(_fmt_row(m, c))
+    print("\ntiers are identical across the roster: 4bit (core), optiq-4bit (core), "
+          "8bit (reference). 'third-party' means no vendor MLX conversion is published.")
     return 0
 
 
