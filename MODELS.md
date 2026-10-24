@@ -123,9 +123,25 @@ one of them means the comparison is no longer comparing models.
 8. **Peak memory from `mx.get_peak_memory()` in-process, `ps` RSS for HTTP**, with
    the source recorded in the row. Never mixed within a column without saying so.
 9. **`caffeinate`, plugged in, nothing else running**, one model per run.
-10. **Blind quality: one rater, outputs shuffled per prompt by seed**, key not
-    opened until scores are filed. Single rater, 8 prompts — a preference signal,
-    and labelled as one.
+10. **Blind quality: one rater, slots assigned by a balanced rotation over a
+    seeded shuffle**, key not opened until scores are filed. Balance matters: with
+    a plain shuffle one row can land in slot A five times out of eight, and a
+    rater who anchors on slot A then manufactures a winner. `score_quality.py`
+    also prints the mean per slot and warns when slots are ≥1 point apart, so
+    position bias is visible instead of baked in. Single rater, 8 prompts — a
+    preference signal, and labelled as one.
+11. **Integrity gate before any run.** `run_bench.py --phase fetch` hashes every
+    weight file and compares against the Hub's published `sha256`, writing
+    `results/<model>/p0/<ckpt>-provenance.json`. A checkpoint that does not match
+    its hash is not the file the report claims to have measured, so it does not
+    run. This is the same check `P0.md` records for the baseline.
+12. **Determinism is checked, not assumed.** P0 generates the same prompt twice
+    and records `deterministic: true/false`. Greedy must reproduce exactly; MoE
+    routing and hybrid attention are new here, and if a row is not reproducible
+    its median is a median of something else.
+13. **A non-greedy row never shares a directory with a greedy one.** `bench.py`
+    appends `-t<temp>-p<top_p>` to the run id, so a card-recommended sampling
+    spot-check cannot overwrite published greedy results.
 
 ## What this roster cannot tell you
 
@@ -145,7 +161,7 @@ One model at a time, all the way through, so any stopping point leaves a usable
 record rather than four half-models:
 
 ```bash
-# 1. fetch (resumable; prints GB on disk)
+# 1. fetch + integrity gate (resumable; verifies every weight file's sha256)
 .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase fetch
 
 # 2. GATE: does it load in mlx_lm, with this template, and answer sanely?

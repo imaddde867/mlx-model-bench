@@ -54,6 +54,18 @@ what makes "which checkpoint does this model wear best" answerable.
   label and (if computed) the config arithmetic marked as arithmetic.
 - Peak memory is `mx.get_peak_memory()` in-process and `ps` RSS for HTTP; the
   source is recorded in the row and never mixed silently inside a column.
+- **Integrity before measurement.** `run_bench.py --phase fetch` verifies every
+  weight file against the Hub's `sha256` and writes a provenance record. No
+  checksum, no row — a mismatched quant is a different file than the one named.
+- **Determinism is verified at P0** (same prompt twice, must match exactly). If a
+  model's greedy output is not reproducible, its medians are not comparable and
+  the row is reported as such.
+- **Deviation rows get their own directory.** `bench.py` tags any non-greedy run
+  `-t<temp>-p<top_p>`; nothing a spot-check produces can overwrite a published
+  greedy summary.
+- **Blind slots are balanced, not just shuffled**, and the scorer reports the
+  mean per slot. A ≥1-point spread across slots means position bias — fix the
+  blind before reading the ranking.
 
 ## Chat template controls
 

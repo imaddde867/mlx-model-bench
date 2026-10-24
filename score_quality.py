@@ -96,6 +96,21 @@ def main():
         else:
             wins[leaders[0]] += 1
 
+    # Position check: if slot A scores systematically above slot D, the blind is
+    # telling you about the rater, not the models.
+    by_slot = {}
+    for row in data["scores"]:
+        for i in range(len(rows)):
+            slot = f"Model {LABELS[i]}"
+            if slot in row:
+                by_slot.setdefault(slot, []).append(row[slot]["total"])
+    slot_means = {s: round(statistics.mean(v), 2) for s, v in by_slot.items() if v}
+    if len(slot_means) > 1:
+        spread = max(slot_means.values()) - min(slot_means.values())
+        print("position means: " + ", ".join(f"{s}={m}" for s, m in sorted(slot_means.items())))
+        if spread >= 1.0:
+            print(f"  warning: {spread:.2f} points apart across slots — check for position bias before trusting the ranking")
+
     ordered = sorted(summary.items(), key=lambda kv: -kv[1]["mean_of_15"])
     print(f"\nBlind quality, round {args.round}: {n_prompts} prompts x {len(rows)} rows\n")
     print(f"| row | mean /5 | total /{15 * n_prompts} | wins (of {n_prompts}) | range |")
@@ -108,7 +123,9 @@ def main():
           f"with an error bar. Say so next to it in the report.")
 
     out = {"round": args.round, "prompts": n_prompts, "rows": rows,
-           "summary": summary, "wins": wins, "ties": ties}
+           "summary": summary, "wins": wins, "ties": ties,
+           "position_means": slot_means,
+           "slot_balance": data.get("slot_balance")}
     if args.unblind:
         out["key"] = key
     (base / "summary.json").write_text(json.dumps(out, indent=2))

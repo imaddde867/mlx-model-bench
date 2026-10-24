@@ -23,6 +23,7 @@ Everything model-specific comes from registry.py.
 """
 
 import argparse
+import hashlib
 import importlib.metadata as md
 import json
 import socket
@@ -62,24 +63,111 @@ def run(cmd, log_path, timeout=None):
     return proc.returncode
 
 
-def phase_fetch(cfg):
+def hub_manifest(hf_repo):
+    """Filename -> {size, sha256} straight from the Hub, the same source P0.md
+    checked the baseline against."""
+    url = f"https://huggingface.co/api/models/{hf_repo}?blobs=true"
+    with urllib.request.urlopen(url, timeout=60) as r:
+        d = json.load(r)
+    return {
+        s["rfilename"]: {"size": s.get("size"),
+                          "sha256": (s.get("lfs") or {}).get("sha256")}
+        for s in d.get("siblings", [])
+    }
+
+
+def sha256_file(path, chunk=8 << 20):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for block in iter(lambda: fh.read(chunk), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def verify_checkpoint(ckpt):
+    """Byte-for-byte check against the Hub. A quant that does not match its
+    published hash is not the file the report claims to have measured."""
+    record = {"hf_repo": ckpt.hf_repo, "checkpoint": ckpt.tag, "files": [],
+              "verified": None, "error": None}
+    try:
+        manifest = hub_manifest(ckpt.hf_repo)
+    except Exception as e:
+        record["error"] = f"manifest fetch failed: {type(e).__name__}: {e}"
+        return record
+
+    all_ok = True
+    for name, meta in sorted(manifest.items()):
+        if not name.endswith(".safetensors"):
+            continue
+        local = ckpt.local_path / name
+        entry = {"file": name, "expected_bytes": meta["size"],
+                 "expected_sha256": meta["sha256"], "ok": False}
+        if not local.exists():
+            entry["error"] = "missing locally"
+            all_ok = False
+            record["files"].append(entry)
+            continue
+        entry["local_bytes"] = local.stat().st_size
+        if meta["size"] and entry["local_bytes"] != meta["size"]:
+            entry["error"] = "size mismatch"
+            all_ok = False
+        elif meta["sha256"]:
+            entry["local_sha256"] = sha256_file(local)
+            entry["ok"] = entry["local_sha256"] == meta["sha256"]
+            if not entry["ok"]:
+                entry["error"] = "sha256 mismatch"
+            all_ok = all_ok and entry["ok"]
+        else:
+            entry["note"] = "no Hub sha256 for this file; size matched only"
+            entry["ok"] = True
+        record["files"].append(entry)
+    record["verified"] = bool(all_ok and record["files"])
+    return record
+
+
+def phase_fetch(cfg, out):
     from huggingface_hub import snapshot_download
 
     ok = True
+    prov_dir = out / cfg.id / "p0"
+    prov_dir.mkdir(parents=True, exist_ok=True)
     for ckpt in cfg.checkpoints.values():
         if ckpt.available:
             print(f"  {ckpt.tag}: already at {ckpt.local_dir}")
+        else:
+            print(f"  {ckpt.tag}: downloading {ckpt.hf_repo} -> {ckpt.local_dir}")
+            try:
+                snapshot_download(
+                    ckpt.hf_repo,
+                    local_dir=str(ckpt.local_path),
+                    allow_patterns=["*.json", "*.safetensors", "*.jinja", "*.txt", "*.model"],
+                )
+                size = sum(f.stat().st_size for f in ckpt.local_path.glob("*")
+                           if f.is_file() and not f.name.startswith("."))
+                print(f"    {size / 1e9:.2f} GB on disk")
+            except Exception as e:
+                print(f"    FAILED: {type(e).__name__}: {e}")
+                ok = False
+                continue
+
+        if not ckpt.available:
+            print("    not loadable: config.json missing after fetch")
+            ok = False
             continue
-        print(f"  {ckpt.tag}: downloading {ckpt.hf_repo} -> {ckpt.local_dir}")
-        try:
-            snapshot_download(
-                ckpt.hf_repo,
-                local_dir=str(ckpt.local_path),
-                allow_patterns=["*.json", "*.safetensors", "*.jinja", "*.txt", "*.model"],
-            )
-            print(f"    {sum(f.stat().st_size for f in ckpt.local_path.glob('*') if f.is_file()) / 1e9:.2f} GB on disk")
-        except Exception as e:
-            print(f"    FAILED: {type(e).__name__}: {e}")
+
+        print(f"  {ckpt.tag}: verifying against the Hub")
+        record = verify_checkpoint(ckpt)
+        record.update({"model_id": cfg.id, "local_dir": ckpt.local_dir,
+                       "weights_gb": ckpt.weights_gb})
+        (prov_dir / f"{ckpt.tag}-provenance.json").write_text(json.dumps(record, indent=2))
+        if record["verified"]:
+            n = len(record["files"])
+            print(f"    {n} weight file(s) match their published sha256")
+        else:
+            print(f"    VERIFICATION FAILED: {record['error'] or 'see ' + str(prov_dir)} — do not report this checkpoint")
+            for f in record["files"]:
+                if not f["ok"]:
+                    print(f"      {f['file']}: {f.get('error')}")
             ok = False
     return ok
 
@@ -216,13 +304,16 @@ def main():
     out = Path(args.out)
     print(f"\n{cfg.id} · {cfg.name} · template {json.dumps(cfg.template_kwargs)}")
     print(f"engine {server_version_string()} · python {sys.version.split()[0]}")
+    if args.phase in ("p2", "all") and args.trials < 5:
+        print(f"warning: --trials {args.trials} breaks the median-of-5 reporting rule; "
+              f"this row cannot be published as a result (fine for a smoke test)")
 
     phases = ["fetch", "p0", "p2", "p3"] if args.phase == "all" else [args.phase]
     ok = True
     for ph in phases:
         print(f"\n[{ph}]")
         if ph == "fetch":
-            ok = phase_fetch(cfg)
+            ok = phase_fetch(cfg, out)
         elif ph == "p0":
             ok = phase_p0(cfg, out)
         elif ph == "p2":

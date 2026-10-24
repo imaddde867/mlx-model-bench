@@ -117,11 +117,21 @@ def main():
         raise SystemExit("no quality prompt was answered by every selected row")
 
     rng = random.Random(args.seed)
+
+    # Slot assignment is balanced, not just shuffled: a rater who anchors on
+    # "Model A" would otherwise pay a model that happens to land in slot A five
+    # times out of eight. A rotation over a random base order gives each row each
+    # slot within one pass through the prompt list.
+    base_order = list(runs)
+    rng.shuffle(base_order)
+    slot_use = {r["label"]: [0] * len(base_order) for r in runs}
+
     prompts, key, template = [], {}, []
-    for qid in complete:
+    for i, qid in enumerate(sorted(complete)):
         entries = by_id[qid]
-        labels = list(entries)
-        rng.shuffle(labels)
+        k = i % len(base_order)
+        ordered = base_order[k:] + base_order[:k]
+        labels = [r["label"] for r in ordered]
         row = {"id": qid, "task": entries[labels[0]]["task"],
                "prompt": entries[labels[0]]["prompt"], "rubric": entries[labels[0]]["rubric"]}
         key[qid] = {}
@@ -130,6 +140,7 @@ def main():
             slot_name = f"Model {LABELS[slot]}"
             row[slot_name] = entries[label]["response"]
             key[qid][slot_name] = label
+            slot_use[label][slot] += 1
             score_row[slot_name] = {
                 "accuracy": None, "coherence": None, "instruction_fit": None,
                 "total": None, "notes": "",
@@ -146,6 +157,7 @@ def main():
         "scale": "1-5 per category (total 15 per prompt)",
         "round": args.round,
         "rows": [r["label"] for r in runs],
+        "slot_balance": slot_use,
         "scores": template,
     }, indent=2))
 
@@ -154,6 +166,9 @@ def main():
         print(f"  row present: {r['label']}")
     print(f"key:      {out_dir}/key.json          (do not read until scored)")
     print(f"template: {out_dir}/scores-template.json -> copy to scores.json and fill in")
+    for label, counts in slot_use.items():
+        spread = max(counts) - min(counts)
+        print(f"  slots {label:32s} {counts}" + ("  UNBALANCED" if spread > 1 else ""))
 
 
 if __name__ == "__main__":

@@ -29,6 +29,8 @@ def main():
     ap.add_argument("model")
     ap.add_argument("--max-tokens", type=int, default=32)
     ap.add_argument("--template-kwargs", default="{}", help='chat template controls, e.g. {"enable_thinking": false}')
+    ap.add_argument("--no-determinism", action="store_true",
+                    help="skip the generate-twice reproducibility check")
     args = ap.parse_args()
 
     row = {
@@ -59,6 +61,15 @@ def main():
         row["completion_tokens"] = len(tokenizer.encode(out))
         row["peak_gb"] = round(mx.get_peak_memory() / 1e9, 2)
         row["sample"] = out.strip()[:200]
+
+        # Greedy must be reproducible, or every later median is a median of
+        # something else. MoE routing and hybrid attention are new here, so this
+        # is checked rather than assumed.
+        if not args.no_determinism:
+            again = generate(model, tokenizer, prompt=prompt, max_tokens=args.max_tokens, verbose=False)
+            row["deterministic"] = again == out
+            if again != out:
+                row["repeat_sample"] = again.strip()[:200]
         row["ok"] = True
     except Exception as e:  # a failed arm is a P0 result, not a crash
         row["load_s"] = round(time.perf_counter() - t0, 2)

@@ -99,6 +99,16 @@ class RssSampler:
         return self.peak * 1024 / 1e9 if self.peak else None
 
 
+def sampling_kwargs(args):
+    """Greedy is the default; a card-recommended sampling row must be labelled."""
+    kw = {}
+    if args.temperature:
+        kw["temp"] = args.temperature
+    if args.top_p:
+        kw["top_p"] = args.top_p
+    return kw
+
+
 def run_mlx(model, tokenizer, text, args, template):
     import mlx.core as mx
     from mlx_lm import stream_generate
@@ -114,7 +124,8 @@ def run_mlx(model, tokenizer, text, args, template):
     first = last = None
     parts = []
     resp = None
-    for resp in stream_generate(model, tokenizer, prompt=prompt, max_tokens=args.max_tokens):
+    for resp in stream_generate(model, tokenizer, prompt=prompt, max_tokens=args.max_tokens,
+                                **sampling_kwargs(args)):
         now = time.perf_counter()
         if first is None:
             first = now
@@ -144,11 +155,13 @@ def run_http(text, args, template):
     body = {
         "messages": [{"role": "user", "content": text}],
         "max_tokens": args.max_tokens,
-        "temperature": 0.0,
+        "temperature": args.temperature,
         "stream": True,
         "stream_options": {"include_usage": True},
         "chat_template_kwargs": template,
     }
+    if args.top_p:
+        body["top_p"] = args.top_p
     req = urllib.request.Request(
         args.base_url.rstrip("/") + "/v1/chat/completions",
         data=json.dumps(body).encode(),
@@ -226,6 +239,10 @@ def main():
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--prompts", nargs="+", default=["short", "medium", "long", "decode-short", "decode-long"])
     ap.add_argument("--max-tokens", type=int, default=256)
+    ap.add_argument("--temperature", type=float, default=0.0,
+                    help="default 0.0 = greedy. Any other value makes this a deviation row")
+    ap.add_argument("--top-p", type=float, default=None,
+                    help="only meaningful with --temperature > 0")
     ap.add_argument("--template-kwargs", default=None,
                     help="override the registry's chat template controls, as JSON")
     ap.add_argument("--base-url", default="http://127.0.0.1:8080")
@@ -247,7 +264,15 @@ def main():
     ckpt = cfg.checkpoint(args.checkpoint)
     template = json.loads(args.template_kwargs) if args.template_kwargs else cfg.template_kwargs
 
-    run_id = f"{ckpt.tag}-{args.transport}" + (f"-{args.tag}" if args.tag else "")
+    # A non-greedy run must never land in the greedy row's directory: it is a
+    # labelled deviation, and silently replacing a published summary is the one
+    # thing a harness should be incapable of.
+    sampling_tag = ""
+    if args.temperature:
+        sampling_tag = f"-t{args.temperature:g}"
+        if args.top_p:
+            sampling_tag += f"-p{args.top_p:g}"
+    run_id = f"{ckpt.tag}-{args.transport}{sampling_tag}" + (f"-{args.tag}" if args.tag else "")
     out_dir = Path(args.out) / cfg.id / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -269,7 +294,9 @@ def main():
         "server_version": args.server_version,
         "max_tokens": args.max_tokens,
         "template_kwargs": template,
-        "greedy": True,
+        "temperature": args.temperature,
+        "top_p": args.top_p,
+        "greedy": args.temperature == 0.0,
         "trials": args.trials,
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -342,7 +369,8 @@ def main():
         **{k: base[k] for k in ("model_id", "model_name", "hf_repo", "checkpoint", "weights_gb",
                                 "bits_per_weight", "publisher", "params_total", "params_active",
                                 "run_id", "transport", "engine", "model", "host", "versions",
-                                "server_version", "max_tokens", "template_kwargs", "trials")},
+                                "server_version", "max_tokens", "template_kwargs",
+                                "temperature", "top_p", "greedy", "trials")},
         "load_s": base.get("load_s"),
         "load_peak_gb": base.get("load_peak_gb"),
         "base_url": base.get("base_url"),
