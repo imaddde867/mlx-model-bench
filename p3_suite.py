@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """P3 Benchmark Suite: 30-prompt accuracy + 8-prompt quality (ML & Data Engineering domain).
 
-Compares Arm 1 (rapid-mlx 4-bit) vs Arm 3 (OptiQ mixed 4/8-bit) on Apple Silicon MLX.
-Greedy decoding, enable_thinking=False, conversational_mode=True.
+Model-agnostic. The same 30 + 8 prompts and the same checkers run against every
+model in the roster (see `registry.py`, `MODELS.md`), so "80%" means the same
+questions everywhere. Chat template controls are per model and come from the
+runner (`run_p3.py`), not from here.
+
+Domain note: the prompts are ML / data-engineering flavoured on purpose. They are
+checkable (exact integers, valid JSON, binary constraints), which is what makes a
+cross-model accuracy column worth printing at all.
 """
 
 import json
-import os
-import random
 import re
-import statistics
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 PROMPTS_DIR = ROOT / "prompts"
-RESULTS_DIR = ROOT / "results" / "p3"
 
 # -----------------------------------------------------------------------------
 # Accuracy Prompts (30)

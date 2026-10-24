@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
-"""P1 harness: one arm x fixed prompts x warm-up + N trials -> JSON per run.
+"""P1 harness: one model x one checkpoint x one transport x fixed prompts -> JSON per run.
 
-In-process (arms 1, 3), run with the engine's own interpreter:
-  .venv-mlxlm/bin/python bench.py --arm 1
-  .venv-mlxlm/bin/python bench.py --arm 3 --trials 3
+Everything model-specific comes from registry.py. Nothing here knows which
+model it is benchmarking.
 
-HTTP (arms 2, 4, 5), server started separately:
-  .venv-mlxlm/bin/python bench.py --arm 2 --base-url http://127.0.0.1:8080 \
-      --server-pid <pid> --server-version "mlx-lm 0.32.2" \
-      --model-label "rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit"
+In-process, run with the engine's own interpreter:
 
-Arm 4/5 have no working transport yet; see P0.md. A failed arm records an
-error row, it does not crash the run.
+  .venv-mlxlm/bin/python bench.py --model nemotron-3.5-bolt --checkpoint mlx-4bit
+  .venv-mlxlm/bin/python bench.py --model minicpm5-2b --checkpoint optiq-4bit
 
+HTTP, server started separately (mlx_lm.server on the same checkpoint):
+
+  .venv-mlxlm/bin/python bench.py --model minicpm5-2b --transport http \\
+      --server-pid <pid> --server-version "mlx-lm 0.32.2"
+
+  # prefix-cache measurement, labelled as such
+  ... --transport http --no-nonce --tag cached
+
+Output lands in results/<model-id>/<checkpoint>-<transport>[-<tag>]/.
 For HTTP rows `versions` is the client environment; the engine version is
 `server_version`, which the operator must supply.
+
+A failed run records an error row, it does not crash the run.
 """
 
 import argparse
@@ -32,17 +39,10 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+import registry
+
 ROOT = Path(__file__).resolve().parent
 PROMPTS = ROOT / "prompts"
-PRIMARY_TEMPLATE = {"enable_thinking": False, "conversational_mode": True}
-
-ARMS = {
-    "1": {"engine": "mlx_lm", "model": ROOT / "models/rapid-mlx-4bit"},
-    "2": {"engine": "http"},
-    "3": {"engine": "mlx_lm", "model": ROOT / "models/optiq-4bit"},
-    "4": {"engine": "http"},
-    "5": {"engine": "http"},
-}
 
 
 def versions():
@@ -209,31 +209,61 @@ def run_http(text, args, template):
     }
 
 
+def print_list():
+    for m in registry.list_models():
+        print(f"\n{m.id}  ({m.name}, {m.vendor})")
+        for c in m.checkpoints.values():
+            state = "downloaded" if c.available else "missing"
+            print(f"  {c.tag:11s} {c.weights_gb:5.2f}GB {c.bits_per_weight:4.2f}bpw  {state:10s} {c.hf_repo}")
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--arm", required=True, choices=sorted(ARMS))
+    ap.add_argument("--list", action="store_true", help="show the registry and which checkpoints are local")
+    ap.add_argument("--model", help="registry id, HF repo or local path")
+    ap.add_argument("--checkpoint", help="checkpoint tag within the model (default: the first one)")
+    ap.add_argument("--transport", choices=("inproc", "http"), default="inproc")
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--prompts", nargs="+", default=["short", "medium", "long", "decode-short", "decode-long"])
     ap.add_argument("--max-tokens", type=int, default=256)
-    ap.add_argument("--template-kwargs", default=json.dumps(PRIMARY_TEMPLATE))
+    ap.add_argument("--template-kwargs", default=None,
+                    help="override the registry's chat template controls, as JSON")
     ap.add_argument("--base-url", default="http://127.0.0.1:8080")
-    ap.add_argument("--server-pid", type=int, help="HTTP arms: server process to sample RSS from")
-    ap.add_argument("--server-version", help="HTTP arms: engine version string of the server")
-    ap.add_argument("--model-label", help="HTTP arms: checkpoint the server was started with")
-    ap.add_argument("--no-nonce", action="store_true", help="send identical prompts (measures prefix-cache hits; label with --tag cached)")
-    ap.add_argument("--tag", default="", help="suffix for the output dir, e.g. think")
+    ap.add_argument("--server-pid", type=int, help="HTTP: server process to sample RSS from")
+    ap.add_argument("--server-version", help="HTTP: engine version string of the server")
+    ap.add_argument("--no-nonce", action="store_true",
+                    help="send identical prompts (measures prefix-cache hits; label with --tag cached)")
+    ap.add_argument("--tag", default="", help="suffix for the output dir, e.g. cached")
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
 
-    template = json.loads(args.template_kwargs)
-    arm = ARMS[args.arm]
-    out_dir = Path(args.out) / (f"arm{args.arm}" + (f"-{args.tag}" if args.tag else ""))
+    if args.list:
+        print_list()
+        return 0
+    if not args.model:
+        ap.error("--model is required (or use --list)")
+
+    cfg = registry.get_model(args.model)
+    ckpt = cfg.checkpoint(args.checkpoint)
+    template = json.loads(args.template_kwargs) if args.template_kwargs else cfg.template_kwargs
+
+    run_id = f"{ckpt.tag}-{args.transport}" + (f"-{args.tag}" if args.tag else "")
+    out_dir = Path(args.out) / cfg.id / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
     base = {
-        "arm": args.arm,
-        "engine": arm["engine"],
-        "transport": "in-process" if arm["engine"] == "mlx_lm" else "http",
+        "model_id": cfg.id,
+        "model_name": cfg.name,
+        "hf_repo": ckpt.hf_repo,
+        "checkpoint": ckpt.tag,
+        "weights_gb": ckpt.weights_gb,
+        "bits_per_weight": ckpt.bits_per_weight,
+        "publisher": ckpt.publisher,
+        "params_total": cfg.params_total,
+        "params_active": cfg.params_active,
+        "run_id": run_id,
+        "transport": args.transport,
+        "engine": "mlx_lm",
         "host": f"{platform.machine()} macOS {platform.mac_ver()[0]} python {platform.python_version()}",
         "versions": versions(),
         "server_version": args.server_version,
@@ -244,25 +274,31 @@ def main():
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
-    if arm["engine"] == "mlx_lm":
+    if args.transport == "inproc":
         import mlx.core as mx
         from mlx_lm import load
 
+        if not ckpt.available:
+            row = {**base, "ok": False, "error": f"checkpoint not downloaded: {ckpt.local_dir}"}
+            (out_dir / "load-error.json").write_text(json.dumps(row, indent=2))
+            print(json.dumps(row))
+            return 1
+
         t0 = time.perf_counter()
         try:
-            model, tokenizer = load(str(arm["model"]))
+            model, tokenizer = load(str(ckpt.local_path))
         except Exception as e:
             row = {**base, "ok": False, "error": f"{type(e).__name__}: {e}",
                    "traceback_tail": traceback.format_exc().strip().splitlines()[-3:]}
             (out_dir / "load-error.json").write_text(json.dumps(row, indent=2))
             print(json.dumps(row))
             return 1
-        base["model"] = str(arm["model"].relative_to(ROOT))
+        base["model"] = ckpt.local_dir
         base["load_s"] = round(time.perf_counter() - t0, 2)
         base["load_peak_gb"] = round(mx.get_peak_memory() / 1e9, 3)
         run = lambda text, a: run_mlx(model, tokenizer, text, a, template)
     else:
-        base["model"] = args.model_label
+        base["model"] = ckpt.hf_repo or ckpt.local_dir
         base["base_url"] = args.base_url
         run = lambda text, a: run_http(text, a, template)
 
@@ -303,7 +339,9 @@ def main():
 
     kept = [r for r in rows if not r["discarded"]]
     summary = {
-        **{k: base[k] for k in ("arm", "engine", "transport", "model", "host", "versions",
+        **{k: base[k] for k in ("model_id", "model_name", "hf_repo", "checkpoint", "weights_gb",
+                                "bits_per_weight", "publisher", "params_total", "params_active",
+                                "run_id", "transport", "engine", "model", "host", "versions",
                                 "server_version", "max_tokens", "template_kwargs", "trials")},
         "load_s": base.get("load_s"),
         "load_peak_gb": base.get("load_peak_gb"),
