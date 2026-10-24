@@ -1,0 +1,1 @@
+A tokenized dataset consists of 500,000 documents, where each document has exactly 128 tokens. How many total tokens are in the dataset? Output only the integer count.

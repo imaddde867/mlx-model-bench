@@ -1,0 +1,1 @@
+A Kafka topic has 16 partitions. A consumer cluster ingests 8,000 messages per second distributed perfectly uniformly across all partitions. How many messages per second does each partition process? Output only the integer.

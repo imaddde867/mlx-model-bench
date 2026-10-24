@@ -1,0 +1,34 @@
+{
+  "qual-01-explanation": {
+    "Model A": "arm3",
+    "Model B": "arm1"
+  },
+  "qual-02-summarization": {
+    "Model A": "arm3",
+    "Model B": "arm1"
+  },
+  "qual-03-rewrite": {
+    "Model A": "arm1",
+    "Model B": "arm3"
+  },
+  "qual-04-persona": {
+    "Model A": "arm3",
+    "Model B": "arm1"
+  },
+  "qual-05-refusal": {
+    "Model A": "arm1",
+    "Model B": "arm3"
+  },
+  "qual-06-code-explanation": {
+    "Model A": "arm3",
+    "Model B": "arm1"
+  },
+  "qual-07-correction": {
+    "Model A": "arm1",
+    "Model B": "arm3"
+  },
+  "qual-08-story": {
+    "Model A": "arm3",
+    "Model B": "arm1"
+  }
+}

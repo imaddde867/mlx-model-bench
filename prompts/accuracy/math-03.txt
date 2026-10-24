@@ -1,0 +1,1 @@
+An embedding table has a vocabulary size of 32,000 and an embedding dimension of 256. If stored in FP32 (4 bytes per element), how many bytes of memory does it consume? Output only the total byte count as an integer.

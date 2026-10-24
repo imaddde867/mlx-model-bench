@@ -1,0 +1,1 @@
+A self-attention layer has a hidden dimension of 768 and 12 attention heads. What is the head dimension (d_k = hidden_dim / num_heads)? Output only the integer.

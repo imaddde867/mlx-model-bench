@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+submit_spark_job(script_path: str, num_executors: int, executor_memory: str)
+
+Request: Submit a Spark job using script 's3://bucket/etl/process.py' with 16 executors and '8g' executor memory.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

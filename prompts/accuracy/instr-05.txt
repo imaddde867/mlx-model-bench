@@ -1,0 +1,1 @@
+List five common loss functions used in machine learning. Each loss function must be on its own line preceded by a hyphen and space ('- '). Do not include any introductory or concluding text.

@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+run_backfill_pipeline(dag_id: str, start_date: str, end_date: str)
+
+Request: Trigger a backfill on Airflow DAG 'features_daily_agg' from start date '2026-01-01' to end date '2026-01-15'.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

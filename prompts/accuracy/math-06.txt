@@ -1,0 +1,1 @@
+In a binary classification model evaluation, True Positives = 75, False Positives = 25, and False Negatives = 25. Calculate the Recall. Output only the decimal number.

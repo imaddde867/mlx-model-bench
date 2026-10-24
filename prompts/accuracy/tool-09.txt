@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+quantize_checkpoint(checkpoint_dir: str, bits: int, group_size: int)
+
+Request: Quantize the model checkpoint in '/checkpoints/llama-8b' to 4 bits with group size 128.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

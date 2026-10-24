@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+create_feature_store_entity(entity_name: str, join_keys: list[str], description: str)
+
+Request: Create a feature store entity named 'customer_features' with join key 'customer_id' and description 'Daily customer metrics'.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

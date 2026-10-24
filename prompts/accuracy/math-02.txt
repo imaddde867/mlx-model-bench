@@ -1,0 +1,1 @@
+Calculate the total number of parameters in a linear layer with input dimension 1024 and output dimension 4096, including bias. Output only the integer count.

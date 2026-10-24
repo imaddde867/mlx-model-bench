@@ -1,0 +1,22 @@
+Analyze the following PyTorch custom autograd function. Explain line-by-line how the forward and backward passes work, explain why `ctx.save_for_backward` is used, and point out any memory leak or numerical instability risks:
+
+```python
+import torch
+
+class ScaledExponentialLoss(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, pred, target, scale=1.0):
+        diff = pred - target
+        exp_diff = torch.exp(scale * diff)
+        loss = exp_diff - scale * diff - 1.0
+        ctx.save_for_backward(diff, exp_diff)
+        ctx.scale = scale
+        return loss.mean()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        diff, exp_diff = ctx.saved_tensors
+        scale = ctx.scale
+        grad_pred = grad_output * (scale * exp_diff - scale) / diff.numel()
+        return grad_pred, None, None
+```

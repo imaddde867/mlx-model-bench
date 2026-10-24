@@ -1,0 +1,3 @@
+Rewrite the following poorly structured, conversational Slack message from an on-call engineer into a clean, professional, production incident post-mortem section titled 'Root Cause and Pipeline Remediation':
+
+'hey so basically what happened at 3am was the spark streaming job died because someone pushed an upstream schema change where user_id became a string instead of an int64 and spark's json parser just threw a silent null or crashed the executor with oom when it tried to buffer the failed schema rows in memory. also there was no dead letter queue so the kafka offset couldn't advance and the lag shot up to like 4 million records in 20 minutes until we manually killed the pod, patched the schema validation check, and restarted with a dedicated dlt topic.'

@@ -1,0 +1,1 @@
+Explain what backpropagation does in neural network training in exactly one sentence. Do not use the word 'gradient' or 'derivative'.

@@ -1,0 +1,1 @@
+Explain the vanishing gradient problem in deep neural networks, why non-saturating activations like ReLU help mitigate it, and where ReLU itself can fail.

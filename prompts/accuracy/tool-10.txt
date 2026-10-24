@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+register_dataset_version(name: str, path: str, format: str, version: str)
+
+Request: Register a new dataset named 'clickstream' located at 'hdfs://cluster/data/clicks' in 'parquet' format with version 'v2.1'.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

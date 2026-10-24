@@ -1,0 +1,1 @@
+Explain the purpose of gradient clipping in deep learning. Answer in exactly two sentences, no lists.

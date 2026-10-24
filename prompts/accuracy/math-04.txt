@@ -1,0 +1,1 @@
+A training run uses a linear learning rate decay schedule starting at 0.02 and decaying linearly to 0.0 at step 1000. What is the learning rate at step 250? Output only the decimal number.

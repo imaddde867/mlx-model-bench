@@ -38,7 +38,7 @@ Primary table is `conversational_mode=True`, `enable_thinking=False`.
 - [x] P0 — load tests. Arms 1–3 load; arm 4 blocked by an optiq prefill buffer. See `P0.md`.
 - [x] P1 — `bench.py` — verified arms 1, 2, 3 produce valid JSON with all metrics.
 - [x] P2 — speed/TTFT/memory runs, arms 1–3, valid after cache-bust fix. See `RESULTS.md`.
-- [ ] P3 — accuracy (30) + quality (8) prompt sets, then final report
+- [x] P3 — accuracy (30) + quality (8) prompt sets, blind evaluation, final report in `RESULTS.md`.
 
 ## Known traps
 

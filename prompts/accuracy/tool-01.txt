@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+train_model(dataset_path: str, model_name: str, epochs: int, learning_rate: float)
+
+Request: Train the 'resnet50' model on '/data/imagenet' for 20 epochs with a learning rate of 0.001.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

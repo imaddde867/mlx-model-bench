@@ -1,0 +1,1 @@
+A 7-billion parameter language model is quantized from FP16 (2 bytes per param) to 4-bit weights (0.5 bytes per param). Assuming only the weight parameters are counted, what is the weight size in gigabytes (where 1 GB = 1e9 bytes)? Output only the number.

@@ -1,0 +1,1 @@
+Name the three tensor projections in standard multi-head self-attention (Query, Key, Value). Output ONLY their names as a single comma-separated line, with no extra text or punctuation.

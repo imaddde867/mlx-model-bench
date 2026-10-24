@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+create_kafka_topic(topic_name: str, partitions: int, replication_factor: int)
+
+Request: Create a Kafka topic called 'model-predictions' with 12 partitions and a replication factor of 3.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

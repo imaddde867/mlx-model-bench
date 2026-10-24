@@ -8,10 +8,11 @@ Speed, TTFT and memory benchmark of `NVIDIA-Nemotron-3.5-Bolt-E4B-4GB` on Apple 
 
 | File | What |
 |---|---|
-| `RESULTS.md` | numbers, findings, caveats |
+| `RESULTS.md` | speed, TTFT, memory, accuracy (30), and blind quality (8) results |
 | `DESIGN.md` | questions, arms, controls |
 | `P0.md` | load tests; why `optiq serve` can't run on 16 GB |
 | `bench.py` | harness, one JSON per run |
+| `p3_suite.py`, `run_p3.py` | P3 accuracy and quality test harness |
 | `run_p2.sh`, `visualize_p2.py` | reproduce the runs and chart |
 | `results/` | raw per-run JSON and summaries |
 
@@ -19,9 +20,12 @@ Speed, TTFT and memory benchmark of `NVIDIA-Nemotron-3.5-Bolt-E4B-4GB` on Apple 
 
 Needs the two checkpoints under `models/` (`rapid-mlx-4bit`, `optiq-4bit`) and a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib`:
 
-```
-python -m venv .venv-mlxlm && .venv-mlxlm/bin/pip install mlx-lm==0.32.2 matplotlib
+```bash
+# Speed and TTFT benchmark (P2)
 caffeinate -i ./run_p2.sh && .venv-mlxlm/bin/python visualize_p2.py
+
+# Accuracy and Quality benchmark (P3)
+caffeinate -i .venv-mlxlm/bin/python run_p3.py
 ```
 
-Status: speed done (arms 1-3); accuracy/quality sets not yet run.
+Status: Complete across P0 (loads), P1 (harness), P2 (speed/memory), and P3 (accuracy/quality).

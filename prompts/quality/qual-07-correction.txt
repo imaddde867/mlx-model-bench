@@ -1,0 +1,1 @@
+Why do Convolutional Neural Networks (CNNs) consistently outperform Gradient Boosted Decision Trees (GBDTs) on tabular datasets because of spatial self-attention mechanisms?

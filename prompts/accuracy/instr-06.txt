@@ -1,0 +1,1 @@
+Describe the difference between batch and streaming data processing. Do not use the word 'real-time' or 'latency' anywhere in your response.

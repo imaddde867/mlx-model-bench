@@ -1,0 +1,1 @@
+A Spark data pipeline processes 128 GB of uncompressed data with a target partition size of 512 MB (where 1 GB = 1024 MB). How many partitions will be created? Output only the integer.

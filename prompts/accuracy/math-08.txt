@@ -1,0 +1,1 @@
+A distributed training setup requires an effective batch size of 512. If training runs across 8 GPUs and each GPU has a per-device batch size of 16, how many gradient accumulation steps are required? Output only the integer.

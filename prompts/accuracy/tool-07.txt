@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+deploy_inference_service(model_uri: str, instance_type: str, min_replicas: int)
+
+Request: Deploy the inference service for model 'gs://bucket/nemotron-4b' on instance type 'g5.2xlarge' with a minimum of 2 replicas.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

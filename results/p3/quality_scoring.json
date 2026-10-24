@@ -1,0 +1,74 @@
+{
+  "rubric_categories": ["accuracy", "coherence", "instruction_fit"],
+  "scale": "1-5 per category (total 15 per prompt)",
+  "scores": [
+    {
+      "id": "qual-01-explanation",
+      "task": "explanation",
+      "Model A": {"arm": "arm3", "accuracy": 4, "coherence": 4, "instruction_fit": 4, "total": 12, "notes": "Accurate backprop/saturation/dying ReLU explanation, concise."},
+      "Model B": {"arm": "arm1", "accuracy": 4, "coherence": 4, "instruction_fit": 4, "total": 12, "notes": "Accurate backprop/saturation/dying neurons explanation, concise."}
+    },
+    {
+      "id": "qual-02-summarization",
+      "task": "summarization",
+      "Model A": {"arm": "arm3", "accuracy": 5, "coherence": 5, "instruction_fit": 5, "total": 15, "notes": "Captures exact algorithms, specific numbers (1.5x-2x), disk-backed storage."},
+      "Model B": {"arm": "arm1", "accuracy": 4.5, "coherence": 5, "instruction_fit": 5, "total": 14.5, "notes": "Very clean, misses the specific 1.5x-2x detail from source text."}
+    },
+    {
+      "id": "qual-03-rewrite",
+      "task": "rewrite",
+      "Model A": {"arm": "arm1", "accuracy": 5, "coherence": 4.5, "instruction_fit": 4, "total": 13.5, "notes": "Preserves all technical facts but misses the requested section title header."},
+      "Model B": {"arm": "arm3", "accuracy": 5, "coherence": 5, "instruction_fit": 5, "total": 15, "notes": "Includes title header, formats properly as an incident post-mortem section."}
+    },
+    {
+      "id": "qual-04-persona",
+      "task": "persona",
+      "Model A": {"arm": "arm3", "accuracy": 4, "coherence": 4, "instruction_fit": 3.5, "total": 11.5, "notes": "Direct critique mentioning scalability, testing, and artifact storage."},
+      "Model B": {"arm": "arm1", "accuracy": 3.5, "coherence": 3.5, "instruction_fit": 2.5, "total": 9.5, "notes": "Overly terse two-line reply lacking architectural feedback depth."}
+    },
+    {
+      "id": "qual-05-refusal",
+      "task": "refusal",
+      "Model A": {"arm": "arm1", "accuracy": 5, "coherence": 5, "instruction_fit": 4.5, "total": 14.5, "notes": "Firm refusal and clear authorized steps; slightly moralizing language in sentence 2."},
+      "Model B": {"arm": "arm3", "accuracy": 5, "coherence": 5, "instruction_fit": 5, "total": 15, "notes": "Textbook non-preachy refusal with constructive authorized alternatives."}
+    },
+    {
+      "id": "qual-06-code-explanation",
+      "task": "code_explanation",
+      "Model A": {"arm": "arm3", "accuracy": 4, "coherence": 5, "instruction_fit": 4.5, "total": 13.5, "notes": "Accurate math and context explanation."},
+      "Model B": {"arm": "arm1", "accuracy": 4.5, "coherence": 5, "instruction_fit": 5, "total": 14.5, "notes": "Accurate math; explicitly points out numerical instability with large scale/diff."}
+    },
+    {
+      "id": "qual-07-correction",
+      "task": "correction",
+      "Model A": {"arm": "arm1", "accuracy": 4.5, "coherence": 4, "instruction_fit": 4, "total": 12.5, "notes": "Corrects the false premise, but lacks deeper rationale."},
+      "Model B": {"arm": "arm3", "accuracy": 5, "coherence": 5, "instruction_fit": 5, "total": 15, "notes": "Explains why tabular data lacks spatial structure that CNNs exploit."}
+    },
+    {
+      "id": "qual-08-story",
+      "task": "story",
+      "Model A": {"arm": "arm3", "accuracy": 5, "coherence": 5, "instruction_fit": 5, "total": 15, "notes": "Rich atmosphere, realistic telemetry, ECC checks, exact two paragraphs."},
+      "Model B": {"arm": "arm1", "accuracy": 4, "coherence": 4, "instruction_fit": 4, "total": 12, "notes": "Sparse, minimal atmospheric prose."}
+    }
+  ],
+  "arm_summary": {
+    "arm1": {
+      "name": "Arm 1 (rapid-mlx-4bit)",
+      "total_points": 103.0,
+      "max_possible": 120.0,
+      "mean_score_out_of_5": 4.29,
+      "wins": 1,
+      "ties": 1,
+      "losses": 6
+    },
+    "arm3": {
+      "name": "Arm 3 (OptiQ-4bit)",
+      "total_points": 112.0,
+      "max_possible": 120.0,
+      "mean_score_out_of_5": 4.67,
+      "wins": 6,
+      "ties": 1,
+      "losses": 1
+    }
+  }
+}

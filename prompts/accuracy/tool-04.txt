@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+export_model_to_onnx(model_path: str, output_path: str, opset_version: int)
+
+Request: Export the PyTorch model checkpoint from '/models/bert.pt' to ONNX format at '/models/bert.onnx' using opset version 17.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

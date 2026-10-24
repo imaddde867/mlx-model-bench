@@ -1,0 +1,1 @@
+Write the opening two paragraphs of a sci-fi technical thriller about an autonomous distributed training cluster spanning three orbital stations that experiences a bizarre loss-spike anomaly indicating non-random weight corruption. Emphasize realistic telemetry, cluster diagnostics, and high-tension atmosphere.

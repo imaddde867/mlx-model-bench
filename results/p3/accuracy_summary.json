@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-10-24 17:59:55 UTC",
+  "arm1": {
+    "name": "Arm 1 (rapid-mlx-4bit)",
+    "load_time_s": 2.5,
+    "load_peak_gb": 4.201,
+    "accuracy": {
+      "total_passed": 24,
+      "total_prompts": 30,
+      "accuracy_pct": 80.0,
+      "by_category": {
+        "arithmetic_ml": {
+          "passed": 6,
+          "total": 12,
+          "accuracy_pct": 50.0
+        },
+        "function_call": {
+          "passed": 10,
+          "total": 10,
+          "accuracy_pct": 100.0
+        },
+        "instruction_following": {
+          "passed": 8,
+          "total": 8,
+          "accuracy_pct": 100.0
+        }
+      }
+    }
+  },
+  "arm3": {
+    "name": "Arm 3 (OptiQ-4bit)",
+    "load_time_s": 3.26,
+    "load_peak_gb": 6.533,
+    "accuracy": {
+      "total_passed": 25,
+      "total_prompts": 30,
+      "accuracy_pct": 83.3,
+      "by_category": {
+        "arithmetic_ml": {
+          "passed": 7,
+          "total": 12,
+          "accuracy_pct": 58.3
+        },
+        "function_call": {
+          "passed": 10,
+          "total": 10,
+          "accuracy_pct": 100.0
+        },
+        "instruction_following": {
+          "passed": 8,
+          "total": 8,
+          "accuracy_pct": 100.0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+You are a function calling agent. Available tool:
+profile_data_drift(reference_dataset: str, current_dataset: str, threshold: float)
+
+Request: Profile data drift between reference dataset 's3://data/train.parquet' and current dataset 's3://data/inference_live.parquet' with drift threshold 0.05.
+Respond ONLY with a JSON object: {"name": "...", "arguments": {...}}. No markdown codeblocks or explanations.

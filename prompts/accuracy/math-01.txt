@@ -1,0 +1,1 @@
+In a convolutional layer, the input height and width is 224, kernel size is 7, padding is 3, and stride is 2. What is the spatial output dimension (height/width)? Output only the final integer.
