@@ -61,9 +61,14 @@ Full metadata, template-control traps and the comparability protocol:
 
 ## Reproduce
 
-Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib` (and `mlx-optiq==0.7.3` in a
-separate venv to attempt the engine arm). No model is vendored: `registry.py` names every Hub
-repo, and `--phase fetch` downloads and verifies them.
+Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib`, `hf_transfer` (and
+`mlx-optiq==0.7.3` in a separate venv to attempt the engine arm). No model is vendored:
+`registry.py` names every Hub repo, and `--phase fetch` downloads and verifies them.
+
+**Set `HF_HUB_ENABLE_HF_TRANSFER=1` before fetching.** Measured here, the Hub caps a single
+connection at ~2 MB/s while the parallel transfer path sustains ~15 MB/s — the difference
+between 45 minutes and 11 hours for the full 43 GB roster. Downloads resume; a killed fetch
+costs only the file in flight.
 
 ```bash
 # inspect the matrix: tiers, sizes, bpw, publisher, what is already on disk
