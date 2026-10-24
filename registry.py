@@ -54,8 +54,32 @@ class Checkpoint:
         return ROOT / self.local_dir
 
     @property
-    def available(self) -> bool:
+    def present(self) -> bool:
+        """Config is on disk. Not the same as complete — see `available`."""
         return (self.local_path / "config.json").exists()
+
+    @property
+    def available(self) -> bool:
+        """Loadable: config, every shard the index names, and no interrupted download.
+
+        A killed fetch leaves `config.json` plus partial shards, which used to read
+        as "download complete" and then fail verification instead of resuming. The
+        `.incomplete` marker in the hub's cache is the reliable tell.
+        """
+        if not self.present:
+            return False
+        if any(self.local_path.rglob("*.incomplete")):
+            return False
+
+        index = self.local_path / "model.safetensors.index.json"
+        if index.exists():
+            try:
+                shards = set(json.loads(index.read_text()).get("weight_map", {}).values())
+            except (json.JSONDecodeError, OSError):
+                shards = set()
+            if shards:
+                return all((self.local_path / s).exists() for s in shards)
+        return bool(list(self.local_path.glob("*.safetensors")))
 
     @property
     def bits_per_weight(self) -> float:
