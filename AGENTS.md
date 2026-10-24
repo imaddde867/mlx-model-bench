@@ -5,6 +5,16 @@ roster of challengers, three quantization tiers each. Renamed from
 `nemotron-bolt-bench` (github.com/imaddde867/mlx-model-bench). Read `DESIGN.md`
 and `MODELS.md` before touching an arm. This file is the operating contract.
 
+## Commits
+
+Sole author and committer, every commit, forever:
+`imaddde867 <63160938+imaddde867@users.noreply.github.com>`.
+
+No co-author trailers, no "generated with" footers, no emoji attribution, no tool
+names in commit messages or PR bodies. If a tooling default would add them, strip
+them before committing. History was rewritten once to remove exactly this; do not
+reintroduce it.
+
 ## Machine
 
 Apple M4, 10-core, 16 GB unified, macOS 27.0.1. Python 3.12.10, uv 0.10.9.
