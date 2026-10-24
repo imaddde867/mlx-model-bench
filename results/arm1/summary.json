@@ -1,0 +1,222 @@
+{
+  "arm": "1",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "model": "models/rapid-mlx-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "trials": 5,
+  "load_s": 2.46,
+  "load_peak_gb": 4.201,
+  "base_url": null,
+  "runs_ok": 25,
+  "runs_failed": 0,
+  "prompts": {
+    "short": {
+      "prompt_tokens": 68,
+      "ttft_s": {
+        "median": 0.1946,
+        "min": 0.1919,
+        "max": 0.2,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 349.4,
+        "min": 340.1,
+        "max": 354.3,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 33.1,
+        "min": 32.1,
+        "max": 34.8,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.383,
+        "min": 4.383,
+        "max": 4.383,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 0.298,
+        "min": 0.294,
+        "max": 0.304,
+        "n": 5
+      }
+    },
+    "medium": {
+      "prompt_tokens": 1026,
+      "ttft_s": {
+        "median": 1.6245,
+        "min": 1.6198,
+        "max": 1.6275,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 631.6,
+        "min": 630.4,
+        "max": 633.4,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 32.2,
+        "min": 31.7,
+        "max": 32.6,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.869,
+        "min": 4.869,
+        "max": 4.869,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 1.733,
+        "min": 1.728,
+        "max": 1.734,
+        "n": 5
+      }
+    },
+    "long": {
+      "prompt_tokens": 8341,
+      "ttft_s": {
+        "median": 14.2773,
+        "min": 13.7467,
+        "max": 14.323,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 584.2,
+        "min": 582.4,
+        "max": 606.8,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 31.2,
+        "min": 30.1,
+        "max": 31.8,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 6,
+        "min": 6,
+        "max": 6,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 5.089,
+        "min": 5.089,
+        "max": 5.089,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 14.449,
+        "min": 13.927,
+        "max": 14.495,
+        "n": 5
+      }
+    },
+    "decode-short": {
+      "prompt_tokens": 85,
+      "ttft_s": {
+        "median": 0.2036,
+        "min": 0.1959,
+        "max": 0.2097,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 417.5,
+        "min": 405.4,
+        "max": 433.9,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 34.4,
+        "min": 33.8,
+        "max": 34.8,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 131,
+        "min": 91,
+        "max": 166,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.428,
+        "min": 4.428,
+        "max": 4.428,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 3.997,
+        "min": 2.882,
+        "max": 5.001,
+        "n": 5
+      }
+    },
+    "decode-long": {
+      "prompt_tokens": 8359,
+      "ttft_s": {
+        "median": 14.4883,
+        "min": 14.3695,
+        "max": 14.9109,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 576.9,
+        "min": 560.6,
+        "max": 581.7,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 29.5,
+        "min": 28.2,
+        "max": 31.1,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 5.089,
+        "min": 5.089,
+        "max": 5.089,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 23.261,
+        "min": 23.078,
+        "max": 23.535,
+        "n": 5
+      }
+    }
+  }
+}

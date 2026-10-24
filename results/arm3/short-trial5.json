@@ -1,0 +1,41 @@
+{
+  "arm": "3",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:23:13+00:00",
+  "model": "models/optiq-4bit",
+  "load_s": 3.59,
+  "load_peak_gb": 6.533,
+  "prompt": "short",
+  "prompt_file": "./prompts/speed/short.txt",
+  "trial": 5,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 68,
+  "generation_tokens": 4,
+  "ttft_s": 0.2344,
+  "prefill_tps": 290.1,
+  "engine_prefill_tps": 295.9,
+  "decode_tps": 20.7,
+  "wall_s": 0.399,
+  "peak_gb": 6.714,
+  "peak_gb_source": "mx_peak",
+  "finish_reason": "stop",
+  "text": "391",
+  "ok": true
+}

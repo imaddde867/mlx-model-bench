@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 4,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.6137,
+  "prefill_tps": 572.0,
+  "engine_prefill_tps": null,
+  "decode_tps": 28.9,
+  "wall_s": 23.437,
+  "peak_gb": 4.036,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "length",
+  "text": "The silence in the cottage was not the silence of abandonment, but of deep, settled rest. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were the only clock needed now. The faded tea tin, undisturbed, suggested a pause, not an ending. The sloping floors, once leading to the bracing chill of the sea air, now held the faint, mineral scent of old stone and dry salt.\n\nThe maps, those patient artifacts of human scale, lay rolled in a corner, their hand-drawn lines a testament to a slower geography. They spoke not just of coastlines, but of human presence: the specific names for small coves, the memory of the water\u2019s hue on a particular day, the shared history bound up in those imperfect lines. This attention, lost to the efficiency of modern satellite data, was the true treasure\u2014the narrative embedded in the measurement.\n\nThe lesson of measurement echoed in the quietude: precision is not a single, perfect number, but a sustained process. The need for repetition, for checking instruments against each other, for recording conditions alongside readings, was the antidote to haste. The average is often misleading; the *spread*\u2014the range of observations\u2014is where the reality of a dynamic system",
+  "ok": true
+}

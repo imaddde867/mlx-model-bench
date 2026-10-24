@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "medium",
+  "prompt_file": "./prompts/speed/medium.txt",
+  "trial": 1,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 1026,
+  "generation_tokens": 4,
+  "ttft_s": 1.5184,
+  "prefill_tps": 675.7,
+  "engine_prefill_tps": null,
+  "decode_tps": 47.7,
+  "wall_s": 1.612,
+  "peak_gb": 4.421,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "stop",
+  "text": "Understood.",
+  "ok": true
+}

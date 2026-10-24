@@ -1,0 +1,41 @@
+{
+  "arm": "3",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:23:13+00:00",
+  "model": "models/optiq-4bit",
+  "load_s": 3.59,
+  "load_peak_gb": 6.533,
+  "prompt": "decode-short",
+  "prompt_file": "./prompts/speed/decode-short.txt",
+  "trial": 1,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 85,
+  "generation_tokens": 162,
+  "ttft_s": 0.212,
+  "prefill_tps": 400.9,
+  "engine_prefill_tps": 402.9,
+  "decode_tps": 24.1,
+  "wall_s": 6.924,
+  "peak_gb": 6.759,
+  "peak_gb_source": "mx_peak",
+  "finish_reason": "stop",
+  "text": "Refrigerators use a vapor-compression cycle.\n\n1. **Compressor:** Compresses low-pressure refrigerant vapor into a high-pressure, high-temperature gas.\n2. **Condenser:** Heat is released from the hot gas into the surrounding room, causing the refrigerant to condense into a high-pressure liquid.\n3. **Expansion Valve:** The high-pressure liquid passes through this valve, causing a rapid drop in pressure and temperature.\n4. **Evaporator:** The cold, low-pressure liquid absorbs heat from the food inside the fridge, boiling into a low-pressure vapor.\n5. **Cycle Repeats:** This low-pressure vapor returns to the compressor, restarting the cycle.\n\nThis continuous heat transfer from the inside to the outside keeps food cold.",
+  "ok": true
+}

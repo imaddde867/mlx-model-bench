@@ -1,0 +1,41 @@
+{
+  "arm": "3",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:23:13+00:00",
+  "model": "models/optiq-4bit",
+  "load_s": 3.59,
+  "load_peak_gb": 6.533,
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 5,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.5367,
+  "prefill_tps": 575.0,
+  "engine_prefill_tps": 575.5,
+  "decode_tps": 24.4,
+  "wall_s": 25.022,
+  "peak_gb": 7.42,
+  "peak_gb_source": "mx_peak",
+  "finish_reason": "length",
+  "text": "The silence of the cottage was not empty, but weighted\u2014a quiet filled with the echoes of past routines. The faded tea tin suggested recent, perhaps fleeting, human presence, a momentary pause in the long stillness. Outside, the sea continued its ancient rhythm, indifferent to the decay of the stone or the obsolescence of the light.\n\nThe old maps, tucked away perhaps in a sea chest beneath the sloping floorboards, held more than just geographical data; they held human context. The names weren't arbitrary; they were anchors to local memory\u2014a cove named for a lost fishing boat, a point marked by a specific storm, a stretch of beach tied to a family history. Modern precision, while efficient, lacked this narrative depth, reducing complex lives to coordinates.\n\nThe lesson of measurement\u2014patience, repetition, resisting expectation\u2014was not just scientific; it was existential. To truly know the coast, one had to observe its slow, persistent changes: the silt in the harbour, the shift of fishing grounds, the slow erosion of the tower's stone.\n\nThe tower, unexceptional yet steadfast, served as a fixed point against the tide of change. The widened lane, the modern boats, the summer tourists\u2014these were transient layers of progress. The",
+  "ok": true
+}

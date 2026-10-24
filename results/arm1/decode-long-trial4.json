@@ -1,0 +1,41 @@
+{
+  "arm": "1",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:18:51+00:00",
+  "model": "models/rapid-mlx-4bit",
+  "load_s": 2.46,
+  "load_peak_gb": 4.201,
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 4,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.3695,
+  "prefill_tps": 581.7,
+  "engine_prefill_tps": 582.5,
+  "decode_tps": 28.2,
+  "wall_s": 23.413,
+  "peak_gb": 5.089,
+  "peak_gb_source": "mx_peak",
+  "finish_reason": "length",
+  "text": "The silence in the cottage was not the silence of abandonment, but of deep rest, earned after decades of vigil. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were the only clock needed now. The faded tea tin, undisturbed, suggested not sudden departure, but a pause, a return to the rhythm of the place.\n\nThe old maps, those tangible records of a slower world, lay rolled in a sea chest, smelling of salt, damp earth, and graphite. They spoke of a time when human scale mattered: the precise weight of a measured pace, the subjective but honest observation of water colour, the narrative embedded in a place name. This attention, lost in the efficiency of modern satellite data, was the true treasure\u2014the commitment to detail, not just for accuracy, but for meaning.\n\nThe lesson of measurement echoed through the quiet rooms: resist the urge to simplify. The average is a convenience; the spread, the variation, is the truth. A single tide reading, a single temperature spike, a single map sketch\u2014all are vulnerable to error or bias. Only through comparison, through repetition against the unchanging backdrop of the tower, could a reliable picture of flux emerge.\n\nThe harbour\u2019s siltation, the eastward shift",
+  "ok": true
+}

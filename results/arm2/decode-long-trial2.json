@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 2,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.4718,
+  "prefill_tps": 577.6,
+  "engine_prefill_tps": null,
+  "decode_tps": 28.9,
+  "wall_s": 23.298,
+  "peak_gb": 4.052,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "length",
+  "text": "The silence in the cottage was not the silence of abandonment, but of deep rest, earned after decades of vigil. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were the only clock needed now. The faded tea tin, undisturbed, suggested not sudden departure, but a pause, a return to the rhythm of the place.\n\nThe sloping floors, once navigated by boots tracking damp sea air and coal dust, now echoed only the soft shift of dust motes dancing in the infrequent shafts of sunlight piercing the deep-set windows. The stove, cold but solid, was a monument to necessary warmth, its chimney cap a quiet agreement with the elements.\n\nThe maps, those patient artifacts of human scale, lay perhaps rolled in a corner, smelling of salt, graphite, and the faint, mineral scent of the sea itself. They were not merely geographical records; they were mnemonic devices, binding the transient life of the coast\u2014the specific hue of the water in a particular autumn, the precise sound of a particular inlet during a spring tide\u2014to a fixed point in time. The satellite image, perfect in its objectivity, lacked the narrative weight: the name of the cove wasn't just coordinates; it was the memory of the nets mended there",
+  "ok": true
+}

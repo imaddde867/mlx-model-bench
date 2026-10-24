@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 5,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.6263,
+  "prefill_tps": 571.5,
+  "engine_prefill_tps": null,
+  "decode_tps": 27.9,
+  "wall_s": 23.774,
+  "peak_gb": 4.038,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "length",
+  "text": "The silence in the cottage was not the silence of abandonment, but of deep, settled rest. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were the only clock needed now. The faded tea tin, undisturbed, suggested not sudden departure, but a pause, a return to the rhythm of the place.\n\nThe old maps, those tangible records of a slower world, lay rolled in a trunk, smelling of salt, damp paper, and pipe smoke. They spoke of a time when measurement was an act of presence, not just data collection. The cartographers hadn't just mapped geography; they had mapped inhabitation\u2014the human scale of the coast.\n\nThe contrast between their painstaking detail and the modern efficiency of satellite imagery was stark. The modern view offered totality, but lacked narrative. The old maps held the *why*\u2014why a cove was named for a lost fishing boat, why a particular stretch of sand held memory, not just coordinates.\n\nThe lesson of measurement, however, remained timeless. The need for repetition, for checking the instrument against the reality of the tide, the temperature, the slow shift of the sea floor, was a humility against haste. The average is a useful summary, but the *spread*\u2014the",
+  "ok": true
+}

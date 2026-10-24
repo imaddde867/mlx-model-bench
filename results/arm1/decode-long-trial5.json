@@ -1,0 +1,41 @@
+{
+  "arm": "1",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:18:51+00:00",
+  "model": "models/rapid-mlx-4bit",
+  "load_s": 2.46,
+  "load_peak_gb": 4.201,
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 5,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.4883,
+  "prefill_tps": 576.9,
+  "engine_prefill_tps": 578.4,
+  "decode_tps": 29.1,
+  "wall_s": 23.261,
+  "peak_gb": 5.089,
+  "peak_gb_source": "mx_peak",
+  "finish_reason": "length",
+  "text": "The silence in the cottage was not the silence of abandonment, but of deep, settled rest. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were the only clock needed now. The faded tea tin, undisturbed, suggested not sudden departure, but a pause, a return to the rhythm of the place.\n\nThe old maps, those tangible records of a slower world, lay rolled in a corner, smelling of salt, damp paper, and pipe smoke. They spoke of a time when measurement was an act of presence, not just data collection. The cartographers hadn't just mapped geography; they had mapped inhabitation\u2014the human scale of the coast.\n\nThe contrast between their painstaking detail and the modern efficiency of satellite imagery was stark. The modern view offered totality, but lacked narrative. The old maps held the *why*\u2014why a cove was named for a lost fishing boat, why a particular stretch of sand held memory, not just coordinates.\n\nThe lesson of measurement, echoed in the quiet endurance of the lighthouse, was not about achieving a perfect number, but about rigorous process. Patience wasn't passive waiting; it was active commitment: checking the instrument, recording the variables, resisting the urge to confirm bias. The spread of",
+  "ok": true
+}

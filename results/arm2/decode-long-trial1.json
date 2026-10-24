@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 1,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.5042,
+  "prefill_tps": 576.3,
+  "engine_prefill_tps": null,
+  "decode_tps": 26.7,
+  "wall_s": 24.064,
+  "peak_gb": 4.316,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "length",
+  "text": "The silence in the cottage was not the silence of abandonment, but of deep rest, earned after decades of vigil. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were the only clock needed now. The faded tea tin, undisturbed, suggested not sudden departure, but a pause, a return to the rhythm of the place.\n\nThe sloping floors, once navigated by boots tracking damp sea air and coal dust, now echoed only the soft shift of dust motes dancing in the infrequent shafts of sunlight piercing the deep-set windows. The stove, cold but solid, was a monument to necessary warmth, its chimney cap a quiet agreement with the elements.\n\nOutside, the modern world\u2014cars on the widened lane, transient summer visitors\u2014had moved on, seeking convenience. But the lighthouse, the cottage, and the memory of the hand-drawn maps held fast to a slower, deeper truth. That truth was not in the accuracy of the measurement, but in the *process*: the slow walk, the careful observation of water colour, the naming of every small cove, each name tethered to a human experience\u2014a storm survived, a successful catch, a lost journey.\n\nThe tower, steadfast against the flux of the harbour, the shifting coast",
+  "ok": true
+}

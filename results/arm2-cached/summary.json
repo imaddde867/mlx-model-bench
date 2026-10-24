@@ -1,0 +1,144 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "model": "rapid-mlx-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "trials": 5,
+  "load_s": null,
+  "load_peak_gb": null,
+  "base_url": "http://127.0.0.1:8080",
+  "runs_ok": 15,
+  "runs_failed": 0,
+  "prompts": {
+    "short": {
+      "prompt_tokens": 60,
+      "ttft_s": {
+        "median": 0.0683,
+        "min": 0.0653,
+        "max": 0.0755,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 878.6,
+        "min": 794.2,
+        "max": 918.5,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 47.5,
+        "min": 46.5,
+        "max": 49.3,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.019,
+        "min": 4.019,
+        "max": 4.019,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 0.162,
+        "min": 0.16,
+        "max": 0.171,
+        "n": 5
+      }
+    },
+    "medium": {
+      "prompt_tokens": 1018,
+      "ttft_s": {
+        "median": 0.0702,
+        "min": 0.0669,
+        "max": 0.0744,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 14504.7,
+        "min": 13686.7,
+        "max": 15219.7,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 48.5,
+        "min": 46.1,
+        "max": 49.0,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.033,
+        "min": 4.033,
+        "max": 4.033,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 0.163,
+        "min": 0.159,
+        "max": 0.171,
+        "n": 5
+      }
+    },
+    "long": {
+      "prompt_tokens": 8333,
+      "ttft_s": {
+        "median": 0.0937,
+        "min": 0.0912,
+        "max": 0.1035,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 88955.2,
+        "min": 80530.0,
+        "max": 91341.3,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 36.4,
+        "min": 35.4,
+        "max": 36.7,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 6,
+        "min": 6,
+        "max": 6,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.034,
+        "min": 4.034,
+        "max": 4.034,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 0.266,
+        "min": 0.262,
+        "max": 0.274,
+        "n": 5
+      }
+    }
+  }
+}

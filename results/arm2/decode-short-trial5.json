@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "decode-short",
+  "prompt_file": "./prompts/speed/decode-short.txt",
+  "trial": 5,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 85,
+  "generation_tokens": 96,
+  "ttft_s": 0.1637,
+  "prefill_tps": 519.3,
+  "engine_prefill_tps": null,
+  "decode_tps": 32.0,
+  "wall_s": 3.161,
+  "peak_gb": 4.315,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "stop",
+  "text": "It uses a vapor-compression cycle. The compressor pressurizes refrigerant vapor. This high-pressure vapor enters the condenser coils, releasing heat and turning into a high-pressure liquid. The expansion valve controls the flow into the evaporator, causing a pressure drop and flash vaporization into a low-pressure liquid/vapor mixture. In the evaporator, absorbing heat from inside the fridge, the refrigerant turns completely into a low-pressure vapor, which returns to the compressor to repeat the cycle.",
+  "ok": true
+}

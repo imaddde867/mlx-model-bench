@@ -1,0 +1,40 @@
+{
+  "arm": "2",
+  "engine": "http",
+  "transport": "http",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:28:38+00:00",
+  "model": "rapid-mlx-4bit",
+  "base_url": "http://127.0.0.1:8080",
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 3,
+  "discarded": false,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.5672,
+  "prefill_tps": 573.8,
+  "engine_prefill_tps": null,
+  "decode_tps": 26.7,
+  "wall_s": 24.125,
+  "peak_gb": 4.037,
+  "peak_gb_source": "server_rss",
+  "finish_reason": "length",
+  "text": "The silence in the keeper's cottage was not the silence of abandonment, but of deep, settled rest. The sea sounds\u2014the ebb and flow, the occasional cry of a gull\u2014were muffled by the thick stone, a constant, low-frequency presence rather than an intrusion. The faded tea tin, undisturbed, suggested not sudden departure, but a pause, a return to the rhythm of the place.\n\nThe sloping floors, once navigated by boots tracking damp sea air and salt spray, now held only the faint scent of old stone and dry herbs from the chimney cap. The stove, cold now, had seen its last proper fire burn perhaps decades ago, its warmth absorbed into the very mass of the walls. The sea, which once dictated the rhythm of life here\u2014the timing of provisioning, the need for constant vigilance\u2014had shifted its demands. The harbour silted, the boats moved on, and the immediate, life-or-death dependency on the tower had dissolved into memory, much like the hand-drawn maps.\n\nYet, the memory of that attention\u2014the deliberate naming of every cove, the painstaking measurement of a cliff face by the simple physics of dropped stone\u2014remained. It was a fidelity to place, not to function. The modern world",
+  "ok": true
+}

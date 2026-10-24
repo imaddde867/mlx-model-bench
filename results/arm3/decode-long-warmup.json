@@ -1,0 +1,41 @@
+{
+  "arm": "3",
+  "engine": "mlx_lm",
+  "transport": "in-process",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "greedy": true,
+  "trials": 5,
+  "timestamp": "2026-10-24T15:23:13+00:00",
+  "model": "models/optiq-4bit",
+  "load_s": 3.59,
+  "load_peak_gb": 6.533,
+  "prompt": "decode-long",
+  "prompt_file": "./prompts/speed/decode-long.txt",
+  "trial": 0,
+  "discarded": true,
+  "nonce": true,
+  "prompt_tokens": 8359,
+  "generation_tokens": 256,
+  "ttft_s": 14.0847,
+  "prefill_tps": 593.5,
+  "engine_prefill_tps": 594.1,
+  "decode_tps": 24.7,
+  "wall_s": 24.45,
+  "peak_gb": 7.42,
+  "peak_gb_source": "mx_peak",
+  "finish_reason": "length",
+  "text": "The silence of the cottage was not empty, but weighted\u2014a quiet filled with the echoes of past routines. The faded tea tin suggested recent, perhaps fleeting, human presence, a momentary pause in the long stillness. Outside, the sea continued its ancient rhythm, indifferent to the decay of the stone or the obsolescence of the light.\n\nThe old maps, tucked away in a sea chest beneath the sloping floorboards, were more than just geographical records; they were artifacts of a specific, patient way of knowing the world. They spoke of a time when human effort, not remote sensing, defined place. The names weren't arbitrary; they were mnemonic anchors, tied to local lore, weather patterns, or the memory of a specific boat lost or found.\n\nThe lighthouse, steadfast in its unremarkable endurance, served as a quiet metaphor for this lost attention. It didn't need to be grand; its value lay in its constancy. The modern world, with its speed and immediate data, often sacrifices depth for breadth. We measure distance instantly, but we lose the context\u2014the story attached to the inlet, the patience required to pace a shoreline, the necessary repetition to understand true variability.\n\nThe change in the harbour, the shift of fishing boats, the widening of the",
+  "ok": true
+}
