@@ -1,0 +1,35 @@
+{
+  "hf_repo": "mlx-community/NVIDIA-Nemotron-3.5-Bolt-E4B-OptiQ-4bit",
+  "checkpoint": "optiq-4bit",
+  "files": [
+    {
+      "file": "model-00001-of-00002.safetensors",
+      "expected_bytes": 3505995882,
+      "expected_sha256": "9b1c3769e582ab07bcb1319e1fd6a1f6ce1d5b2afed1b7b120efbd6381a67c95",
+      "ok": true,
+      "local_bytes": 3505995882,
+      "local_sha256": "9b1c3769e582ab07bcb1319e1fd6a1f6ce1d5b2afed1b7b120efbd6381a67c95"
+    },
+    {
+      "file": "model-00002-of-00002.safetensors",
+      "expected_bytes": 3023979920,
+      "expected_sha256": "c816c356a2bbddef2b6e6e389f77055cf4cc11b586f9d91ac4e5804537d90f99",
+      "ok": true,
+      "local_bytes": 3023979920,
+      "local_sha256": "c816c356a2bbddef2b6e6e389f77055cf4cc11b586f9d91ac4e5804537d90f99"
+    },
+    {
+      "file": "optiq_vision.safetensors",
+      "expected_bytes": 956351300,
+      "expected_sha256": "edaf481025dbd76fa64b0f6bb94e5b020f5621d84b8c04ea9ecbefcd52db957f",
+      "ok": true,
+      "local_bytes": 956351300,
+      "local_sha256": "edaf481025dbd76fa64b0f6bb94e5b020f5621d84b8c04ea9ecbefcd52db957f"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "nemotron-3.5-bolt",
+  "local_dir": "models/optiq-4bit",
+  "weights_gb": 6.53
+}

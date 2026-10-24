@@ -1,8 +1,8 @@
 # AGENTS.md
 
-Benchmarking sub-5 GB quantized LLMs on Apple Silicon MLX: one baseline plus a
-roster of challengers. The repo directory keeps its historical name
-`nemotron-bolt-bench`; it is no longer a single-model benchmark. Read `DESIGN.md`
+Benchmarking 2-9 GB quantized LLMs on Apple Silicon MLX: one baseline plus a
+roster of challengers, three quantization tiers each. Renamed from
+`nemotron-bolt-bench` (github.com/imaddde867/mlx-model-bench). Read `DESIGN.md`
 and `MODELS.md` before touching an arm. This file is the operating contract.
 
 ## Machine

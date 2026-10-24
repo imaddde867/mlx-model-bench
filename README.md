@@ -88,8 +88,8 @@ caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase al
 .venv-mlxlm/bin/python score_quality.py --round r1
 ```
 
-The repository directory keeps its historical name (`nemotron-bolt-bench`); it began as a
-single-model study and that record is now section 1 of the report.
+The repository was renamed from `nemotron-bolt-bench` when the study grew from one model to
+four; its original single-model record is now section 1 of the report, unchanged.
 
 ## Pins
 
