@@ -17,6 +17,13 @@ def entry(n):
 
 
 class TestMerge(unittest.TestCase):
+    def test_legacy_summary_without_checkpoints_keeps_its_keys(self):
+        self.path.write_text(json.dumps({"timestamp": "t0", "arm1": {"name": "a"}}))
+        run_p3.merge_summary(self.d, {"model_id": "m", "checkpoints": {"mlx-8bit": entry(25)}})
+        got = json.loads(self.path.read_text())
+        self.assertEqual(got["arm1"], {"name": "a"})
+        self.assertEqual(got["checkpoints"], {"mlx-8bit": entry(25)})
+
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)

@@ -200,7 +200,7 @@ def merge_summary(out_dir, new):
     """Write new checkpoint entries beside the existing ones, leaving those untouched."""
     path = Path(out_dir) / "accuracy_summary.json"
     old = json.loads(path.read_text()) if path.exists() else {**new, "checkpoints": {}}
-    old["checkpoints"].update(new["checkpoints"])
+    old.setdefault("checkpoints", {}).update(new["checkpoints"])
     path.write_text(json.dumps(old, indent=2))
     return old
 

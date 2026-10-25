@@ -1,0 +1,97 @@
+{
+  "model_id": "lfm2.5-8b-a1b",
+  "model_name": "LFM2.5-8B-A1B",
+  "timestamp": "2026-10-25 20:01:24 UTC",
+  "checkpoints": {
+    "mlx-4bit": {
+      "name": "LFM2.5-8B-A1B (mlx-4bit)",
+      "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-4bit",
+      "weights_gb": 4.85,
+      "bits_per_weight": 4.58,
+      "load_time_s": 2.34,
+      "load_peak_gb": 4.834,
+      "accuracy": {
+        "total_passed": 20,
+        "total_prompts": 30,
+        "accuracy_pct": 66.7,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 4,
+            "total": 12,
+            "accuracy_pct": 33.3
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 6,
+            "total": 8,
+            "accuracy_pct": 75.0
+          }
+        }
+      }
+    },
+    "optiq-4bit": {
+      "name": "LFM2.5-8B-A1B (optiq-4bit)",
+      "hf_repo": "mlx-community/LFM2.5-8B-A1B-OptiQ-4bit",
+      "weights_gb": 5.47,
+      "bits_per_weight": 5.17,
+      "load_time_s": 2.49,
+      "load_peak_gb": 5.455,
+      "accuracy": {
+        "total_passed": 21,
+        "total_prompts": 30,
+        "accuracy_pct": 70.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 4,
+            "total": 12,
+            "accuracy_pct": 33.3
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 7,
+            "total": 8,
+            "accuracy_pct": 87.5
+          }
+        }
+      }
+    },
+    "mlx-8bit": {
+      "name": "LFM2.5-8B-A1B (mlx-8bit)",
+      "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-8bit",
+      "weights_gb": 9.02,
+      "bits_per_weight": 8.52,
+      "load_time_s": 3.58,
+      "load_peak_gb": 9.002,
+      "accuracy": {
+        "total_passed": 21,
+        "total_prompts": 30,
+        "accuracy_pct": 70.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 5,
+            "total": 12,
+            "accuracy_pct": 41.7
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 6,
+            "total": 8,
+            "accuracy_pct": 75.0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "model_id": "spark-x2.5-4b",
+  "model_name": "Spark-X2.5-4B",
+  "timestamp": "2026-10-25 19:19:21 UTC",
+  "checkpoints": {
+    "mlx-4bit": {
+      "name": "Spark-X2.5-4B (mlx-4bit)",
+      "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-4bit",
+      "weights_gb": 2.32,
+      "bits_per_weight": 4.51,
+      "load_time_s": 1.16,
+      "load_peak_gb": 2.314,
+      "accuracy": {
+        "total_passed": 18,
+        "total_prompts": 30,
+        "accuracy_pct": 60.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 2,
+            "total": 12,
+            "accuracy_pct": 16.7
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 6,
+            "total": 8,
+            "accuracy_pct": 75.0
+          }
+        }
+      }
+    },
+    "optiq-4bit": {
+      "name": "Spark-X2.5-4B (optiq-4bit)",
+      "hf_repo": "mlx-community/Spark-X2.5-4B-OptiQ-4bit",
+      "weights_gb": 3.05,
+      "bits_per_weight": 5.93,
+      "load_time_s": 1.33,
+      "load_peak_gb": 3.04,
+      "accuracy": {
+        "total_passed": 18,
+        "total_prompts": 30,
+        "accuracy_pct": 60.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 2,
+            "total": 12,
+            "accuracy_pct": 16.7
+          },
+          "function_call": {
+            "passed": 9,
+            "total": 10,
+            "accuracy_pct": 90.0
+          },
+          "instruction_following": {
+            "passed": 7,
+            "total": 8,
+            "accuracy_pct": 87.5
+          }
+        }
+      }
+    },
+    "mlx-8bit": {
+      "name": "Spark-X2.5-4B (mlx-8bit)",
+      "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-8bit",
+      "weights_gb": 4.38,
+      "bits_per_weight": 8.52,
+      "load_time_s": 1.68,
+      "load_peak_gb": 4.37,
+      "accuracy": {
+        "total_passed": 21,
+        "total_prompts": 30,
+        "accuracy_pct": 70.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 4,
+            "total": 12,
+            "accuracy_pct": 33.3
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 7,
+            "total": 8,
+            "accuracy_pct": 87.5
+          }
+        }
+      }
+    }
+  }
+}

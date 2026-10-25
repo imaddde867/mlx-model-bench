@@ -53,5 +53,37 @@
         }
       }
     }
+  },
+  "checkpoints": {
+    "mlx-8bit": {
+      "name": "NVIDIA Nemotron 3.5 Bolt E4B (mlx-8bit)",
+      "hf_repo": "rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-8bit",
+      "weights_gb": 7.96,
+      "bits_per_weight": 8.53,
+      "load_time_s": 3.98,
+      "load_peak_gb": 7.933,
+      "accuracy": {
+        "total_passed": 24,
+        "total_prompts": 30,
+        "accuracy_pct": 80.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 6,
+            "total": 12,
+            "accuracy_pct": 50.0
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 8,
+            "total": 8,
+            "accuracy_pct": 100.0
+          }
+        }
+      }
+    }
   }
 }
