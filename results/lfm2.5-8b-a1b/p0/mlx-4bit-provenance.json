@@ -1,0 +1,19 @@
+{
+  "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "files": [
+    {
+      "file": "model.safetensors",
+      "expected_bytes": 4834029941,
+      "expected_sha256": "3cc15631acc1894b3584ac11fb4122beee50b604e1a0be575da686cee87aa3a4",
+      "ok": true,
+      "local_bytes": 4834029941,
+      "local_sha256": "3cc15631acc1894b3584ac11fb4122beee50b604e1a0be575da686cee87aa3a4"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "lfm2.5-8b-a1b",
+  "local_dir": "models/lfm2.5-8b-a1b-4bit",
+  "weights_gb": 4.85
+}

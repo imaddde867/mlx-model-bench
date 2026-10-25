@@ -1,0 +1,19 @@
+{
+  "hf_repo": "mlx-community/MiniCPM5-2B-OptiQ-4bit",
+  "checkpoint": "optiq-4bit",
+  "files": [
+    {
+      "file": "model.safetensors",
+      "expected_bytes": 1926167935,
+      "expected_sha256": "4c317e91ee2a000cf1094986bd4c4025c96c0a0dbd38a3adb8b3b31399eb2348",
+      "ok": true,
+      "local_bytes": 1926167935,
+      "local_sha256": "4c317e91ee2a000cf1094986bd4c4025c96c0a0dbd38a3adb8b3b31399eb2348"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "minicpm5-2b",
+  "local_dir": "models/minicpm5-2b-optiq",
+  "weights_gb": 1.94
+}

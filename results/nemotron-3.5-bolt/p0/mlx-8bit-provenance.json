@@ -1,0 +1,27 @@
+{
+  "hf_repo": "rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-8bit",
+  "checkpoint": "mlx-8bit",
+  "files": [
+    {
+      "file": "model-00001-of-00002.safetensors",
+      "expected_bytes": 4906172928,
+      "expected_sha256": "d2a19ce0f96276cba72cadefbfabbe4fd750789c1cc41e95af13e5d72be544dd",
+      "ok": true,
+      "local_bytes": 4906172928,
+      "local_sha256": "d2a19ce0f96276cba72cadefbfabbe4fd750789c1cc41e95af13e5d72be544dd"
+    },
+    {
+      "file": "model-00002-of-00002.safetensors",
+      "expected_bytes": 3023979920,
+      "expected_sha256": "c816c356a2bbddef2b6e6e389f77055cf4cc11b586f9d91ac4e5804537d90f99",
+      "ok": true,
+      "local_bytes": 3023979920,
+      "local_sha256": "c816c356a2bbddef2b6e6e389f77055cf4cc11b586f9d91ac4e5804537d90f99"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "nemotron-3.5-bolt",
+  "local_dir": "models/rapid-mlx-8bit",
+  "weights_gb": 7.96
+}

@@ -1,0 +1,27 @@
+{
+  "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-8bit",
+  "checkpoint": "mlx-8bit",
+  "files": [
+    {
+      "file": "model-00001-of-00002.safetensors",
+      "expected_bytes": 5358120367,
+      "expected_sha256": "b6d6f103a95424fac54611468f281a8ca175e12ea4f7500549cafd684c5408b1",
+      "ok": true,
+      "local_bytes": 5358120367,
+      "local_sha256": "b6d6f103a95424fac54611468f281a8ca175e12ea4f7500549cafd684c5408b1"
+    },
+    {
+      "file": "model-00002-of-00002.safetensors",
+      "expected_bytes": 3643474900,
+      "expected_sha256": "0d9d40a3435f6a483e9ee597ef0bfb9dcbd747f5b87bf13b5caf6267e374d41f",
+      "ok": true,
+      "local_bytes": 3643474900,
+      "local_sha256": "0d9d40a3435f6a483e9ee597ef0bfb9dcbd747f5b87bf13b5caf6267e374d41f"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "lfm2.5-8b-a1b",
+  "local_dir": "models/lfm2.5-8b-a1b-8bit",
+  "weights_gb": 9.02
+}

@@ -1,0 +1,19 @@
+{
+  "hf_repo": "mlx-community/Spark-X2.5-4B-OptiQ-4bit",
+  "checkpoint": "optiq-4bit",
+  "files": [
+    {
+      "file": "model.safetensors",
+      "expected_bytes": 3040272206,
+      "expected_sha256": "fd213d43a311fc85e7d3cd36e78e614ab2056b24285967fddf2b66cd4fc936a5",
+      "ok": true,
+      "local_bytes": 3040272206,
+      "local_sha256": "fd213d43a311fc85e7d3cd36e78e614ab2056b24285967fddf2b66cd4fc936a5"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "spark-x2.5-4b",
+  "local_dir": "models/spark-x2.5-4b-optiq",
+  "weights_gb": 3.05
+}

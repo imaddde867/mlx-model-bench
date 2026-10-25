@@ -1,0 +1,19 @@
+{
+  "hf_repo": "mlx-community/MiniCPM5-2B-8bit",
+  "checkpoint": "mlx-8bit",
+  "files": [
+    {
+      "file": "model.safetensors",
+      "expected_bytes": 2674327290,
+      "expected_sha256": "82db8e423c5df99a5989f1b73dad1f44941a7800b308915f6ae7142966b32e40",
+      "ok": true,
+      "local_bytes": 2674327290,
+      "local_sha256": "82db8e423c5df99a5989f1b73dad1f44941a7800b308915f6ae7142966b32e40"
+    }
+  ],
+  "verified": true,
+  "error": null,
+  "model_id": "minicpm5-2b",
+  "local_dir": "models/minicpm5-2b-8bit",
+  "weights_gb": 2.68
+}
