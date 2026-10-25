@@ -19,6 +19,7 @@
       "local_sha256": "c816c356a2bbddef2b6e6e389f77055cf4cc11b586f9d91ac4e5804537d90f99"
     }
   ],
+  "revision": "72263b814727693c874bf765c657dfb32102e870",
   "verified": true,
   "error": null,
   "model_id": "nemotron-3.5-bolt",

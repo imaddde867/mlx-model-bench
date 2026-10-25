@@ -11,6 +11,7 @@
       "local_sha256": "2471dc02ed61ba53907a12e8d941a7d13e5e1e17cf16f9354e8487bb7e105149"
     }
   ],
+  "revision": "7225153c867b13ce2637fe572b9a9fbce38fb108",
   "verified": true,
   "error": null,
   "model_id": "spark-x2.5-4b",
