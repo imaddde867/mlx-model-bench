@@ -111,7 +111,7 @@ is the single biggest source of accidentally measuring the wrong thing.
 | LFM2.5 | `preserve_thinking` | false | keeps historical `<think>` blocks in context — irrelevant single-turn, relevant the moment anyone runs a transcript |
 | — | `thinking_token_budget` | n/a | a serving-API parameter, **not** a template variable (P0.md corrects AGENTS.md on this) |
 
-LFM2.5 always emits a `<think>` block and its template has no switch to disable it. P0 therefore uses a larger token budget (`p0_max_tokens=512`) so the answer is not truncated, and its decode and accuracy rows include reasoning tokens. This is a documented deviation from "thinking off everywhere"; every LFM2.5 number must carry that caveat.
+LFM2.5 always emits a `<think>` block and its template has no switch to disable it. P0 therefore uses a larger token budget (`p0_max_tokens=512`) so the answer is not truncated, and its decode and accuracy rows include reasoning tokens. This is a documented deviation from "thinking off everywhere"; every LFM2.5 number must carry that caveat. P3 gives it 4x the token caps (`p3_budget_x=4`: 1024 accuracy, 1536 quality); graders and blind scoring see only the text after `</think>` (raw text kept as `raw_response`), and an unfinished think block counts as an empty answer.
 
 The harness never invents a kwarg: `bench.py` and `run_p3.py` read
 `Model.template_kwargs` from the registry and record the exact dict in every row.
