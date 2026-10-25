@@ -37,6 +37,9 @@ class FakeProcess:
         if stdout:
             stdout.write("synthetic server started\n")
 
+    def poll(self):
+        return self.returncode
+
     def terminate(self):
         self.terminated = True
 
@@ -52,6 +55,7 @@ class FakeProcess:
 class SyntheticHTTPHandler(BaseHTTPRequestHandler):
     request_body = None
     fail = False
+    truncate = False
 
     def log_message(self, *_args):
         pass
@@ -69,7 +73,8 @@ class SyntheticHTTPHandler(BaseHTTPRequestHandler):
             {"choices": [], "usage": {"prompt_tokens": 7, "completion_tokens": 3}},
         ]
         payload = "".join(f"data: {json.dumps(event)}\n\n" for event in events)
-        payload += "data: [DONE]\n\n"
+        if not type(self).truncate:
+            payload += "data: [DONE]\n\n"
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.end_headers()
@@ -385,6 +390,163 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(commands[2][commands[2].index("--prompts") + 1:], ["short"])
         self.assertTrue(launched[0].terminated)
         self.assertTrue(launched[0].waited)
+
+
+    def run_inproc_cli(self, trials, results):
+        """bench.main() in-process with run_mlx replaced by `results` (a row dict or an exception per call)."""
+        results = iter(results)
+
+        def fake_run_mlx(*_a, **_k):
+            r = next(results)
+            if isinstance(r, Exception):
+                raise r
+            return dict(r)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            prompts_dir = temp / "prompts"
+            (prompts_dir / "speed").mkdir(parents=True)
+            (prompts_dir / "speed" / "fixture.txt").write_text("synthetic prompt")
+            argv = [
+                "bench.py", "--model", self.cfg.id, "--checkpoint", "mlx-4bit",
+                "--prompts", "fixture", "--trials", str(trials), "--max-tokens", "8",
+                "--out", str(temp),
+            ]
+            with (
+                patch.dict(sys.modules, install_fake_mlx()),
+                patch.object(registry.Checkpoint, "available", new_callable=PropertyMock, return_value=True),
+                patch.object(bench, "versions", return_value={"mlx": "fixture"}),
+                patch.object(bench, "PROMPTS", prompts_dir),
+                patch.object(bench, "run_mlx", side_effect=fake_run_mlx),
+                patch.object(sys, "argv", argv),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                status = bench.main()
+            out_dir = temp / self.cfg.id / "mlx-4bit-inproc"
+            return status, json.loads((out_dir / "summary.json").read_text())
+
+    GOOD = {"prompt_tokens": 7, "generation_tokens": 3, "ttft_s": 0.1, "prefill_tps": 70.0,
+            "wall_s": 0.5, "decode_tps": 30.0}
+
+    def test_complete_five_trial_run_is_publishable(self):
+        status, summary = self.run_inproc_cli(5, [self.GOOD] * 6)
+
+        self.assertEqual(status, 0)
+        self.assertEqual(summary["outcome"], "completed")
+        self.assertTrue(summary["publishable"])
+        self.assertEqual(summary["non_publishable_reasons"], [])
+        self.assertEqual(summary["prompts"]["fixture"]["kept_ok"], 5)
+
+    def test_smoke_run_succeeds_but_is_not_publishable(self):
+        status, summary = self.run_inproc_cli(1, [self.GOOD] * 2)
+
+        self.assertEqual(status, 0)
+        self.assertEqual(summary["outcome"], "completed")
+        self.assertFalse(summary["publishable"])
+        self.assertIn("1 trials < 5", summary["non_publishable_reasons"][0])
+
+    def test_failed_kept_trial_makes_the_arm_partial_and_exit_nonzero(self):
+        status, summary = self.run_inproc_cli(
+            3, [self.GOOD, self.GOOD, RuntimeError("synthetic trial failure")])
+
+        self.assertEqual(status, 1)
+        self.assertEqual(summary["outcome"], "partial")
+        self.assertFalse(summary["publishable"])
+        self.assertEqual(summary["prompts"]["fixture"]["kept_ok"], 1)
+        self.assertTrue(any("1/3 kept trials" in r for r in summary["non_publishable_reasons"]))
+
+    def test_missing_required_metric_fails_the_trial(self):
+        incomplete = {k: v for k, v in self.GOOD.items() if k != "ttft_s"}
+        status, summary = self.run_inproc_cli(1, [self.GOOD, incomplete])
+
+        self.assertEqual(status, 1)
+        self.assertEqual(summary["outcome"], "partial")
+        self.assertEqual(summary["runs_failed"], 1)
+
+    def test_failed_warmup_leaves_nothing_measured(self):
+        status, summary = self.run_inproc_cli(2, [RuntimeError("synthetic warm-up failure")])
+
+        self.assertEqual(status, 1)
+        self.assertEqual(summary["outcome"], "failed")
+        self.assertFalse(summary["prompts"]["fixture"]["warmup_ok"])
+
+    def test_http_stream_without_done_marker_is_an_error(self):
+        SyntheticHTTPHandler.fail = False
+        SyntheticHTTPHandler.truncate = True
+        server = ThreadingHTTPServer(("127.0.0.1", 0), SyntheticHTTPHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            args = SimpleNamespace(
+                base_url=f"http://127.0.0.1:{server.server_port}",
+                server_pid=None, max_tokens=8, temperature=0.0, top_p=None,
+            )
+            with self.assertRaisesRegex(RuntimeError, "without \\[DONE\\]"):
+                bench.run_http("prompt", args, {})
+        finally:
+            SyntheticHTTPHandler.truncate = False
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def phase_optiq(self, out, exe=None, run_rc=0, summary=None, ready=True):
+        ckpt = self.cfg.checkpoint("optiq-4bit")
+        run_dir = Path(out) / self.cfg.id / "optiq-4bit-http-optiq-engine"
+
+        def fake_run(cmd, log_path, timeout=None):
+            Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(log_path).write_text("synthetic bench log\n")
+            if summary:
+                run_dir.mkdir(parents=True, exist_ok=True)
+                (run_dir / "summary.json").write_text(json.dumps(summary))
+            return run_rc
+
+        with (
+            patch.object(registry.Checkpoint, "available", new_callable=PropertyMock, return_value=True),
+            patch.object(run_bench, "optiq_exe", return_value=exe),
+            patch.object(run_bench, "optiq_version", return_value="mlx-optiq fixture"),
+            patch.object(run_bench, "run", side_effect=fake_run),
+            patch.object(run_bench, "free_port", return_value=8765),
+            patch.object(run_bench, "wait_for_server", return_value=ready),
+            patch.object(run_bench, "log_tail"),
+            patch.object(run_bench.subprocess, "Popen", side_effect=FakeProcess),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            outcomes = run_bench.phase_p2_optiq(self.cfg, Path(out), 5, ["short"], 8, [ckpt])
+        return outcomes, run_dir
+
+    def test_missing_optiq_runtime_is_recorded_as_unmeasurable(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outcomes, run_dir = self.phase_optiq(temp_dir, exe=None)
+            record = json.loads((run_dir / "unmeasurable.json").read_text())
+
+        self.assertEqual(outcomes, {"optiq-4bit": "unmeasurable"})
+        self.assertEqual(record["outcome"], "unmeasurable")
+        self.assertIn("not installed", record["reason"])
+
+    def test_optiq_server_that_never_starts_is_unmeasurable(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outcomes, _ = self.phase_optiq(temp_dir, exe=Path("optiq"), ready=False)
+
+        self.assertEqual(outcomes, {"optiq-4bit": "unmeasurable"})
+
+    def test_optiq_bench_outcomes_are_distinguished(self):
+        cases = [(0, None, "completed"), (1, {"outcome": "partial"}, "partial"),
+                 (1, {"outcome": "failed"}, "unmeasurable"), (1, None, "failed")]
+        for rc, summary, expected in cases:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as temp_dir:
+                outcomes, _ = self.phase_optiq(temp_dir, exe=Path("optiq"), run_rc=rc, summary=summary)
+                self.assertEqual(outcomes, {"optiq-4bit": expected})
+
+    def test_wait_for_server_gives_up_when_the_server_process_exited(self):
+        proc = SimpleNamespace(poll=lambda: 3)
+        self.assertFalse(run_bench.wait_for_server("http://127.0.0.1:9", timeout=60, proc=proc))
+
+    def test_run_reports_a_timeout_as_a_failing_exit_code(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            rc = run_bench.run([sys.executable, "-c", "import time; time.sleep(30)"],
+                               Path(temp_dir) / "log.txt", timeout=0.2)
+        self.assertEqual(rc, 124)
 
 
 if __name__ == "__main__":
