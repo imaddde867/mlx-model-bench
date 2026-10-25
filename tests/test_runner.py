@@ -297,6 +297,7 @@ class RunnerTests(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(registry.Checkpoint, "available", new_callable=PropertyMock, return_value=True),
             patch.object(run_bench, "run", side_effect=fake_run),
             patch.object(run_bench, "free_port", return_value=8765),
             patch.object(run_bench, "wait_for_server", return_value=True),
@@ -323,6 +324,7 @@ class RunnerTests(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(registry.Checkpoint, "available", new_callable=PropertyMock, return_value=True),
             patch.object(run_bench, "run", side_effect=fake_run),
             patch.object(
                 run_bench.subprocess,
@@ -356,6 +358,7 @@ class RunnerTests(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(registry.Checkpoint, "available", new_callable=PropertyMock, return_value=True),
             patch.object(run_bench, "run", side_effect=fake_run),
             patch.object(run_bench, "free_port", return_value=8765),
             patch.object(run_bench, "wait_for_server", return_value=True),
