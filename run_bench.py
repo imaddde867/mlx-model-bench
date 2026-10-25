@@ -225,7 +225,8 @@ def phase_p0(cfg, out, selected):
         log = out / cfg.id / "logs" / f"p0-{ckpt.tag}.log"
         rc = run(
             [sys.executable, str(ROOT / "p0_load.py"), str(ckpt.local_path),
-             "--template-kwargs", json.dumps(cfg.template_kwargs)],
+             "--template-kwargs", json.dumps(cfg.template_kwargs),
+             "--max-tokens", str(cfg.p0_max_tokens)],
             log, timeout=900,
         )
         if rc != 0:
