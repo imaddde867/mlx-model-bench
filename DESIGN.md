@@ -99,6 +99,12 @@ but this is not a local execution result. See `P0.md` and `REPORT.md` section 1.
 | Accuracy | % correct on a fixed, auto-graded set | objective |
 | Quality | blind human rubric on 8 fixed prompts | the only honest judge here |
 
+Timing boundaries are defined per field in the comment block above
+`decode_window()` in `bench.py`. Historical `ttft_s` scope differs by transport
+(each row's `ttft_scope` says which); `request_ttft_s` is the cross-transport
+TTFT, `wall_s` the end-to-end user latency, and `decode_window_tps` the revised
+decode rate, left None (not ranked) whenever `decode_flags` is non-empty.
+
 TTFT is measured at three prompt lengths (short ≈ 64, medium ≈ 1k, long ≈ 8k
 tokens) because prefill cost is not linear in a useful way and the model
 claims a voice-assistant use case where short-prompt TTFT dominates.
