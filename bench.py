@@ -123,6 +123,51 @@ def decode_window(t_req, first, end, gen, cached=None, nonce=True):
     }
 
 
+# peak_gb is only comparable between rows with the same source. Neither is GPU
+# VRAM: Apple Silicon has one unified pool. weights_gb is file size, not runtime.
+MEMORY_BASES = {
+    "mx_peak": {"method": "mx.get_peak_memory()", "scope": "in-process MLX allocator (Metal buffers)",
+                "phase": "per-trial: reset before prompt prefill, read after generation"},
+    "server_rss": {"method": "ps -o rss= polled every 0.1 s", "scope": "server process resident set (whole process)",
+                   "phase": "per-request: sampler runs while the request streams; includes the loaded weights"},
+}
+MEMORY_UNIT = "GB, decimal (1e9 bytes)"
+
+
+def memory_record(source, value_gb, reason=None):
+    """Provenance for peak_gb. source None = not measured; reason says why."""
+    basis = MEMORY_BASES.get(source, {})
+    return {"value_gb": value_gb, "source": source, "unit": MEMORY_UNIT,
+            "method": basis.get("method"), "scope": basis.get("scope"), "phase": basis.get("phase"),
+            "available": value_gb is not None,
+            "unavailable_reason": None if value_gb is not None else (reason or "not measured")}
+
+
+def memory_source(summary):
+    """Recorded source of a summary's peak_gb; legacy summaries are inferred from transport."""
+    if "memory" in summary:  # new format: None means mixed or unmeasured, never inferred
+        return summary["memory"].get("source"), False
+    return {"inproc": "mx_peak", "http": "server_rss"}.get(summary.get("transport")), True
+
+
+def memory_label(summary):
+    """Legend suffix from recorded provenance; legacy summaries are marked inferred."""
+    src, inferred = memory_source(summary)
+    if src is None and len((summary.get("memory") or {}).get("sources_seen") or []) > 1:
+        return "mixed sources"
+    names = {"mx_peak": "MLX allocator peak", "server_rss": "server RSS", None: "memory n/a"}
+    return names.get(src, src) + (" (inferred)" if inferred and src else "")
+
+
+def memory_delta(a, b):
+    """b - a in GB, or None when the two summaries are not on the same memory basis."""
+    (sa, _), (sb, _) = memory_source(a), memory_source(b)
+    va, vb = a.get("peak_gb"), b.get("peak_gb")
+    if sa is None or sa != sb or va is None or vb is None:
+        return None
+    return round(vb - va, 3)
+
+
 def versions():
     out = {}
     for pkg in ("mlx", "mlx-lm", "mlx-optiq", "transformers"):
@@ -223,6 +268,7 @@ def run_mlx(model, tokenizer, text, args, template):
         "wall_s": round(wall, 3),
         "peak_gb": round(mx.get_peak_memory() / 1e9, 3),
         "peak_gb_source": "mx_peak",
+        "memory": memory_record("mx_peak", round(mx.get_peak_memory() / 1e9, 3)),
         "finish_reason": resp.finish_reason,
         "text": "".join(parts).strip(),
         "prep_s": round(t_engine - t0, 4),
@@ -326,6 +372,9 @@ def run_http(text, args, template):
         "wall_s": round(wall, 3),
         "peak_gb": round(peak, 3) if peak else None,
         "peak_gb_source": "server_rss" if peak else None,
+        "memory": memory_record(
+            "server_rss" if peak else None, round(peak, 3) if peak else None,
+            None if peak else "no --server-pid" if sampler is None else "sampler read no RSS"),
         "finish_reason": finish,
         "text": "".join(parts).strip(),
         "reasoning_chars": len("".join(reasoning_parts)),
@@ -506,6 +555,7 @@ def main():
                                 "ttft_scope", "decode_min_tokens")},
         "load_s": base.get("load_s"),
         "load_peak_gb": base.get("load_peak_gb"),
+        "load_peak_gb_source": "mx_peak" if "load_peak_gb" in base else None,
         "base_url": base.get("base_url"),
         "runs_ok": sum(1 for r in kept if r.get("ok")),
         "runs_failed": sum(1 for r in rows if not r.get("ok")),
@@ -539,6 +589,16 @@ def main():
     # absent, engine cannot serve the checkpoint) is decided by run_bench.py.
     complete = not summary["runs_failed"] and not any(
         not p["warmup_ok"] or p["kept_ok"] < args.trials for p in summary["prompts"].values())
+    # One basis per run: a mixed or absent set is recorded, never averaged over.
+    mem = [r["memory"] for r in kept if r.get("ok") and r.get("memory")]
+    srcs = sorted({m["source"] for m in mem if m["source"]})
+    one = MEMORY_BASES.get(srcs[0], {}) if len(srcs) == 1 else {}
+    summary["memory"] = {
+        "source": srcs[0] if len(srcs) == 1 else None, "sources_seen": srcs, "unit": MEMORY_UNIT,
+        "method": one.get("method"), "scope": one.get("scope"), "phase": one.get("phase"),
+        "unavailable_rows": sum(1 for m in mem if not m["available"]),
+        "weights_gb_is": "checkpoint file size, not runtime memory",
+    }
     summary["outcome"] = ("completed" if complete
                           else "partial" if any(r.get("ok") for r in rows) else "failed")
     summary["publishable"] = complete and not problems

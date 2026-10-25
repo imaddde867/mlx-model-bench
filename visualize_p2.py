@@ -17,6 +17,7 @@ import json
 import statistics
 from pathlib import Path
 
+import bench
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -32,7 +33,7 @@ PANELS = [  # (metric, title, prompts, log, annotate, skip_cached)
     # cached-prefix time), so cached rows are excluded from this panel on purpose.
     ("prefill_tps", "Prefill tok/s (higher is better)", ["short", "medium", "long"], True, "%.0f", True),
     ("decode_tps", "Decode tok/s, prefill excluded (higher is better)", ["decode-short", "decode-long"], False, "%.0f", False),
-    ("peak_gb", "Peak memory, GB (lower is better)", ["short", "long"], False, "%.2f", False),
+    ("peak_gb", "Peak memory, GB decimal (lower is better)", ["short", "long"], False, "%.2f", False),
 ]
 
 
@@ -89,11 +90,25 @@ def main():
     order = {"nemotron-3.5-bolt": 0, "minicpm5-2b": 1, "spark-x2.5-4b": 2, "lfm2.5-8b-a1b": 3}
     series.sort(key=lambda s: (order.get(s["model_id"], 99), s["checkpoint"], s["transport"]))
 
-    fig, axes = plt.subplots(2, 2, figsize=(19, 10.5))
+    # Memory gets one panel per recorded source: allocator peaks and server RSS
+    # never share an axis, so they cannot be ranked against each other.
+    panels = []
+    for pn in PANELS:
+        if pn[0] != "peak_gb":
+            panels.append((*pn, None))
+        else:
+            panels += [(*pn, lab) for lab in sorted({bench.memory_label(s["summary"]) for s in series})]
+    rows_n = (len(panels) + 1) // 2
+    fig, axes = plt.subplots(rows_n, 2, figsize=(19, 5.25 * rows_n), squeeze=False)
     axes = axes.ravel()
+    for extra in axes[len(panels):]:
+        extra.set_visible(False)
 
-    for ax, (metric, title, prompts, log, fmt, skip_cached) in zip(axes, PANELS):
-        panel = [s for s in series if not (skip_cached and s["cached"])]
+    for ax, (metric, title, prompts, log, fmt, skip_cached, only) in zip(axes, panels):
+        panel = [s for s in series if not (skip_cached and s["cached"])
+                 and (only is None or bench.memory_label(s["summary"]) == only)]
+        if only:
+            title += f" [{only}]"
         prompts = [p for p in prompts if any(s["summary"]["prompts"].get(p, {}).get(metric) for s in panel)]
         if not prompts:
             ax.set_visible(False)
@@ -105,7 +120,7 @@ def main():
                 m = s["summary"]["prompts"].get(p, {}).get(metric)
                 if not m:
                     continue
-                xs.append(j + (i - (len(series) - 1) / 2) * w)
+                xs.append(j + (i - (len(panel) - 1) / 2) * w)
                 med.append(m["median"])
                 lo.append(m["median"] - m["min"])
                 hi.append(m["max"] - m["median"])
@@ -139,6 +154,10 @@ def main():
         ax.set_title(title, fontsize=11)
         if log:
             ax.set_yscale("log")
+        if metric == "peak_gb":
+            ax.text(0.01, 0.98, "Not comparable with other memory panels (different basis; neither is GPU VRAM).\n"
+                    "weights_gb is file size, not runtime memory.",
+                    transform=ax.transAxes, va="top", fontsize=7.5)
         ax.grid(axis="y", alpha=0.25)
         ax.spines[["top", "right"]].set_visible(False)
 
