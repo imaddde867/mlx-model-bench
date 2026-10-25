@@ -1,0 +1,31 @@
+{
+  "model": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/models/minicpm5-2b-optiq",
+  "engine": "mlx_lm",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "host": "arm64 27.0.1",
+  "max_tokens": 32,
+  "load_s": 1.79,
+  "load_peak_gb": 1.93,
+  "prompt_tokens": 30,
+  "gen_s": 0.36,
+  "completion_tokens": 3,
+  "peak_gb": 2.14,
+  "sample": "391.",
+  "deterministic": true,
+  "sanity": true,
+  "ok": true,
+  "weights_fingerprint": "36b6f132b6d81304b6e1a817e239df3f37d8aaacd078aa3622b19cb54c0e7c53",
+  "model_id": "minicpm5-2b",
+  "checkpoint": "optiq-4bit",
+  "hf_repo": "mlx-community/MiniCPM5-2B-OptiQ-4bit",
+  "weights_gb": 1.94,
+  "bits_per_weight": 6.17,
+  "template_kwargs": {
+    "enable_thinking": false
+  }
+}
