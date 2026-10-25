@@ -72,6 +72,12 @@ third-party. That distinction goes in every table the row appears in.
 - **Integrity before measurement.** `run_bench.py --phase fetch` verifies every
   weight file against the Hub's `sha256` and writes a provenance record. No
   checksum, no row — a mismatched quant is a different file than the one named.
+- **The gate is code, not convention.** `gates.py` refuses P2/P3 (via
+  `run_bench.py` and direct `bench.py` / `run_p3.py`) unless the checkpoint has a
+  provenance record with a Hub revision and a matching sha256 for every weight file
+  (a size-only match does not count), and a P0 row that passed, stamped with that
+  provenance. Re-fetching invalidates old P0 rows. Old results are not
+  retroactively validated: the baseline's rows predate the gate.
 - **Determinism is verified at P0** (same prompt twice, must match exactly). If a
   model's greedy output is not reproducible, its medians are not comparable and
   the row is reported as such.

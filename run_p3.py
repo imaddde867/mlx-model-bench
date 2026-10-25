@@ -22,6 +22,7 @@ import sys
 import time
 from pathlib import Path
 
+import gates
 import registry
 from p3_suite import CHECKERS, INSTR_PROMPTS, MATH_PROMPTS, QUALITY_PROMPTS, TOOL_PROMPTS
 
@@ -176,6 +177,10 @@ def main():
     tags = args.checkpoints or [c.tag for c in cfg.available_checkpoints]
     if not tags:
         print(f"no checkpoint of {cfg.id} is downloaded under models/", file=sys.stderr)
+        return 1
+
+    if gates.refuse(cfg, [cfg.checkpoint(t) for t in tags], args.out):
+        print("refusing to measure: provenance/P0 gate failed", file=sys.stderr)
         return 1
 
     out_dir = Path(args.out) / cfg.id / "p3"

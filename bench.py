@@ -39,6 +39,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+import gates
 import registry
 
 ROOT = Path(__file__).resolve().parent
@@ -278,6 +279,9 @@ def main():
     cfg = registry.get_model(args.model)
     ckpt = cfg.checkpoint(args.checkpoint)
     template = json.loads(args.template_kwargs) if args.template_kwargs else cfg.template_kwargs
+    if gates.refuse(cfg, [ckpt], args.out):
+        print("refusing to measure: provenance/P0 gate failed", file=sys.stderr)
+        return 1
 
     # A non-greedy run must never land in the greedy row's directory: it is a
     # labelled deviation, and silently replacing a published summary is the one

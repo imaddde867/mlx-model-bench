@@ -75,7 +75,13 @@ def main():
             row["deterministic"] = again == out
             if again != out:
                 row["repeat_sample"] = again.strip()[:200]
-        row["ok"] = True
+        row["sanity"] = "391" in out
+        row["ok"] = row["sanity"] and row.get("deterministic", False)
+        if not row["ok"]:
+            row["error"] = ("sanity answer wrong or empty" if not row["sanity"]
+                            else "greedy output differs between two identical runs"
+                            if row.get("deterministic") is False
+                            else "determinism check skipped")
     except Exception as e:  # a failed arm is a P0 result, not a crash
         row["load_s"] = round(time.perf_counter() - t0, 2)
         row["ok"] = False
