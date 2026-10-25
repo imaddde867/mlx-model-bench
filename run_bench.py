@@ -38,6 +38,8 @@ import gates
 import registry
 
 ROOT = Path(__file__).resolve().parent
+DEFAULT_PROMPTS = ["short", "medium", "long", "decode-short", "decode-long"]
+DEFAULT_MAX_TOKENS = 256
 
 
 def optiq_exe():
@@ -461,8 +463,8 @@ def main():
                     choices=("4bit", "optiq-4bit", "8bit"),
                     help="checkpoint tiers to run; 8bit is a reference tier")
     ap.add_argument("--trials", type=int, default=5)
-    ap.add_argument("--max-tokens", type=int, default=256)
-    ap.add_argument("--prompts", nargs="+", default=["short", "medium", "long", "decode-short", "decode-long"])
+    ap.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
+    ap.add_argument("--prompts", nargs="+", default=DEFAULT_PROMPTS)
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
 
