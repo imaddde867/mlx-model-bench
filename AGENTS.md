@@ -113,6 +113,7 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 - [x] P3 — accuracy (30) + quality (8) prompt sets, blind evaluation, report in `REPORT.md` §1.2–1.5.
 - [x] R0 — harness generalized: registry-driven `bench.py`/`run_p3.py`/`run_bench.py`, multi-model chart, cross-model `blind.py` + `score_quality.py`, results moved to `results/<model>/`.
 - [x] R0.5 — tier matrix: every model at `4bit` / `optiq-4bit` / `8bit` (reference), three arms each (`inproc`, `http`, `optiq` engine attempted), `run_bench.py --tiers` to select. Fairness ledger in `MODELS.md`.
+- [x] R0.6 — `readiness.py`: offline READY / NOT READY gate (unit suite, provenance, P0, trials, versions, output collisions) before any matrix run; fixture-tested in `tests/test_readiness.py`. Passing it is not the independently reviewed clean run.
 - [ ] R1 — MiniCPM5-2B: fetch (sha256 gate), P0 (determinism gate), P2, P2-optiq, P3.
 - [ ] R2 — Spark-X2.5-4B: same. Remember: its 4-bit and 8-bit tiers are community quants, no vendor conversion exists.
 - [ ] R3 — LFM2.5-8B-A1B: same. The 9.02 GB 8-bit tier may fail the P0 memory gate on 16 GB — record that, do not drop the row.

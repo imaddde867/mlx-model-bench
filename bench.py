@@ -168,6 +168,10 @@ def memory_delta(a, b):
     return round(vb - va, 3)
 
 
+def host_string():
+    return f"{platform.machine()} macOS {platform.mac_ver()[0]} python {platform.python_version()}"
+
+
 def versions():
     out = {}
     for pkg in ("mlx", "mlx-lm", "mlx-optiq", "transformers"):
@@ -462,7 +466,7 @@ def main():
         "run_id": run_id,
         "transport": args.transport,
         "engine": args.engine,
-        "host": f"{platform.machine()} macOS {platform.mac_ver()[0]} python {platform.python_version()}",
+        "host": host_string(),
         "versions": versions(),
         "server_version": args.server_version,
         "max_tokens": args.max_tokens,

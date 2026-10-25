@@ -58,6 +58,7 @@ Full metadata, template-control traps and the comparability protocol:
 | `p0_load.py` | load gate: does this checkpoint run here, deterministically, at what cost |
 | `p3_suite.py`, `run_p3.py` | the fixed 30 accuracy + 8 quality prompts and their runner |
 | `blind.py`, `score_quality.py` | cross-model blind set (balanced slots) and scoring summary |
+| `readiness.py` | offline go/no-go before the matrix (suite + preconditions + checklist) |
 | `visualize_p2.py` | the chart: every model on the same axes |
 | `results/` | raw per-run JSON, one directory per model |
 
@@ -74,6 +75,27 @@ python3 -m unittest discover -s tests -v
 Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib` (and `mlx-optiq==0.7.3`
 in a separate venv to attempt the engine arm). No model is vendored: `registry.py` names
 every Hub repo, and `--phase fetch` downloads and verifies them.
+
+### Readiness check before the matrix
+
+```bash
+.venv-mlxlm/bin/python readiness.py [--models ...] [--tiers ...] [--out results] [--round r1]
+```
+
+One offline go/no-go: runs the unit suite above, then checks the planned run against
+`--out` read-only (registry and downloaded checkpoints, `gates.problems` provenance and
+P0 evidence, `--trials` >= 5, one mlx / mlx-lm / host across a model's rows, prompt files,
+blind-round inputs, and that no planned output path already exists). It loads no model,
+runs no benchmark and uses no network. Prints `READY` (exit 0) or `NOT READY` with every
+reason (exit 1), then the reproducibility checklist (host, runtimes, Hub revisions, prompt
+sha256, generation settings, trials, output paths). Existing results, including the
+historical `results/nemotron-3.5-bolt/*` baseline, count as collisions: narrow
+`--models/--tiers` or use another `--out`. The exception is `p3/accuracy_summary.json`,
+which `run_p3.py` always rewrites: narrowing `--tiers` cannot clear that collision, only a
+different `--out` or a later `run_p3.py` change can, so the baseline 8-bit row (R3b) stays
+`NOT READY` until then. `READY` is not
+the independently reviewed clean run, which is a separate future action; real P0 rows
+for R1-R3 do not exist yet, so the check reports `NOT READY` on the repo today.
 
 **To fetch fast, pull several checkpoints at once — not "with a faster transfer path".**
 On the pinned `huggingface_hub` 2.3.0, `HF_HUB_ENABLE_HF_TRANSFER=1` does nothing but emit a
