@@ -34,6 +34,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import gates
 import registry
 
 ROOT = Path(__file__).resolve().parent
@@ -85,12 +86,12 @@ def run(cmd, log_path, timeout=None):
 
 
 def hub_manifest(hf_repo):
-    """Filename -> {size, sha256} straight from the Hub, the same source P0.md
-    checked the baseline against."""
+    """(revision, {filename: {size, sha256}}) straight from the Hub, the same
+    source P0.md checked the baseline against."""
     url = f"https://huggingface.co/api/models/{hf_repo}?blobs=true"
     with urllib.request.urlopen(url, timeout=60) as r:
         d = json.load(r)
-    return {
+    return d.get("sha"), {
         s["rfilename"]: {"size": s.get("size"),
                           "sha256": (s.get("lfs") or {}).get("sha256")}
         for s in d.get("siblings", [])
@@ -109,9 +110,9 @@ def verify_checkpoint(ckpt):
     """Byte-for-byte check against the Hub. A quant that does not match its
     published hash is not the file the report claims to have measured."""
     record = {"hf_repo": ckpt.hf_repo, "checkpoint": ckpt.tag, "files": [],
-              "verified": None, "error": None}
+              "revision": None, "verified": None, "error": None}
     try:
-        manifest = hub_manifest(ckpt.hf_repo)
+        record["revision"], manifest = hub_manifest(ckpt.hf_repo)
     except Exception as e:
         record["error"] = f"manifest fetch failed: {type(e).__name__}: {e}"
         return record
@@ -139,23 +140,23 @@ def verify_checkpoint(ckpt):
                 entry["error"] = "sha256 mismatch"
             all_ok = all_ok and entry["ok"]
         else:
-            entry["note"] = "no Hub sha256 for this file; size matched only"
-            entry["ok"] = True
+            entry["error"] = "Hub publishes no sha256; a size match is not verification"
+            all_ok = False
         record["files"].append(entry)
-    record["verified"] = bool(all_ok and record["files"])
+    record["verified"] = bool(all_ok and record["files"] and record["revision"])
     return record
 
 
-def phase_fetch(cfg, out):
-    from huggingface_hub import snapshot_download
-
+def phase_fetch(cfg, out, selected):
     ok = True
     prov_dir = out / cfg.id / "p0"
     prov_dir.mkdir(parents=True, exist_ok=True)
-    for ckpt in cfg.checkpoints.values():
+    for ckpt in selected:
         if ckpt.available:
             print(f"  {ckpt.tag}: already at {ckpt.local_dir}")
         else:
+            from huggingface_hub import snapshot_download
+
             print(f"  {ckpt.tag}: downloading {ckpt.hf_repo} -> {ckpt.local_dir}")
             try:
                 snapshot_download(
@@ -195,19 +196,26 @@ def phase_fetch(cfg, out):
 
 
 def local(selected):
-    """Selected checkpoints that are actually on disk. A phase with nothing to do
-    must fail, not print 'done'."""
+    """Selected checkpoints that are actually on disk."""
     return [c for c in selected if c.available]
+
+
+def undownloaded(cfg, selected):
+    """Report selected tiers that are not on disk; a missing tier is a failure,
+    never a silent skip. True if any (or none selected)."""
+    missing = [c for c in selected if not c.available]
+    for c in missing:
+        print(f"  {cfg.id}/{c.tag}: selected but not downloaded ({c.local_dir}) — run --phase fetch")
+    return bool(missing) or not selected
 
 
 def phase_p0(cfg, out, selected):
     p0_dir = out / cfg.id / "p0"
     p0_dir.mkdir(parents=True, exist_ok=True)
-    if not local(selected):
-        print(f"  none of the selected tiers are downloaded ({cfg.id}) — run --phase fetch")
+    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, out, need_p0=False):
         return False
     all_ok = True
-    for ckpt in local(selected):
+    for ckpt in selected:
         log = out / cfg.id / "logs" / f"p0-{ckpt.tag}.log"
         rc = run(
             [sys.executable, str(ROOT / "p0_load.py"), str(ckpt.local_path),
@@ -226,7 +234,8 @@ def phase_p0(cfg, out, selected):
             print(f"  {ckpt.tag}: p0 produced no JSON row (see {log})")
             all_ok = False
             continue
-        row.update({"model_id": cfg.id, "checkpoint": ckpt.tag, "hf_repo": ckpt.hf_repo,
+        prov = json.loads((p0_dir / f"{ckpt.tag}-provenance.json").read_text())
+        row.update({"weights_fingerprint": gates.fingerprint(prov), "model_id": cfg.id, "checkpoint": ckpt.tag, "hf_repo": ckpt.hf_repo,
                     "weights_gb": ckpt.weights_gb, "bits_per_weight": ckpt.bits_per_weight,
                     "template_kwargs": cfg.template_kwargs})
         (p0_dir / f"{ckpt.tag}.json").write_text(json.dumps(row, indent=2))
@@ -252,10 +261,9 @@ def wait_for_server(url, timeout=240):
 
 def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
     ok = True
-    if not local(selected):
-        print(f"  none of the selected tiers are downloaded ({cfg.id}) — run --phase fetch")
+    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, out):
         return False
-    for ckpt in local(selected):
+    for ckpt in selected:
         # --out must be on every call: without it a smoke run overwrites the real
         # results directory, which is how a 1-trial check once ate a 5-trial set.
         args = [sys.executable, str(ROOT / "bench.py"),
@@ -325,10 +333,12 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
     produces a number, or it records why it cannot. An unmeasurable arm is a
     result, not an error, so it does not fail the run.
     """
-    targets = [c for c in local(selected) if "mlx-optiq" in c.engines]
+    targets = [c for c in selected if "mlx-optiq" in c.engines]
     if not targets:
         print("  no OptiQ checkpoint selected — engine arm skipped")
         return True
+    if undownloaded(cfg, targets) or gates.refuse(cfg, targets, out):
+        return False
     exe = optiq_exe()
     if exe is None:
         print("  .venv-optiq not present — engine arm unmeasurable here")
@@ -388,10 +398,9 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
 
 
 def phase_p3(cfg, out, selected):
-    tags = [c.tag for c in local(selected)]
-    if not tags:
-        print(f"  none of the selected tiers are downloaded ({cfg.id}) — run --phase fetch")
+    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, out):
         return False
+    tags = [c.tag for c in selected]
     log = out / cfg.id / "logs" / "p3.log"
     rc = run([sys.executable, str(ROOT / "run_p3.py"), "--model", cfg.id,
               "--checkpoints", *tags, "--out", str(out)], log, timeout=3600)
@@ -436,7 +445,7 @@ def main():
     for ph in phases:
         print(f"\n[{ph}]")   
         if ph == "fetch":
-            ok = phase_fetch(cfg, out)
+            ok = phase_fetch(cfg, out, selected)
         elif ph == "p0":
             ok = phase_p0(cfg, out, selected)
         elif ph == "p2":

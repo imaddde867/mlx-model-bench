@@ -11,6 +11,7 @@
       "local_sha256": "4c317e91ee2a000cf1094986bd4c4025c96c0a0dbd38a3adb8b3b31399eb2348"
     }
   ],
+  "revision": "d1392929adb5693640daeebe6b45e12a07a60b5a",
   "verified": true,
   "error": null,
   "model_id": "minicpm5-2b",

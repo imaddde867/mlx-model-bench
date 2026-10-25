@@ -19,6 +19,7 @@
       "local_sha256": "0d9d40a3435f6a483e9ee597ef0bfb9dcbd747f5b87bf13b5caf6267e374d41f"
     }
   ],
+  "revision": "c663adcc7d9d82abc4d482cb4f226e0a7eed3170",
   "verified": true,
   "error": null,
   "model_id": "lfm2.5-8b-a1b",

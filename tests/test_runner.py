@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import bench
+import gates
 import registry
 import run_bench
 
@@ -108,6 +109,10 @@ def install_fake_mlx(stream_error=False):
 class RunnerTests(unittest.TestCase):
     def setUp(self):
         self.cfg = registry.get_model("nemotron-3.5-bolt")
+        # Gate behaviour is covered in test_gates.py; these tests exercise the runner.
+        patcher = patch.object(gates, "refuse", return_value=False)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_stats_reports_median_range_and_successful_sample_count(self):
         self.assertEqual(bench.stats([1.0, None, 3.0]), {
