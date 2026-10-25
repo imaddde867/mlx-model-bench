@@ -52,6 +52,7 @@ Full metadata, template-control traps and the comparability protocol:
 | `P0.md` | load tests; why `optiq serve` cannot run the baseline on 16 GB |
 | `registry.py` | single source of truth: models, checkpoints, sizes, template controls |
 | `run_bench.py` | one model end to end: fetch → p0 gate → p2 → p2-optiq → p3 |
+| `fetch_all.py` | the whole roster at once, in parallel; verification stays in `run_bench.py` |
 | `bench.py` | speed/TTFT/memory harness, one JSON per run |
 | `p0_load.py` | load gate: does this checkpoint run here, deterministically, at what cost |
 | `p3_suite.py`, `run_p3.py` | the fixed 30 accuracy + 8 quality prompts and their runner |
@@ -61,16 +62,25 @@ Full metadata, template-control traps and the comparability protocol:
 
 ## Reproduce
 
-Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib`, `hf_transfer` (and
-`mlx-optiq==0.7.3` in a separate venv to attempt the engine arm). No model is vendored:
-`registry.py` names every Hub repo, and `--phase fetch` downloads and verifies them.
+Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib` (and `mlx-optiq==0.7.3`
+in a separate venv to attempt the engine arm). No model is vendored: `registry.py` names
+every Hub repo, and `--phase fetch` downloads and verifies them.
 
-**Set `HF_HUB_ENABLE_HF_TRANSFER=1` before fetching.** Measured here, the Hub caps a single
-connection at ~2 MB/s while the parallel transfer path sustains ~15 MB/s — the difference
-between 45 minutes and 11 hours for the full 43 GB roster. Downloads resume; a killed fetch
-costs only the file in flight.
+**To fetch fast, pull several checkpoints at once — not "with a faster transfer path".**
+On the pinned `huggingface_hub` 2.3.0, `HF_HUB_ENABLE_HF_TRANSFER=1` does nothing but emit a
+`FutureWarning` that `hf_transfer` is no longer used, and `HF_XET_HIGH_PERFORMANCE` does
+nothing for these repos either: they are LFS, not Xet. Concurrency is the lever that does
+exist. One stream tops out near 4.5 MB/s here, while six concurrent `snapshot_download`s
+sustain 35–45 MB/s aggregate, which is the difference between ~15 minutes and hours for the
+54 GB download roster (51 GiB on disk). Downloads resume, so a killed fetch costs only the
+files in flight — and a half-written shard leaves an `.incomplete` marker that
+`Checkpoint.available` reads as *not downloaded*, so nothing gets measured from a partial
+file.
 
 ```bash
+.venv-mlxlm/bin/python fetch_all.py --jobs 6          # every checkpoint, in parallel
+.venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase fetch   # sha256 gate, per model
+
 # inspect the matrix: tiers, sizes, bpw, publisher, what is already on disk
 .venv-mlxlm/bin/python registry.py
 .venv-mlxlm/bin/python bench.py --list

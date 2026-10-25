@@ -161,7 +161,8 @@ def phase_fetch(cfg, out):
                 snapshot_download(
                     ckpt.hf_repo,
                     local_dir=str(ckpt.local_path),
-                    allow_patterns=["*.json", "*.safetensors", "*.jinja", "*.txt", "*.model"],
+                    allow_patterns=["*.json", "*.safetensors", "*.jinja", "*.txt", "*.model",
+                                    "*.py", "*.md", "*LICENSE*", "*.png", ".gitattributes"],
                 )
                 size = sum(f.stat().st_size for f in ckpt.local_path.glob("*")
                            if f.is_file() and not f.name.startswith("."))
