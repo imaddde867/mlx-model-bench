@@ -190,9 +190,15 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                 if s and (s.get("trials") or 0) < bench.MIN_PUBLISHABLE_TRIALS:
                     flag("trials", f"{rel(path)}: row recorded {s.get('trials')} trials < {bench.MIN_PUBLISHABLE_TRIALS}")
         summary = out / cfg.id / "p3" / "accuracy_summary.json"
-        if selected and summary.exists():
-            flag("collision", f"{rel(summary)} exists; run_p3.py would overwrite it — narrowing --tiers "
-                                  "cannot clear this; use a different --out or change run_p3.py first")
+        try:
+            done = run_p3.published_tags(summary.parent) if selected else {}
+        except (OSError, ValueError, AttributeError) as e:
+            done = {}
+            flag("collision", f"{rel(summary)} unreadable ({e}); run_p3.py would refuse to merge into it")
+        for ck in selected:
+            if ck.tag in done:
+                flag("collision", f"{rel(summary)} already has an entry for {ck.tag}; run_p3.py would refuse — "
+                                  "narrow --tiers or use another --out")
         for p in version_problems(cfg, out, env):
             flag("versions", p)
         plan.append(summary)

@@ -90,10 +90,9 @@ runs no benchmark and uses no network. Prints `READY` (exit 0) or `NOT READY` wi
 reason (exit 1), then the reproducibility checklist (host, runtimes, Hub revisions, prompt
 sha256, generation settings, trials, output paths). Existing results, including the
 historical `results/nemotron-3.5-bolt/*` baseline, count as collisions: narrow
-`--models/--tiers` or use another `--out`. The exception is `p3/accuracy_summary.json`,
-which `run_p3.py` always rewrites: narrowing `--tiers` cannot clear that collision, only a
-different `--out` or a later `run_p3.py` change can, so the baseline 8-bit row (R3b) stays
-`NOT READY` until then. `READY` is not
+`--models/--tiers` or use another `--out`. `p3/accuracy_summary.json` is merged per tier by `run_p3.py`, so it collides only for tiers
+that already have an entry there; other tiers (e.g. the baseline 8-bit row, R3b) are not blocked by it.
+`READY` is not
 the independently reviewed clean run, which is a separate future action; real P0 rows
 for R1-R3 do not exist yet, so the check reports `NOT READY` on the repo today.
 

@@ -141,11 +141,19 @@ class ReadinessTests(unittest.TestCase):
         summary(self.out, HISTORICAL, "mlx-4bit-inproc")
         before = base.joinpath("summary.json").read_text()
         self.assertBlocked("collision", f"{HISTORICAL}/mlx-4bit-inproc")
-        for extra in (self.out / "fx-a/p3/accuracy_summary.json", self.out / "blind-r1"):
-            extra.parent.mkdir(parents=True, exist_ok=True)
-            extra.mkdir() if extra.name.startswith("blind") else extra.write_text("{}")
+        for extra in (self.out / "blind-r1",):
+            extra.mkdir(parents=True, exist_ok=True)
             self.assertBlocked("collision", extra.name)
         self.assertEqual(base.joinpath("summary.json").read_text(), before)  # evaluate wrote nothing
+
+    def test_p3_summary_collides_only_for_published_tags(self):
+        p3 = self.out / "fx-a/p3"
+        p3.mkdir(parents=True)
+        (p3 / "accuracy_summary.json").write_text(json.dumps({"checkpoints": {"mlx-8bit": {}}}))
+        bad, _ = self.run_ev(models=("fx-a",))  # planned tiers: mlx-4bit, optiq-4bit
+        self.assertFalse([b for b in bad if b.startswith("[collision]")], bad)
+        (p3 / "accuracy_summary.json").write_text(json.dumps({"checkpoints": {"optiq-4bit": {}}}))
+        self.assertBlocked("collision", "entry for optiq-4bit", models=("fx-a",))
 
     def test_speed_results_audit(self):
         summary(self.out, "fx-a", "mlx-4bit-http", outcome="partial", publishable=False)
