@@ -12,10 +12,13 @@ supposed to be opened until scoring is done.
 Default is one row per model (its first checkpoint, the plain 4-bit), because
 scoring 8 prompts x 8 checkpoints by hand is where blind evaluation dies.
 
-Writes results/blind-<round>/{prompts.json,key.json,scores-template.json}.
+Writes results/blind-<round>/{prompts.json,key.json,scores-template.json}. prompts.json and the
+template carry no checkpoint IDs; key.json holds the mapping, seed, checkpoint set and
+expected prompt IDs. Missing/duplicate/unexpected responses abort the round.
 """
 
 import argparse
+import hashlib
 import json
 import random
 from pathlib import Path
@@ -25,6 +28,9 @@ import registry
 ROOT = Path(__file__).resolve().parent
 RESULTS = ROOT / "results"
 LABELS = "ABCDEFGH"
+CATS = ("accuracy", "coherence", "instruction_fit")
+QUALITY_DIR = ROOT / "prompts" / "quality"
+N_PROMPTS = 8
 
 # Pre-refactor result files keyed by arm number, for the Nemotron baseline.
 LEGACY_ARM = {"arm1": "mlx-4bit", "arm3": "optiq-4bit"}
@@ -69,6 +75,73 @@ def load_runs():
     return found
 
 
+def expected_ids():
+    ids = sorted(p.stem for p in QUALITY_DIR.glob("*.txt"))
+    if len(ids) != N_PROMPTS:
+        raise SystemExit(f"expected {N_PROMPTS} quality prompts in {QUALITY_DIR}, found {len(ids)}")
+    return ids
+
+
+def check_runs(runs, expected):
+    """Every selected row must answer each expected prompt exactly once."""
+    problems, seen = [], set()
+    if len(runs) > len(LABELS):
+        problems.append(f"{len(runs)} rows but only {len(LABELS)} slot labels")
+    for r in runs:
+        if r["label"] in seen:
+            problems.append(f"{r['label']}: selected twice (duplicate result files)")
+        seen.add(r["label"])
+        ids = [q["id"] for q in r["runs"]]
+        for qid in sorted({i for i in ids if ids.count(i) > 1}):
+            problems.append(f"{r['label']}: duplicate response for {qid}")
+        for qid in sorted(set(expected) - set(ids)):
+            problems.append(f"{r['label']}: missing response for {qid}")
+        for qid in sorted(set(ids) - set(expected)):
+            problems.append(f"{r['label']}: unexpected prompt {qid}")
+    if problems:
+        raise SystemExit("incomplete round, not blinding:\n  " + "\n  ".join(problems))
+
+
+def check_balance(slot_use, n_prompts):
+    """Each row must hold each slot floor or ceil of n_prompts/n_rows times."""
+    n = len(slot_use)
+    lo, hi = n_prompts // n, -(-n_prompts // n)
+    for label, counts in slot_use.items():
+        if sum(counts) != n_prompts or not all(lo <= c <= hi for c in counts):
+            raise SystemExit(f"unbalanced slots for {label}: {counts}, need each in {lo}..{hi}")
+
+
+def assign(runs, expected, seed):
+    """Balanced slot assignment -> (prompts, key, score template, slot_use). Deterministic in seed."""
+    by_id = {r["label"]: {q["id"]: q for q in r["runs"]} for r in runs}
+    # Slot assignment is balanced, not just shuffled: a rater who anchors on
+    # "Model A" would otherwise pay a model that happens to land in slot A five
+    # times out of eight. A rotation over a random base order gives each row each
+    # slot within one pass through the prompt list.
+    base_order = [r["label"] for r in runs]
+    random.Random(seed).shuffle(base_order)
+    slot_use = {label: [0] * len(base_order) for label in base_order}
+
+    prompts, key, template = [], {}, []
+    for i, qid in enumerate(expected):
+        k = i % len(base_order)
+        labels = base_order[k:] + base_order[:k]
+        first = by_id[labels[0]][qid]
+        row = {"id": qid, "task": first["task"], "prompt": first["prompt"], "rubric": first["rubric"]}
+        key[qid] = {}
+        score_row = {"id": qid, "task": first["task"]}
+        for slot, label in enumerate(labels):
+            slot_name = f"Model {LABELS[slot]}"
+            row[slot_name] = by_id[label][qid]["response"]
+            key[qid][slot_name] = label
+            slot_use[label][slot] += 1
+            score_row[slot_name] = {c: None for c in CATS} | {"total": None, "notes": ""}
+        prompts.append(row)
+        template.append(score_row)
+    check_balance(slot_use, len(expected))
+    return prompts, key, template, slot_use
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--round", default="r1", help="label for this blind round, e.g. r1")
@@ -104,71 +177,42 @@ def main():
         raise SystemExit(f"need at least 2 result sets to blind, found {len(runs)}: "
                          + ", ".join(r["label"] for r in runs))
 
-    by_id = {}
-    for r in runs:
-        for q in r["runs"]:
-            by_id.setdefault(q["id"], {})[r["label"]] = q
-
-    complete = [qid for qid, entries in by_id.items() if len(entries) == len(runs)]
-    missing = sorted(set(by_id) - set(complete))
-    if missing:
-        print(f"warning: {len(missing)} prompt(s) missing a model, excluded: {missing}")
-    if not complete:
-        raise SystemExit("no quality prompt was answered by every selected row")
-
-    rng = random.Random(args.seed)
-
-    # Slot assignment is balanced, not just shuffled: a rater who anchors on
-    # "Model A" would otherwise pay a model that happens to land in slot A five
-    # times out of eight. A rotation over a random base order gives each row each
-    # slot within one pass through the prompt list.
-    base_order = list(runs)
-    rng.shuffle(base_order)
-    slot_use = {r["label"]: [0] * len(base_order) for r in runs}
-
-    prompts, key, template = [], {}, []
-    for i, qid in enumerate(sorted(complete)):
-        entries = by_id[qid]
-        k = i % len(base_order)
-        ordered = base_order[k:] + base_order[:k]
-        labels = [r["label"] for r in ordered]
-        row = {"id": qid, "task": entries[labels[0]]["task"],
-               "prompt": entries[labels[0]]["prompt"], "rubric": entries[labels[0]]["rubric"]}
-        key[qid] = {}
-        score_row = {"id": qid, "task": row["task"]}
-        for slot, label in enumerate(labels):
-            slot_name = f"Model {LABELS[slot]}"
-            row[slot_name] = entries[label]["response"]
-            key[qid][slot_name] = label
-            slot_use[label][slot] += 1
-            score_row[slot_name] = {
-                "accuracy": None, "coherence": None, "instruction_fit": None,
-                "total": None, "notes": "",
-            }
-        prompts.append(row)
-        template.append(score_row)
+    runs = sorted(runs, key=lambda r: r["label"])  # seed -> order must not depend on glob order
+    expected = expected_ids()
+    check_runs(runs, expected)
+    prompts, key, template, slot_use = assign(runs, expected, args.seed)
 
     out_dir = Path(args.out) / f"blind-{args.round}"
+    if (out_dir / "scores.json").exists():
+        raise SystemExit(f"{out_dir}/scores.json exists — rebuilding would orphan it; pick a new --round")
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "prompts.json").write_text(json.dumps(prompts, indent=2))
-    (out_dir / "key.json").write_text(json.dumps(key, indent=2))
+    prompts_text = json.dumps(prompts, indent=2)
+    (out_dir / "prompts.json").write_text(prompts_text)
+    # Sealed: the only file that maps slots to checkpoints. It also pins the seed,
+    # the exact checkpoint set and expected prompt IDs for later audit.
+    (out_dir / "key.json").write_text(json.dumps({
+        "round": args.round,
+        "seed": args.seed,
+        "rows": [r["label"] for r in runs],
+        "expected_prompt_ids": expected,
+        "prompts_sha256": hashlib.sha256(prompts_text.encode()).hexdigest(),
+        "slot_balance": slot_use,
+        "key": key,
+    }, indent=2))
     (out_dir / "scores-template.json").write_text(json.dumps({
-        "rubric_categories": ["accuracy", "coherence", "instruction_fit"],
+        "rubric_categories": list(CATS),
         "scale": "1-5 per category (total 15 per prompt)",
         "round": args.round,
-        "rows": [r["label"] for r in runs],
-        "slot_balance": slot_use,
         "scores": template,
     }, indent=2))
 
     print(f"{len(prompts)} prompts x {len(runs)} rows -> {out_dir}/prompts.json")
     for r in runs:
         print(f"  row present: {r['label']}")
-    print(f"key:      {out_dir}/key.json          (do not read until scored)")
+    print(f"key:      {out_dir}/key.json          (do not read until scored; holds seed {args.seed})")
     print(f"template: {out_dir}/scores-template.json -> copy to scores.json and fill in")
     for label, counts in slot_use.items():
-        spread = max(counts) - min(counts)
-        print(f"  slots {label:32s} {counts}" + ("  UNBALANCED" if spread > 1 else ""))
+        print(f"  slots {label:32s} {counts}")
 
 
 if __name__ == "__main__":
