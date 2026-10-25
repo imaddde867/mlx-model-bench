@@ -394,7 +394,7 @@ def main():
         "load_peak_gb": base.get("load_peak_gb"),
         "base_url": base.get("base_url"),
         "runs_ok": sum(1 for r in kept if r.get("ok")),
-        "runs_failed": sum(1 for r in kept if not r.get("ok")),
+        "runs_failed": sum(1 for r in rows if not r.get("ok")),
         "reasoning_only_runs": sum(1 for r in kept if r.get("reasoning_only")),
         "prompts": {},
     }
@@ -407,7 +407,7 @@ def main():
         }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps({"summary": str(out_dir / "summary.json"), **summary}))
-    return 0
+    return 1 if summary["runs_failed"] else 0
 
 
 if __name__ == "__main__":
