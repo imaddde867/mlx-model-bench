@@ -54,6 +54,7 @@ Full metadata, template-control traps and the comparability protocol:
 | `run_bench.py` | one model end to end: fetch → p0 gate → p2 → p2-optiq → p3 |
 | `fetch_all.py` | the whole roster at once, in parallel; verification stays in `run_bench.py` |
 | `bench.py` | speed/TTFT/memory harness, one JSON per run |
+| `tests/test_runner.py` | offline fixture-driven regression suite (Python standard library only) |
 | `p0_load.py` | load gate: does this checkpoint run here, deterministically, at what cost |
 | `p3_suite.py`, `run_p3.py` | the fixed 30 accuracy + 8 quality prompts and their runner |
 | `blind.py`, `score_quality.py` | cross-model blind set (balanced slots) and scoring summary |
@@ -61,6 +62,14 @@ Full metadata, template-control traps and the comparability protocol:
 | `results/` | raw per-run JSON, one directory per model |
 
 ## Reproduce
+
+Run the hardware-independent regression suite without models, MLX, network
+access, or third-party test dependencies (also run by GitHub Actions on pushes
+and pull requests):
+
+```bash
+python3 -m unittest discover -s tests -v
+```
 
 Needs a venv with `mlx-lm==0.32.2`, `mlx==0.32.4`, `matplotlib` (and `mlx-optiq==0.7.3`
 in a separate venv to attempt the engine arm). No model is vendored: `registry.py` names

@@ -274,14 +274,17 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
         port = free_port()
         print(f"  {ckpt.tag}: mlx_lm.server on :{port}")
         slog = out / cfg.id / "logs" / f"p2-{ckpt.tag}-server.log"
-        server = subprocess.Popen(
-            [sys.executable, "-m", "mlx_lm.server", "--model", str(ckpt.local_path),
-             "--port", str(port)],
-            stdout=open(slog, "w"), stderr=subprocess.STDOUT,
-        )
+        slog.parent.mkdir(parents=True, exist_ok=True)
+        with open(slog, "w") as server_log:
+            server = subprocess.Popen(
+                [sys.executable, "-m", "mlx_lm.server", "--model", str(ckpt.local_path),
+                 "--port", str(port)],
+                stdout=server_log, stderr=subprocess.STDOUT,
+            )
         try:
             if not wait_for_server(f"http://127.0.0.1:{port}"):
                 print(f"    server never became ready; see {slog}")
+                log_tail(slog)
                 ok = False
                 continue
             base = f"http://127.0.0.1:{port}"
@@ -289,14 +292,22 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
                          "--server-pid", str(server.pid),
                          "--server-version", server_version]
             print(f"  {ckpt.tag}: HTTP, cache-busted")
-            run([*http_args, "--prompts", *prompts],
-                out / cfg.id / "logs" / f"p2-{ckpt.tag}-http.log")
+            http_log = out / cfg.id / "logs" / f"p2-{ckpt.tag}-http.log"
+            http_rc = run([*http_args, "--prompts", *prompts], http_log)
+            if http_rc != 0:
+                print(f"    HTTP benchmark exited {http_rc}")
+                log_tail(http_log)
+                ok = False
 
             print(f"  {ckpt.tag}: HTTP, prefix-cache hit (labelled row)")
             cache_prompts = [p for p in prompts if p in ("short", "medium", "long")]
-            run([*http_args, "--no-nonce", "--tag", "cached",
-                 "--prompts", *(cache_prompts or prompts)],
-                out / cfg.id / "logs" / f"p2-{ckpt.tag}-http-cached.log")
+            cache_log = out / cfg.id / "logs" / f"p2-{ckpt.tag}-http-cached.log"
+            cache_rc = run([*http_args, "--no-nonce", "--tag", "cached",
+                            "--prompts", *(cache_prompts or prompts)], cache_log)
+            if cache_rc != 0:
+                print(f"    cached HTTP benchmark exited {cache_rc}")
+                log_tail(cache_log)
+                ok = False
         finally:
             server.terminate()
             try:
@@ -332,15 +343,17 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
         run_dir.mkdir(parents=True, exist_ok=True)
         print(f"  {ckpt.tag}: {exe.name} serve on :{port} ({version})")
         slog = out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine.log"
-        slog.parent.mkdir(parents=True, exist_ok=True)
         cmd = [str(exe), "serve", "--model", str(ckpt.local_path), "--port", str(port)]
         if exe.name == "python":
             cmd = [str(exe), "-m", "mlx_optiq", "serve", "--model", str(ckpt.local_path),
                    "--port", str(port)]
-        server = subprocess.Popen(cmd, stdout=open(slog, "w"), stderr=subprocess.STDOUT)
+        slog.parent.mkdir(parents=True, exist_ok=True)
+        with open(slog, "w") as server_log:
+            server = subprocess.Popen(cmd, stdout=server_log, stderr=subprocess.STDOUT)
         try:
             if not wait_for_server(f"http://127.0.0.1:{port}"):
                 print(f"    server never became ready; recorded as unmeasurable ({slog})")
+                log_tail(slog)
                 (run_dir / "unmeasurable.json").write_text(json.dumps({
                     "model_id": cfg.id, "checkpoint": ckpt.tag, "engine": version,
                     "reason": "server did not answer /v1/models", "log": str(slog),
