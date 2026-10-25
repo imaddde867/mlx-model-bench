@@ -1,0 +1,97 @@
+{
+  "model_id": "minicpm5-2b",
+  "model_name": "MiniCPM5-2B",
+  "timestamp": "2026-10-25 15:38:04 UTC",
+  "checkpoints": {
+    "mlx-4bit": {
+      "name": "MiniCPM5-2B (mlx-4bit)",
+      "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+      "weights_gb": 1.43,
+      "bits_per_weight": 4.55,
+      "load_time_s": 1.02,
+      "load_peak_gb": 1.416,
+      "accuracy": {
+        "total_passed": 19,
+        "total_prompts": 30,
+        "accuracy_pct": 63.3,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 3,
+            "total": 12,
+            "accuracy_pct": 25.0
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 6,
+            "total": 8,
+            "accuracy_pct": 75.0
+          }
+        }
+      }
+    },
+    "optiq-4bit": {
+      "name": "MiniCPM5-2B (optiq-4bit)",
+      "hf_repo": "mlx-community/MiniCPM5-2B-OptiQ-4bit",
+      "weights_gb": 1.94,
+      "bits_per_weight": 6.17,
+      "load_time_s": 1.25,
+      "load_peak_gb": 1.926,
+      "accuracy": {
+        "total_passed": 17,
+        "total_prompts": 30,
+        "accuracy_pct": 56.7,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 1,
+            "total": 12,
+            "accuracy_pct": 8.3
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 6,
+            "total": 8,
+            "accuracy_pct": 75.0
+          }
+        }
+      }
+    },
+    "mlx-8bit": {
+      "name": "MiniCPM5-2B (mlx-8bit)",
+      "hf_repo": "mlx-community/MiniCPM5-2B-8bit",
+      "weights_gb": 2.68,
+      "bits_per_weight": 8.52,
+      "load_time_s": 1.22,
+      "load_peak_gb": 2.674,
+      "accuracy": {
+        "total_passed": 18,
+        "total_prompts": 30,
+        "accuracy_pct": 60.0,
+        "by_category": {
+          "arithmetic_ml": {
+            "passed": 2,
+            "total": 12,
+            "accuracy_pct": 16.7
+          },
+          "function_call": {
+            "passed": 10,
+            "total": 10,
+            "accuracy_pct": 100.0
+          },
+          "instruction_following": {
+            "passed": 6,
+            "total": 8,
+            "accuracy_pct": 75.0
+          }
+        }
+      }
+    }
+  }
+}

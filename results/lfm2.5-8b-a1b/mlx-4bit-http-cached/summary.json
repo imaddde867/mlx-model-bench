@@ -1,0 +1,256 @@
+{
+  "model_id": "lfm2.5-8b-a1b",
+  "model_name": "LFM2.5-8B-A1B",
+  "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 4.85,
+  "bits_per_weight": 4.58,
+  "publisher": "vendor",
+  "params_total": 8.468,
+  "params_active": 1.3,
+  "run_id": "mlx-4bit-http-cached",
+  "transport": "http",
+  "engine": "mlx_lm",
+  "model": "LiquidAI/LFM2.5-8B-A1B-MLX-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": "mlx-lm 0.32.2",
+  "max_tokens": 256,
+  "template_kwargs": {
+    "preserve_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "http: request send + transport + server template/tokenize/prefill + first visible SSE delta; excludes client JSON serialization",
+  "decode_min_tokens": 32,
+  "load_s": null,
+  "load_peak_gb": null,
+  "load_peak_gb_source": null,
+  "base_url": "http://127.0.0.1:50065",
+  "runs_ok": 15,
+  "runs_failed": 0,
+  "reasoning_only_runs": 10,
+  "prompts": {
+    "short": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 31,
+      "ttft_s": {
+        "median": 0.0487,
+        "min": 0.0465,
+        "max": 0.0534,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 636.0,
+        "min": 581.1,
+        "max": 667.1,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 65.5,
+        "min": 62.4,
+        "max": 68.6,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 97,
+        "min": 97,
+        "max": 97,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.286,
+        "min": 4.286,
+        "max": 4.286,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 1.534,
+        "min": 1.462,
+        "max": 1.603,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 0.0501,
+        "min": 0.0466,
+        "max": 0.0546,
+        "n": 5
+      },
+      "prep_s": null,
+      "engine_ttft_s": null,
+      "first_content_s": {
+        "median": 1.3657,
+        "min": 1.3096,
+        "max": 1.475,
+        "n": 5
+      },
+      "cached_prompt_tokens": {
+        "median": 30,
+        "min": 30,
+        "max": 30,
+        "n": 5
+      },
+      "decode_window_tps": {
+        "median": 64.6,
+        "min": 61.9,
+        "max": 67.8,
+        "n": 5
+      },
+      "decode_flagged": 0
+    },
+    "medium": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 1016,
+      "ttft_s": {
+        "median": 0.0539,
+        "min": 0.0509,
+        "max": 0.0611,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 18844.4,
+        "min": 16634.5,
+        "max": 19951.4,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 59.2,
+        "min": 58.6,
+        "max": 66.7,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.289,
+        "min": 4.289,
+        "max": 4.289,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 4.36,
+        "min": 3.879,
+        "max": 4.415,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 0.0541,
+        "min": 0.052,
+        "max": 0.0613,
+        "n": 5
+      },
+      "prep_s": null,
+      "engine_ttft_s": null,
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 1015,
+        "min": 1015,
+        "max": 1015,
+        "n": 5
+      },
+      "decode_window_tps": {
+        "median": 59.2,
+        "min": 58.6,
+        "max": 66.7,
+        "n": 5
+      },
+      "decode_flagged": 0
+    },
+    "long": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 8506,
+      "ttft_s": {
+        "median": 0.061,
+        "min": 0.0545,
+        "max": 0.0661,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 139462.4,
+        "min": 128766.8,
+        "max": 155934.4,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 67.2,
+        "min": 65.4,
+        "max": 72.4,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.299,
+        "min": 4.297,
+        "max": 4.299,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 3.851,
+        "min": 3.58,
+        "max": 3.961,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 0.0612,
+        "min": 0.0553,
+        "max": 0.0662,
+        "n": 5
+      },
+      "prep_s": null,
+      "engine_ttft_s": null,
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 8505,
+        "min": 8505,
+        "max": 8505,
+        "n": 5
+      },
+      "decode_window_tps": {
+        "median": 67.2,
+        "min": 65.4,
+        "max": 72.4,
+        "n": 5
+      },
+      "decode_flagged": 0
+    }
+  },
+  "memory": {
+    "source": "server_rss",
+    "sources_seen": [
+      "server_rss"
+    ],
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "ps -o rss= polled every 0.1 s",
+    "scope": "server process resident set (whole process)",
+    "phase": "per-request: sampler runs while the request streams; includes the loaded weights",
+    "unavailable_rows": 0,
+    "weights_gb_is": "checkpoint file size, not runtime memory"
+  },
+  "outcome": "completed",
+  "publishable": true,
+  "non_publishable_reasons": []
+}
