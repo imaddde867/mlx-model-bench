@@ -1,0 +1,153 @@
+unit suite: ok (OK)
+nemotron-3.5-bolt: 3 checkpoint(s) checked, BLOCKED
+minicpm5-2b: 3 checkpoint(s) checked, BLOCKED
+spark-x2.5-4b: 3 checkpoint(s) checked, BLOCKED
+lfm2.5-8b-a1b: 3 checkpoint(s) checked, BLOCKED
+
+Reproducibility checklist
+  host:      arm64 macOS 27.0.1 python 3.12.10
+  runtimes:  mlx 0.32.4, mlx-lm 0.32.2, mlx-optiq NOT INSTALLED, transformers 5.20.2; mlx-optiq 0.7.3 (separate venv)
+  revisions: nemotron-3.5-bolt/mlx-4bit: rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit @ 601cd937da1e168dfe0dcf184b95204344c683a9
+             nemotron-3.5-bolt/optiq-4bit: mlx-community/NVIDIA-Nemotron-3.5-Bolt-E4B-OptiQ-4bit @ 0c204a16b6b186d1434e70f5fc2ca2e30984a006
+             nemotron-3.5-bolt/mlx-8bit: rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-8bit @ 72263b814727693c874bf765c657dfb32102e870
+             minicpm5-2b/mlx-4bit: openbmb/MiniCPM5-2B-MLX @ 8a9ad7539ac86281d0ac2b017ba04a5de53fe9a3
+             minicpm5-2b/optiq-4bit: mlx-community/MiniCPM5-2B-OptiQ-4bit @ d1392929adb5693640daeebe6b45e12a07a60b5a
+             minicpm5-2b/mlx-8bit: mlx-community/MiniCPM5-2B-8bit @ 2d20e8e672ce892d50f7265bfd3fc9b59b718f2a
+             spark-x2.5-4b/mlx-4bit: abenzerps/Spark-X2.5-4B-MLX-4bit @ 92b3135109f696dd18dee97be1e2d395866733e6
+             spark-x2.5-4b/optiq-4bit: mlx-community/Spark-X2.5-4B-OptiQ-4bit @ 105b628431dd078933c969a89cba78066dfa86b5
+             spark-x2.5-4b/mlx-8bit: abenzerps/Spark-X2.5-4B-MLX-8bit @ 7225153c867b13ce2637fe572b9a9fbce38fb108
+             lfm2.5-8b-a1b/mlx-4bit: LiquidAI/LFM2.5-8B-A1B-MLX-4bit @ 2e92b640a63d47ad4dcf81a19a366b902356b3bc
+             lfm2.5-8b-a1b/optiq-4bit: mlx-community/LFM2.5-8B-A1B-OptiQ-4bit @ 39bb7d49cc92118db10e30e9421c7f8f1f23bfe8
+             lfm2.5-8b-a1b/mlx-8bit: LiquidAI/LFM2.5-8B-A1B-MLX-8bit @ c663adcc7d9d82abc4d482cb4f226e0a7eed3170
+  prompts:   prompts/speed/short.txt  sha256 4006ef0a453d19fa8ccf225f60e3a90d3b2ec13cf8956eacdb3ff53ca5457fd0
+             prompts/speed/medium.txt  sha256 35ae271edc3934fdbc8d3ea5393aac4324f38ceff4a13a59c42981b942758495
+             prompts/speed/long.txt  sha256 d71d3fe47b869a98c8d23f54d2562024410ba3deae08968f7ecc9705903dfac1
+             prompts/speed/decode-short.txt  sha256 83643045cd6d0fcf77ea1fd8e810f6969c8d39a8273cde0b67f9f0e6fe79f096
+             prompts/speed/decode-long.txt  sha256 969436335d8118ba7e3bb30263250925d45af46123a4335a0d8f1d7ffea7468c
+             prompts/accuracy  30 files  sha256 8b8f8c8622b765decfc26050781fc74ecfe87d57eb62defd3c87d5d92613b1ae
+             prompts/quality   8 files  sha256 288d0bdd2a7e559700c9cd55f931eb0787c33e6bdd73fe670280ab42d675404d
+  generation: greedy (temperature 0), speed max_tokens 256, accuracy 256, quality 384, nonce on, decode_min_tokens 32
+  template controls: nemotron-3.5-bolt={'enable_thinking': False, 'conversational_mode': True}; minicpm5-2b={'enable_thinking': False}; spark-x2.5-4b={'enable_thinking': False}; lfm2.5-8b-a1b={'preserve_thinking': False}
+  trials:    5 kept per prompt + 1 discarded warm-up (minimum 5)
+  outputs:   /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/mlx-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/mlx-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/mlx-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/p3/mlx-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/optiq-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/optiq-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/optiq-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/optiq-4bit-http-optiq-engine
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/p3/optiq-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/mlx-8bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/mlx-8bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/mlx-8bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/p3/mlx-8bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/nemotron-3.5-bolt/p3/accuracy_summary.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/mlx-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/mlx-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/mlx-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/p3/mlx-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/optiq-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/optiq-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/optiq-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/optiq-4bit-http-optiq-engine
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/p3/optiq-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/mlx-8bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/mlx-8bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/mlx-8bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/p3/mlx-8bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/minicpm5-2b/p3/accuracy_summary.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/mlx-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/mlx-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/mlx-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/p3/mlx-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/optiq-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/optiq-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/optiq-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/optiq-4bit-http-optiq-engine
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/p3/optiq-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/mlx-8bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/mlx-8bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/mlx-8bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/p3/mlx-8bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/spark-x2.5-4b/p3/accuracy_summary.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/mlx-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/mlx-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/mlx-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/p3/mlx-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/optiq-4bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/optiq-4bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/optiq-4bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/optiq-4bit-http-optiq-engine
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/p3/optiq-4bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/mlx-8bit-inproc
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/mlx-8bit-http
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/mlx-8bit-http-cached
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/p3/mlx-8bit-results.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/lfm2.5-8b-a1b/p3/accuracy_summary.json
+             /Users/imadeddine/Documents/GitHub/mlx-model-bench/results/blind-r1
+
+Not done here: a clean, independently reviewed run is a separate future action; no benchmark was run and no model was loaded.
+
+NOT READY: 61 blocking problem(s)
+  [load gate] nemotron-3.5-bolt/mlx-4bit: missing mlx-4bit.json — run --phase p0
+  [collision] results/nemotron-3.5-bolt/mlx-4bit-inproc exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/mlx-4bit-http exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/mlx-4bit-http-cached exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/p3/mlx-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [load gate] nemotron-3.5-bolt/optiq-4bit: missing optiq-4bit.json — run --phase p0
+  [collision] results/nemotron-3.5-bolt/optiq-4bit-inproc exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/p3/optiq-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/mlx-8bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/mlx-8bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/mlx-8bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/p3/mlx-8bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/nemotron-3.5-bolt/p3/accuracy_summary.json already has an entry for mlx-8bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/minicpm5-2b/mlx-4bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/mlx-4bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/mlx-4bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/p3/mlx-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/optiq-4bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/optiq-4bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/optiq-4bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/optiq-4bit-http-optiq-engine exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/p3/optiq-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/mlx-8bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/mlx-8bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/mlx-8bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/p3/mlx-8bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/minicpm5-2b/p3/accuracy_summary.json already has an entry for mlx-4bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/minicpm5-2b/p3/accuracy_summary.json already has an entry for optiq-4bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/minicpm5-2b/p3/accuracy_summary.json already has an entry for mlx-8bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/spark-x2.5-4b/mlx-4bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/mlx-4bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/mlx-4bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/p3/mlx-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/optiq-4bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/optiq-4bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/optiq-4bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/optiq-4bit-http-optiq-engine exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/p3/optiq-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/mlx-8bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/mlx-8bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/mlx-8bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/p3/mlx-8bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/spark-x2.5-4b/p3/accuracy_summary.json already has an entry for mlx-4bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/spark-x2.5-4b/p3/accuracy_summary.json already has an entry for optiq-4bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/spark-x2.5-4b/p3/accuracy_summary.json already has an entry for mlx-8bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/mlx-4bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/mlx-4bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/mlx-4bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/p3/mlx-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/optiq-4bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/optiq-4bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/optiq-4bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/optiq-4bit-http-optiq-engine exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/p3/optiq-4bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/mlx-8bit-inproc exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/mlx-8bit-http exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/mlx-8bit-http-cached exists (outcome=completed, publishable=True); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/p3/mlx-8bit-results.json exists (a file); a new run would overwrite it — narrow --models/--tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for mlx-4bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for optiq-4bit; run_p3.py would refuse — narrow --tiers or use another --out
+  [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for mlx-8bit; run_p3.py would refuse — narrow --tiers or use another --out
