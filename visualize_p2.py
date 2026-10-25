@@ -111,6 +111,9 @@ def main():
                 hi.append(m["max"] - m["median"])
             colour = COLORS[order.get(s["model_id"], 3) % len(COLORS)]
             label = f"{s['model_id']} · {s['checkpoint']}"
+            engine = s["summary"].get("engine")
+            if engine and engine != "mlx_lm":
+                label += f" · {engine}"
             if s["cached"]:
                 hatch, label = "\\\\", label + " · cache hit"
             elif s["transport"] == "http":

@@ -175,6 +175,7 @@ def run_http(text, args, template):
     first = last = None
     usage = finish = None
     parts = []
+    reasoning_parts = []
     try:
         with urllib.request.urlopen(req, timeout=900) as resp:
             for raw in resp:
@@ -191,19 +192,29 @@ def run_http(text, args, template):
                 if not choices:
                     continue
                 finish = choices[0].get("finish_reason") or finish
-                delta = (choices[0].get("delta") or {}).get("content")
-                if delta:
+                # mlx_lm.server splits a template's thinking block into
+                # `delta.reasoning` and leaves `delta.content` null while the model
+                # is still thinking. A row that only counted content would both
+                # drop those tokens from the text and hard-fail on a
+                # reasoning-only answer, so both streams are timed and recorded.
+                delta = choices[0].get("delta") or {}
+                text = delta.get("content")
+                thinking = delta.get("reasoning")
+                if text or thinking:
                     now = time.perf_counter()
                     if first is None:
                         first = now
                     last = now
-                    parts.append(delta)
+                    if text:
+                        parts.append(text)
+                    if thinking:
+                        reasoning_parts.append(thinking)
     finally:
         peak = sampler.stop() if sampler else None
     wall = time.perf_counter() - t0
 
     if first is None:
-        raise RuntimeError("no content chunk in stream")
+        raise RuntimeError("no content or reasoning chunk in stream")
 
     prompt_tokens = (usage or {}).get("prompt_tokens")
     gen = (usage or {}).get("completion_tokens")
@@ -219,6 +230,8 @@ def run_http(text, args, template):
         "peak_gb_source": "server_rss" if peak else None,
         "finish_reason": finish,
         "text": "".join(parts).strip(),
+        "reasoning_chars": len("".join(reasoning_parts)),
+        "reasoning_only": not parts and bool(reasoning_parts),
     }
 
 
@@ -248,6 +261,8 @@ def main():
     ap.add_argument("--base-url", default="http://127.0.0.1:8080")
     ap.add_argument("--server-pid", type=int, help="HTTP: server process to sample RSS from")
     ap.add_argument("--server-version", help="HTTP: engine version string of the server")
+    ap.add_argument("--engine", default="mlx_lm",
+                    help="engine that produced this row; mlx-optiq rows are their own row, never a replacement")
     ap.add_argument("--no-nonce", action="store_true",
                     help="send identical prompts (measures prefix-cache hits; label with --tag cached)")
     ap.add_argument("--tag", default="", help="suffix for the output dir, e.g. cached")
@@ -290,7 +305,7 @@ def main():
         "params_active": cfg.params_active,
         "run_id": run_id,
         "transport": args.transport,
-        "engine": "mlx_lm",
+        "engine": args.engine,
         "host": f"{platform.machine()} macOS {platform.mac_ver()[0]} python {platform.python_version()}",
         "versions": versions(),
         "server_version": args.server_version,
@@ -380,6 +395,7 @@ def main():
         "base_url": base.get("base_url"),
         "runs_ok": sum(1 for r in kept if r.get("ok")),
         "runs_failed": sum(1 for r in kept if not r.get("ok")),
+        "reasoning_only_runs": sum(1 for r in kept if r.get("reasoning_only")),
         "prompts": {},
     }
     for name in args.prompts:

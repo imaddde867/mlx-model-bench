@@ -326,7 +326,9 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
     version = optiq_version()
     for ckpt in targets:
         port = free_port()
-        run_dir = out / cfg.id / f"{ckpt.tag}-optiq-engine"
+        # The same directory bench.py will write into, so a row and the record of
+        # why it could not be produced live together.
+        run_dir = out / cfg.id / f"{ckpt.tag}-http-optiq-engine"
         run_dir.mkdir(parents=True, exist_ok=True)
         print(f"  {ckpt.tag}: {exe.name} serve on :{port} ({version})")
         slog = out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine.log"
@@ -344,8 +346,12 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
                     "reason": "server did not answer /v1/models", "log": str(slog),
                 }, indent=2))
                 continue
+            # --tag keeps the engine arm out of the plain mlx_lm HTTP row's
+            # directory: two engines on one checkpoint are two rows, and one must
+            # never overwrite the other.
             rc = run([sys.executable, str(ROOT / "bench.py"),
                       "--model", cfg.id, "--checkpoint", ckpt.tag, "--transport", "http",
+                      "--tag", "optiq-engine", "--engine", "mlx-optiq",
                       "--base-url", f"http://127.0.0.1:{port}", "--server-pid", str(server.pid),
                       "--server-version", version, "--trials", str(trials),
                       "--max-tokens", str(max_tokens), "--out", str(out),
