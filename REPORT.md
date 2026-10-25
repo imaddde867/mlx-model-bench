@@ -15,6 +15,11 @@ has no numbers yet says so rather than showing a blank row.
 | 4 | Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 / 9.02 GB | pending |
 | 5 | Cross-model comparison | — | pending |
 
+Section 1's measurements predate the checkpoint, P0, timing, memory and grader gates (PRs #13-#18) and
+are historical, not re-validated by them. Checkpoints: Arm 1 `rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit`
+@ `601cd937`, Arm 3 `mlx-community/NVIDIA-Nemotron-3.5-Bolt-E4B-OptiQ-4bit` @ `0c204a16` (sha256-verified in
+`results/nemotron-3.5-bolt/p0/*-provenance.json`).
+
 Method, controls and comparability rules: [`MODELS.md`](MODELS.md). Machine-readable
 model/checkpoint metadata: [`registry.py`](registry.py). Every row in this report is produced
 by one of the commands in the README, and the raw JSON sits beside it under `results/`.
@@ -40,7 +45,12 @@ This model is the **baseline row** of the roster (`MODELS.md`). Its parameter co
 
 ### 1.1 Speed, TTFT, and Memory (P2)
 
-Speed runs conducted with 1 discarded warm-up + 5 trials; reported as **median [min–max]**. Prompt cache busted with random nonces, except for `Arm 2 cached` which measures warm prefix reuse.
+Speed runs conducted with 1 discarded warm-up + 5 trials; reported as **median [min–max]**. Prompt cache busted with random nonces, except for `Arm 2 cached` which measures warm prefix reuse. Source rows: `results/nemotron-3.5-bolt/{mlx-4bit-inproc,mlx-4bit-http,mlx-4bit-http-cached,optiq-4bit-inproc}/summary.json` (`mlx` 0.32.4, `mlx-lm` 0.32.2).
+
+**Metric scope (historical rows).** These rows predate `request_ttft_s`, `decode_window_tps`, `ttft_scope` and the `memory` provenance record, so none are in the recorded rows. Figures below are the original `ttft_s` / `decode_tps` / `peak_gb`, and their scopes differ by transport (see the comment block in `bench.py`):
+- In-process TTFT (Arms 1, 3) includes chat-template rendering and tokenization; HTTP TTFT (Arm 2) starts at request send and ends at the first visible SSE delta, excluding client JSON serialization. The in-process vs HTTP TTFT columns are therefore not a like-for-like engine comparison; `request_ttft_s` is the cross-transport definition and was not recorded here.
+- `Arm 2 cached` is a deliberate warm-prefix row (`--no-nonce`); it measures prefix-cache reuse, not prefill speed, and is not comparable to the cold columns.
+- Decode tps is the original `decode_tps`, not `decode_window_tps`, and was not flagged for short or cache-hit windows.
 
 ### TTFT (s)
 
@@ -50,7 +60,7 @@ Speed runs conducted with 1 discarded warm-up + 5 trials; reported as **median [
 | 1,026 | 1.62 [1.62–1.63] | 1.52 [1.52–1.61] | 1.68 [1.68–1.72] | 0.070 [0.067–0.074] |
 | 8,341 | 14.3 [13.7–14.3] | 14.4 [14.1–14.6] | 14.6 [14.4–15.0] | 0.094 [0.091–0.104] |
 
-Prefill throughput saturates near 570–630 tok/s across all arms.
+Prefill throughput (historical `prefill_tps` medians, so it inherits the `ttft_s` scope) is not flat: 68 tokens 314–422 tok/s (Arm 3 / Arm 2), 1,026 tokens 609–674, 8,341 tokens 571–584, across Arms 1–3 (cold rows).
 
 ### Decode (tok/s, prefill excluded)
 
@@ -61,7 +71,7 @@ Prefill throughput saturates near 570–630 tok/s across all arms.
 
 ### Memory (`mx.get_peak_memory`)
 
-Basis: MLX allocator peak, in-process, GB decimal. It is not comparable with server RSS (HTTP rows), and neither is GPU VRAM on unified memory.
+Basis: MLX allocator peak, in-process, GB decimal (source inferred from transport; these summaries predate the `memory` provenance record). It is not comparable with server RSS (HTTP rows), and neither is GPU VRAM on unified memory. The load peaks match the checkpoint file sizes; they are not total process memory.
 
 | Metric | Arm 1 | Arm 3 | Delta (OptiQ overhead) |
 |---|---|---|---|
@@ -87,15 +97,17 @@ Evaluated on 30 fixed prompts in the **Machine Learning & Data Engineering** dom
 | **Instruction-Following Constraints** | 8 | **8 / 8 (100.0%)** | **8 / 8 (100.0%)** | Parity |
 | **Total Accuracy** | **30** | **24 / 30 (80.0%)** | **25 / 30 (83.3%)** | **+3.3%** |
 
+Counts are unchanged by the #4 grader hardening: `p3-grader-v2` (`GRADER_VERSION` in `p3_suite.py`) reproduces every recorded verdict from the raw answers in `results/nemotron-3.5-bolt/p3/{mlx-4bit,optiq-4bit}-results.json` (24 and 25 passes); the check is `tests/test_graders.py::test_recorded_legacy_results_do_not_drift`, which re-grades those files. The original run predates the grader version tag. The 25 vs 24 difference is one net prompt: Arm 3 passes `math-03` and `math-09` where Arm 1 fails, and Arm 1 passes `math-01` where Arm 3 fails. With n=30 and one greedy run per prompt this is not evidence of superior reasoning. The "Instruction-Following" category is format-compliance only (sentence/word counts, letter and word bans, casing), not instruction-following ability in general.
+
 ### Key Accuracy Findings
-1. **Flawless tool use and constraint adherence**: Both checkpoints achieved 100% on JSON function calling (10/10) and 100% on binary negative/formatting constraints (8/8). The conversational mode chat template reliably enforces strict formatting.
-2. **OptiQ edge on numerical calculations**: Arm 3 successfully computed large multi-factor memory calculations (`math-03`: `32000 * 256 * 4 = 32768000`) and dataset token counts (`math-09`: `64000000`), whereas Arm 1 returned the uncomputed expression (`'32000 * 256 * 4'`) or dropped a trailing zero (`'6400000'`).
+1. **Tool use and format compliance at ceiling**: Both checkpoints scored 10/10 on JSON function calling and 8/8 on the format constraints. With the suite at ceiling for both, it cannot separate them here.
+2. **Numerical calculations (observation, not a conclusion)**: Arm 3 computed large multi-factor memory calculations (`math-03`: `32000 * 256 * 4 = 32768000`) and dataset token counts (`math-09`: `64000000`), whereas Arm 1 returned the uncomputed expression (`'32000 * 256 * 4'`) or dropped a trailing zero (`'6400000'`). Arm 3 failed `math-01`, which Arm 1 passed.
 
 ---
 
 ### 1.3 Qualitative Evaluation (P3 — 8 Prompts Blind Scored)
 
-Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into **Model A** and **Model B** per prompt, scored independently across 3 rubrics (1–5 scale each, 15 max per prompt):
+Evaluated on 8 core NLP/ML engineering tasks. **Exploratory:** one rater, 8 prompts, one greedy output per arm per prompt; a preference signal, not a statistically demonstrated ranking. Scoring predates the balanced-slot rounds (`blind.py`, `score_quality.py`), so slot balance for this round was not audited. Raw scores: `results/nemotron-3.5-bolt/p3/quality_scoring.json`. Outputs were randomized blind into **Model A** and **Model B** per prompt, scored independently across 3 rubrics (1–5 scale each, 15 max per prompt):
 1. **Accuracy / Technical Fidelity** (1–5)
 2. **Coherence & Tone** (1–5)
 3. **Instruction-Fit & Completeness** (1–5)
@@ -112,7 +124,7 @@ Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into
 | `qual-06` | PyTorch Custom Autograd Analysis | **14.5 / 15 (4.83)** | 13.5 / 15 (4.50) | **Arm 1** | Arm 1 explicitly flags numerical instability with large scale/diff exponential overflow. |
 | `qual-07` | Tabular CNN vs GBDT Correction | 12.5 / 15 (4.17) | **15.0 / 15 (5.00)** | **Arm 3** | Arm 3 explains why tabular data lacks spatial structure exploited by CNNs. |
 | `qual-08` | Orbital Cluster Sci-Fi Opening | 12.0 / 15 (4.00) | **15.0 / 15 (5.00)** | **Arm 3** | Arm 3 delivers rich technical atmosphere (ECC checks, telemetry, 100 tok vs 42 tok). |
-| **Total** | **Mean Score (out of 5.0)** | **4.29 / 5.0** (103/120) | **4.67 / 5.0** (112/120) | **Arm 3 (6-1-1)** | **OptiQ +0.38 higher mean quality** |
+| **Total** | **Mean Score (out of 5.0)** | **4.29 / 5.0** (103/120) | **4.67 / 5.0** (112/120) | **Arm 3 (6-1-1)** | OptiQ +0.38 mean score (single rater, exploratory) |
 
 ### Qualitative Side-by-Side Highlights
 
@@ -129,24 +141,23 @@ Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into
 ### 1.4 Synthesis: Answering the Four Benchmark Questions
 
 #### 1. How much of the speed gap is the engine, and how much is the checkpoint?
-- **Engine**: Virtually zero TTFT penalty (~0.195 s in-process vs 0.161 s HTTP) and only a **~5% decode penalty** (34.4 tok/s vs 32.5 tok/s). `mlx_lm.server` adds negligible transport overhead.
-- **Checkpoint**: Massive difference. OptiQ mixed 4/8-bit causes a **25% decode slowdown** (34.4 → 25.7 tok/s) and requires **+2.33 GB VRAM** (4.20 GB → 6.53 GB).
+- **Engine**: ~0.195 s in-process vs 0.161 s HTTP TTFT and 34.4 vs 32.5 tok/s decode (~5%). The TTFT scopes differ (in-process includes template and tokenize; HTTP does not), so this is not a clean transport cost; a like-for-like `request_ttft_s` comparison has not been run.
+- **Checkpoint**: OptiQ mixed 4/8-bit decodes ~25% slower (34.4 → 25.7 tok/s, same in-process transport) and loads **+2.33 GB** more (4.20 GB → 6.53 GB, MLX allocator basis; unified memory, not VRAM).
 
 #### 2. Is the OptiQ mixed 4/8-bit checkpoint's quality distinguishable from plain 4-bit?
-- **Yes, measurably.**
-  - **Objective Accuracy**: 83.3% vs 80.0% (+3.3%). OptiQ shows superior retention of large-number arithmetic and multi-step reasoning.
-  - **Subjective Quality**: 4.67 vs 4.29 out of 5.0 (+0.38 points, winning 6 out of 8 categories). OptiQ produces more detailed, structured, and technically complete responses, while plain 4-bit occasionally collapses into overly terse one-liners.
+- **Not established.**
+  - **Objective Accuracy**: 25/30 vs 24/30, one net prompt (see 1.2). Not a demonstrated difference.
+  - **Subjective Quality** (exploratory, single rater, 8 prompts): 4.67 vs 4.29 out of 5.0, Arm 3 ahead on 6 of 8. Arm 3's outputs were more detailed; Arm 1's were sometimes terse one-liners. Direction is suggestive; more raters and prompts are needed for a claim.
 
 #### 3. What does OptiQ's application layer cost in TTFT, measured like-for-like?
 - `optiq serve` crashes out-of-the-box due to eager evaluation of the unquantized dummy `embed_tokens_per_layer` weight (`vocab 262,144 × layers 42 × dim 512 × 2 bytes = 11,274,289,152 bytes = 10.5 GiB`) in `optiq/mlx_lm_patches/_chunked_quantize.py#L72`, exceeding Metal's 8.88 GiB max allocation limit.
 - When `_chunked_quantize`'s eager eval is bypassed:
-  - `OptiqEngine` short-prompt TTFT is **0.218 s** (matching `mlx_lm`'s 0.217 s on the same weights).
-  - Autoregressive decode throughput is **21.3 tok/s**, which is **~17% slower** than `mlx_lm` in-process (**25.7 tok/s**) and **38% slower** than plain 4-bit (**34.4 tok/s**).
-- When loaded via `mlx_lm`, the OptiQ weights add **+0.022 s TTFT** on short prompts (0.217 s vs 0.195 s) over plain 4-bit, while prefill throughput remains virtually identical (~570 tok/s).
+  - `OptiqEngine` short-prompt TTFT of 0.218 s and decode of 21.3 tok/s (~17% below `mlx_lm` in-process, 25.7) are **unverified**: no `results/` row exists for the patched engine run, so they cannot be tied to a measurement and are withdrawn as findings until re-run.
+- Both `mlx_lm` in-process arms share a scope: OptiQ weights add +0.022 s short-prompt TTFT (0.217 s vs 0.195 s, ranges 0.204–0.234 and 0.192–0.200, so close to the run-to-run spread) with similar prefill throughput (~570 tok/s).
 
 #### 4. Does speculative decoding earn its keep on this architecture?
 - **An external Gemma 4 assistant is a documented OptiQ pairing, but its benefit and memory cost are not measured in this study.**
-  - **Native MTP**: Nemotron 3.5 Bolt has no native MTP head. The observed `OptiqEngine` run was autoregressive (`mode='AR', depth=0`); this says nothing about the separate assistant-drafter path.
+  - **Native MTP**: Nemotron 3.5 Bolt has no native MTP head. An `OptiqEngine` run reported in an earlier session was autoregressive (`mode='AR', depth=0`), but it has no row in `results/` and is unverified; this says nothing about the separate assistant-drafter path.
   - **Gemma 4 assistant drafting**: This is a separate four-layer assistant, not another 3.5 GB target model. The pinned local `mlx-optiq` 0.7.3 package exposes `serve --drafter` and contains a Gemma assistant adapter that consumes target embeddings and hidden states. The [Nemotron OptiQ card](https://huggingface.co/mlx-community/NVIDIA-Nemotron-3.5-Bolt-E4B-OptiQ-4bit/tree/0c204a16b6b186d1434e70f5fc2ca2e30984a006) documents this exact target/drafter pairing and reports decode results on a 24 GB M4. These sources establish an implemented and documented path, not that this exact pair has been executed or verified in this study. The MLX Hub repo reports 78,779,908 parameters, a 159,138,208-byte `model.safetensors` file (~0.159 GB), and 191,307,648 bytes total storage. Its checked revision is [`844e008e`](https://huggingface.co/mlx-community/gemma-4-E4B-it-assistant-bf16/commit/844e008e06ef5562bdb89428d851d0634d119dcd). That upstream card reports 1.70–2.38x decode throughput on its four listed prompts, with one prose output differing at a near-tie token; those figures are not this study's measurements. Drafter file size alone does not establish total live memory, peak usage, or a safe 16 GB configuration.
   - **DFlash**: This is a distinct block-diffusion drafter, not Gemma assistant MTP or a target's native MTP head. NVIDIA's [current integration guidance](https://developer.nvidia.com/blog/boost-inference-performance-up-to-15x-on-nvidia-blackwell-using-dflash-speculative-decoding/) describes Speculators/vLLM and SGLang integrations using target hidden states on NVIDIA GPU stacks; this repo has no verified DFlash path in its pinned MLX stack. The prior claims that DFlash requires GGUF and provides <100 ms TTFT improvement are withdrawn; the cited current official source does not support either claim.
   - **Verdict**: The blanket memory-based rejection was unsupported. An implementation and exact pairing are documented, and the drafter checkpoint is small; however, compatibility and performance on this 16 GB host remain unverified and unmeasured. Do not claim an accelerated Nemotron result, a safe memory margin, or DFlash compatibility without applicable verification.
@@ -157,9 +168,9 @@ Evaluated on 8 core NLP/ML engineering tasks. Outputs were randomized blind into
 
 | Target Workload | Recommended Arm | Rationale |
 |---|---|---|
-| **Voice Assistant / Low Latency UI** | **Arm 1 / Arm 2 (rapid-mlx 4-bit)** | 34.4 tok/s decode, sub-200ms TTFT, only 4.2 GB VRAM. Fast and lightweight. |
-| **Technical Copilot / Complex RAG** | **Arm 3 (OptiQ mixed 4/8-bit)** | Higher reasoning fidelity (83.3% acc, 4.67/5 quality), superior formatting, fits easily in 16 GB (6.5 GB peak). 25.7 tok/s is still fast. |
-| **Multi-turn Conversational Service** | **Arm 2 (`mlx_lm.server`)** | Prefix caching delivers **0.068–0.094 s TTFT** across all context lengths (150× faster than 14 s cold prefill on 8k prompts). |
+| **Voice Assistant / Low Latency UI** | **Arm 1 / Arm 2 (rapid-mlx 4-bit)** | 34.4 tok/s decode, 0.195 s (in-process) / 0.161 s (HTTP) short-prompt TTFT on differing scopes, 4.20 GB load peak (MLX allocator). Fastest decode measured here. |
+| **Technical Copilot / Complex RAG** | **Arm 3 (OptiQ mixed 4/8-bit)** | Tentative: 25/30 vs 24/30 and 4.67 vs 4.29 are not demonstrated differences (1.2, 1.3). Costs ~25% decode (25.7 tok/s) and 7.42 GB peak (8.3k prompt, MLX allocator). Choose it for the larger bit budget, not proven quality. |
+| **Multi-turn Conversational Service** | **Arm 2 (`mlx_lm.server`)** | Warm-prefix row (`--no-nonce`): 0.068–0.094 s TTFT vs ~14 s cold at 8k (~150x, arithmetic on historical `ttft_s`). Applies only when the prefix repeats; server RSS peak 4.02–4.03 GB (`mlx-4bit-http-cached/summary.json`; process RSS, a different basis from the in-process MLX allocator peaks above). |
 
 These recommendations are **within this model only**. Whether the 4-bit Nemotron is the right
 pick for any of those workloads is decided in section 5, against rows that have not run yet.
@@ -224,4 +235,5 @@ Fills in as each section completes. The table below is the shape, not a result.
 
 What this table will **not** claim: a single "best model". 30 checkable prompts separate 50%
 from 100%; they do not separate 83% from 87%, and a blind score from one rater over 8 prompts is
-a preference signal. Differences smaller than a row's own min–max range are not differences.
+a preference signal. The Nemotron rows above are historical (pre-gate); new rows will carry
+`request_ttft_s`, `decode_window_tps` and memory provenance, and are not mixed with them. Differences smaller than a row's own min–max range are not differences.
