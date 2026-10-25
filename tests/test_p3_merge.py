@@ -1,0 +1,50 @@
+"""Offline: P3 summary is merged per checkpoint and never overwrites a published tag. No model, no inference."""
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+import run_p3
+
+
+def entry(n):
+    return {"accuracy": {"total_passed": n}}
+
+
+class TestMerge(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.d = Path(tmp.name)
+        self.path = self.d / "accuracy_summary.json"
+
+    def test_new_tier_keeps_old_entries_byte_identical(self):
+        old = {"model_id": "m", "timestamp": "t0", "checkpoints": {"mlx-4bit": entry(20)}}
+        self.path.write_text(json.dumps(old, indent=2))
+        run_p3.merge_summary(self.d, {"model_id": "m", "timestamp": "t1", "checkpoints": {"mlx-8bit": entry(25)}})
+        got = json.loads(self.path.read_text())
+        self.assertEqual(json.dumps(got["checkpoints"]["mlx-4bit"]), json.dumps(old["checkpoints"]["mlx-4bit"]))
+        self.assertEqual(got["checkpoints"]["mlx-8bit"], entry(25))
+        self.assertEqual(got["timestamp"], "t0")
+
+    def test_creates_when_absent(self):
+        run_p3.merge_summary(self.d, {"model_id": "m", "checkpoints": {"mlx-8bit": entry(1)}})
+        self.assertEqual(list(json.loads(self.path.read_text())["checkpoints"]), ["mlx-8bit"])
+
+    def test_existing_tag_refused(self):
+        self.path.write_text(json.dumps({"checkpoints": {"mlx-4bit": entry(20)}}))
+        self.assertEqual(run_p3.collisions(self.d, ["mlx-8bit"]), [])
+        self.assertIn("mlx-4bit", run_p3.collisions(self.d, ["mlx-8bit", "mlx-4bit"])[0])
+
+    def test_existing_results_file_refused(self):
+        (self.d / "mlx-8bit-results.json").write_text("{}")
+        self.assertIn("mlx-8bit-results.json", run_p3.collisions(self.d, ["mlx-8bit"])[0])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -11,7 +11,8 @@ Controls: mlx_lm in-process, greedy, this model's own chat template controls
   .venv-mlxlm/bin/python run_p3.py --model minicpm5-2b
   .venv-mlxlm/bin/python run_p3.py --model nemotron-3.5-bolt --checkpoints mlx-4bit optiq-4bit
 
-Writes results/<model-id>/p3/<checkpoint>-results.json plus accuracy_summary.json.
+Writes results/<model-id>/p3/<checkpoint>-results.json plus accuracy_summary.json (merged
+per checkpoint; a tag already published is refused, never overwritten).
 Blind cross-model scoring is built separately by blind.py — this script only
 records what each checkpoint said.
 """
@@ -167,6 +168,29 @@ def summarize_acc(runs):
     }
 
 
+def published_tags(out_dir):
+    """Tags that already have an entry in accuracy_summary.json (raises on an unreadable file)."""
+    path = Path(out_dir) / "accuracy_summary.json"
+    return json.loads(path.read_text()).get("checkpoints", {}) if path.exists() else {}
+
+
+def collisions(out_dir, tags):
+    """Existing outputs a run of these tags would overwrite; P3 never replaces a published result."""
+    have = published_tags(out_dir)
+    return [f"{t}: {why}" for t in tags for why, hit in (
+        ("already in accuracy_summary.json", t in have),
+        (f"{t}-results.json exists", (Path(out_dir) / f"{t}-results.json").exists())) if hit]
+
+
+def merge_summary(out_dir, new):
+    """Write new checkpoint entries beside the existing ones, leaving those untouched."""
+    path = Path(out_dir) / "accuracy_summary.json"
+    old = json.loads(path.read_text()) if path.exists() else {**new, "checkpoints": {}}
+    old["checkpoints"].update(new["checkpoints"])
+    path.write_text(json.dumps(old, indent=2))
+    return old
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="registry id, HF repo or local path")
@@ -185,6 +209,10 @@ def main():
         return 1
 
     out_dir = Path(args.out) / cfg.id / "p3"
+    bad = collisions(out_dir, tags)
+    if bad:
+        print("refusing to overwrite published P3 results:\n  " + "\n  ".join(bad), file=sys.stderr)
+        return 1
     out_dir.mkdir(parents=True, exist_ok=True)
 
     summary = {
@@ -213,8 +241,8 @@ def main():
         print("nothing ran", file=sys.stderr)
         return 1
 
-    (out_dir / "accuracy_summary.json").write_text(json.dumps(summary, indent=2))
-    print("\n" + json.dumps(summary, indent=2))
+    merged = merge_summary(out_dir, summary)
+    print("\n" + json.dumps(merged, indent=2))
     return 0
 
 
