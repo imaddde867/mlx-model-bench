@@ -61,6 +61,8 @@ Prefill throughput saturates near 570–630 tok/s across all arms.
 
 ### Memory (`mx.get_peak_memory`)
 
+Basis: MLX allocator peak, in-process, GB decimal. It is not comparable with server RSS (HTTP rows), and neither is GPU VRAM on unified memory.
+
 | Metric | Arm 1 | Arm 3 | Delta (OptiQ overhead) |
 |---|---|---|---|
 | Load peak | 4.20 GB | 6.53 GB | +2.33 GB (+55.5%) |

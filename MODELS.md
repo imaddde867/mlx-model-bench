@@ -145,7 +145,10 @@ one of them means the comparison is no longer comparing models.
    layers are counted). Decode tps is measured against active work, so the label
    goes next to the number and the arithmetic is flagged as arithmetic.
 8. **Peak memory from `mx.get_peak_memory()` in-process, `ps` RSS for HTTP**, with
-   the source recorded in the row. Never mixed within a column without saying so.
+   the source recorded in the row (`memory` dict: method, scope, phase, unit,
+   availability). The two are different bases (MLX allocator buffers vs whole-process
+   resident set), are never subtracted or ranked together, and neither is GPU VRAM
+   (unified memory). `weights_gb` is checkpoint file size, not runtime memory.
 9. **`caffeinate`, plugged in, nothing else running**, one model per run.
 10. **Blind quality: one rater, slots assigned by a balanced rotation over a
     seeded shuffle**, key not opened until scores are filed. Balance matters: with
