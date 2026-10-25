@@ -199,6 +199,31 @@ class P0VerdictTests(unittest.TestCase):
         self.assertFalse(row["ok"])
         self.assertIn("differs", row["error"])
 
+    def test_truncated_thinking_answer_fails(self):
+        row = run_p0(lambda *_a, **_k: "<think>17 times 23, first 17 x 20")
+        self.assertFalse(row["ok"])
+
+
+class P0BudgetTests(unittest.TestCase):
+    def cmd_for(self, cfg):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        sel = [cfg.checkpoint()]
+        with patch.object(run_bench, "undownloaded", return_value=[]), \
+                patch.object(run_bench.gates, "refuse", return_value=False), \
+                patch.object(run_bench, "run", return_value=1) as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            run_bench.phase_p0(cfg, Path(tmp.name), sel)
+        return run.call_args[0][0]
+
+    def test_per_model_budget_reaches_subprocess(self):
+        cmd = self.cmd_for(registry.MODELS["lfm2.5-8b-a1b"])
+        self.assertEqual(cmd[cmd.index("--max-tokens") + 1], "512")
+
+    def test_default_budget_is_32(self):
+        cmd = self.cmd_for(CFG)
+        self.assertEqual(cmd[cmd.index("--max-tokens") + 1], "32")
+
 
 class EnforcementTests(unittest.TestCase):
     def setUp(self):

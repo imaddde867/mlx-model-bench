@@ -104,6 +104,7 @@ class Model:
     role: str = ""            # why this model is in the roster
     source: str = ""          # Hub repo or paper the metadata came from
     notes: str = ""
+    p0_max_tokens: int = 32
 
     def checkpoint(self, tag: Optional[str] = None) -> Checkpoint:
         if tag is None:
@@ -356,6 +357,7 @@ MODELS: Dict[str, Model] = {
         params_total=8.468,
         params_active=1.3,
         context_train=128000,
+        p0_max_tokens=512,  # always opens with <think>; 32 tokens truncates before the answer
         template_kwargs={"preserve_thinking": False},
         template_notes=(
             "No enable_thinking. The only control is preserve_thinking (default false), "
