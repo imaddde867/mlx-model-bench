@@ -315,7 +315,8 @@ def main():
 
         t0 = time.perf_counter()
         try:
-            model, tokenizer = load(str(ckpt.local_path))
+            model, tokenizer = load(str(ckpt.local_path),
+                                    tokenizer_config={"trust_remote_code": False})
         except Exception as e:
             row = {**base, "ok": False, "error": f"{type(e).__name__}: {e}",
                    "traceback_tail": traceback.format_exc().strip().splitlines()[-3:]}

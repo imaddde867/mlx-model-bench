@@ -44,7 +44,12 @@ def main():
     try:
         from mlx_lm import generate, load
 
-        model, tokenizer = load(args.model)
+        # trust_remote_code is passed as an explicit False, not left unset: Spark's
+        # repos declare an auto_map, and an unset value makes transformers ask
+        # interactively whether to execute the repo's own code -- which blocks a
+        # non-interactive run. mlx_lm has its own spark2_5 implementation and never
+        # needs the .py files.
+        model, tokenizer = load(args.model, tokenizer_config={"trust_remote_code": False})
         row["load_s"] = round(time.perf_counter() - t0, 2)
         row["load_peak_gb"] = round(mx.get_peak_memory() / 1e9, 2)
 

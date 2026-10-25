@@ -74,7 +74,8 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
     print(f"   template {json.dumps(template)}")
 
     t_load = time.perf_counter()
-    model, tokenizer = load(str(ckpt.local_path))
+    model, tokenizer = load(str(ckpt.local_path),
+                            tokenizer_config={"trust_remote_code": False})
     load_time = round(time.perf_counter() - t_load, 2)
     load_peak = round(mx.get_peak_memory() / 1e9, 3)
     print(f"   loaded in {load_time}s (peak {load_peak} GB)")
