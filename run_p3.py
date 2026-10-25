@@ -24,7 +24,7 @@ from pathlib import Path
 
 import gates
 import registry
-from p3_suite import CHECKERS, INSTR_PROMPTS, MATH_PROMPTS, QUALITY_PROMPTS, TOOL_PROMPTS
+from p3_suite import CHECKERS, GRADER_VERSION, INSTR_PROMPTS, MATH_PROMPTS, QUALITY_PROMPTS, TOOL_PROMPTS
 
 ROOT = Path(__file__).resolve().parent
 ACCURACY_MAX_TOKENS = 256
@@ -92,6 +92,7 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
         "params_total": cfg.params_total,
         "params_active": cfg.params_active,
         "template_kwargs": template,
+        "grader_version": GRADER_VERSION,
         "model_path": ckpt.local_dir,
         "load_time_s": load_time,
         "load_peak_gb": load_peak,

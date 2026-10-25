@@ -13,6 +13,7 @@ cross-model accuracy column worth printing at all.
 
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -451,134 +452,127 @@ QUALITY_PROMPTS = [
 # Checkers for Accuracy Auto-Grading
 # -----------------------------------------------------------------------------
 
-def extract_ints(text: str) -> list[int]:
-    cleaned = text.replace(",", "")
-    return [int(m) for m in re.findall(r"-?\b\d+\b", cleaned)]
+# Bump when any checker below changes what counts as a pass. Recorded in new
+# result files and used by `--rescore` so old and new scores are never mixed.
+GRADER_VERSION = "p3-grader-v2"
 
-def extract_floats(text: str) -> list[float]:
-    cleaned = text.replace(",", "")
-    matches = re.findall(r"-?\b\d+(?:\.\d+)?\b", cleaned)
-    return [float(m) for m in matches]
+FLOAT_TOLERANCE = 1e-4  # absolute, shared by float_match and tool-call floats
+
+_INT_RE = re.compile(r"-?(?:\d+|\d{1,3}(?:,\d{3})+)")
+_DEC_RE = re.compile(r"-?(?:(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?|\.\d+)")
+
+
+def parse_single_number(text: str, integer: bool):
+    """The whole response must be exactly one number ("Output only ..."); anything
+    else (prose, units, a second number, a trailing period) is invalid -> None."""
+    s = text.strip()
+    if not (_INT_RE if integer else _DEC_RE).fullmatch(s):
+        return None
+    s = s.replace(",", "")
+    return int(s) if integer else float(s)
+
 
 def check_int_match(text: str, target: int) -> bool:
-    ints = extract_ints(text)
-    if target in ints:
-        return True
-    # If the response ends with the target or matches target exactly
-    clean_strip = re.sub(r"[^\d\-]", "", text.strip())
-    return clean_strip == str(target)
+    return parse_single_number(text, True) == target
 
-def check_float_match(text: str, target: float, tolerance: float = 1e-4) -> bool:
-    floats = extract_floats(text)
-    for f in floats:
-        if abs(f - target) <= tolerance:
-            return True
-    return False
+
+def check_float_match(text: str, target: float, tolerance: float = FLOAT_TOLERANCE) -> bool:
+    v = parse_single_number(text, False)
+    return v is not None and abs(v - target) <= tolerance
+
+
+def _reject(token):
+    raise ValueError(token)
+
+
+def _no_dup_keys(pairs):
+    d = dict(pairs)
+    if len(d) != len(pairs):
+        raise ValueError("duplicate key")
+    return d
+
 
 def parse_json_from_text(text: str):
-    text = text.strip()
-    # Strip markdown block if present
-    if text.startswith("```"):
-        lines = text.splitlines()
-        if lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].startswith("```"):
-            lines = lines[:-1]
-        text = "\n".join(lines).strip()
-    # Find outer { ... }
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group(0))
-        except Exception:
-            pass
+    """Strict: the whole response must be one JSON value. The prompts forbid
+    markdown fences and explanations, so neither is stripped. None if invalid."""
     try:
-        return json.loads(text)
-    except Exception:
+        return json.loads(text.strip(), parse_constant=_reject, object_pairs_hook=_no_dup_keys)
+    except ValueError:
         return None
+
+
+def _same(actual, expected) -> bool:
+    """Type-strict equality: no str->number coercion, bool is not int, int param
+    rejects 20.0, float param accepts any JSON number within tolerance."""
+    if isinstance(actual, bool) or isinstance(expected, bool):
+        return type(actual) is type(expected) and actual == expected
+    if isinstance(expected, float):
+        return isinstance(actual, (int, float)) and abs(actual - expected) <= FLOAT_TOLERANCE
+    if isinstance(expected, list):
+        return isinstance(actual, list) and len(actual) == len(expected) and all(
+            _same(a, e) for a, e in zip(actual, expected))
+    if isinstance(expected, dict):
+        return isinstance(actual, dict) and actual.keys() == expected.keys() and all(
+            _same(actual[k], v) for k, v in expected.items())
+    return type(actual) is type(expected) and actual == expected
+
 
 def check_json_tool_match(text: str, target: dict) -> bool:
     parsed = parse_json_from_text(text)
-    if not isinstance(parsed, dict):
-        return False
-    if parsed.get("name") != target["name"]:
-        return False
-    args = parsed.get("arguments")
-    if not isinstance(args, dict):
-        return False
-    target_args = target["arguments"]
-    for k, v in target_args.items():
-        if k not in args:
-            return False
-        # compare values
-        actual_val = args[k]
-        if isinstance(v, list):
-            if not isinstance(actual_val, list) or actual_val != v:
-                return False
-        elif isinstance(v, float):
-            try:
-                if abs(float(actual_val) - v) > 1e-4:
-                    return False
-            except Exception:
-                return False
-        elif isinstance(v, int):
-            try:
-                if int(actual_val) != v:
-                    return False
-            except Exception:
-                return False
-        else:
-            if str(actual_val).strip() != str(v).strip():
-                return False
-    return True
+    # exact key sets: every required argument present, no invented extras
+    return isinstance(parsed, dict) and parsed.keys() == {"name", "arguments"} and _same(parsed, target)
+
+
+# Instruction checkers are format-only: they test the stated, objectively
+# countable constraint and say nothing about whether the content is correct.
+
+_ABBREV_RE = re.compile(r"\b(?:e\.g|i\.e|etc|vs|approx|cf|fig)\.", re.IGNORECASE)
+_LIST_RE = re.compile(r"^\s*(?:[-*\u2022\u2013+]|\d+[.)])(?:\s|$)")
+
 
 def count_sentences(text: str) -> int:
-    text = text.strip()
-    # Split by standard sentence terminators
-    sentences = re.split(r"(?<=[.!?])\s+", text)
-    # Filter out empty or whitespace sentences
-    valid = [s.strip() for s in sentences if s.strip() and re.search(r"\w", s)]
-    return len(valid)
+    text = _ABBREV_RE.sub(lambda m: m.group(0).replace(".", ""), text.strip())
+    sentences = re.split(r"(?<=[.!?])[\"')\]]*\s+|\n\s*\n", text)
+    return sum(1 for s in sentences if re.search(r"\w", s))
+
 
 def check_two_sentences_no_lists(text: str, target=None) -> bool:
-    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
-    for l in lines:
-        if l.startswith(("-", "*", "•")) or re.match(r"^\d+[\.\)]", l):
-            return False
-    s_count = count_sentences(text)
-    return s_count == 2
+    if any(_LIST_RE.match(l) for l in text.splitlines()):
+        return False
+    return count_sentences(text) == 2
+
 
 def check_no_letter_e(text: str, target=None) -> bool:
-    return "e" not in text.lower() and len(text.strip()) > 10
+    # NFKD folds accented and full-width variants (e-acute, fullwidth e) to "e"
+    folded = unicodedata.normalize("NFKD", text).lower()
+    return "e" not in folded and bool(text.strip())
+
 
 def check_qkv_single_line(text: str, target=None) -> bool:
-    cleaned = text.strip()
-    if "\n" in cleaned:
-        return False
-    items = [x.strip().lower() for x in cleaned.split(",")]
-    # Should contain query, key, value in some order
-    has_q = any("query" in x for x in items)
-    has_k = any("key" in x for x in items)
-    has_v = any("value" in x for x in items)
-    return len(items) == 3 and has_q and has_k and has_v
+    items = [x.strip().lower() for x in text.strip().split(",")]
+    return "\n" not in text.strip() and sorted(items) == ["key", "query", "value"]
+
 
 def check_word_count_25_35(text: str, target=None) -> bool:
-    words = [w for w in re.findall(r"\b\w+\b", text)]
+    # whitespace-delimited tokens containing a letter or digit ("training-serving" is one word)
+    words = [w for w in text.split() if re.search(r"\w", w)]
     return 25 <= len(words) <= 35
 
+
 def check_five_hyphen_lines(text: str, target=None) -> bool:
-    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
-    if len(lines) != 5:
+    lines = [l.rstrip() for l in text.splitlines() if l.strip()]
+    if len(lines) != 5 or not all(l.startswith("- ") and l[2:].strip() for l in lines):
         return False
-    return all(l.startswith("- ") for l in lines)
+    return len({l[2:].strip().lower() for l in lines}) == 5  # five distinct items
+
 
 def check_no_realtime_latency(text: str, target=None) -> bool:
-    low = text.lower()
-    if "real-time" in low or "realtime" in low or "real time" in low:
+    low = unicodedata.normalize("NFKC", text).lower()
+    # any hyphen/dash/space (or none) between "real" and "time"
+    if re.search(r"real[\s_\-\u2010-\u2015\u2212]*time", low) or "latency" in low:
         return False
-    if "latency" in low:
-        return False
-    return len(text.strip()) > 20
+    return bool(low.strip())
+
 
 def check_all_caps(text: str, target=None) -> bool:
     alphas = [c for c in text if c.isalpha()]
@@ -586,12 +580,13 @@ def check_all_caps(text: str, target=None) -> bool:
         return False
     return all(c.isupper() for c in alphas)
 
+
 def check_one_sentence_no_gradient(text: str, target=None) -> bool:
     low = text.lower()
     if "gradient" in low or "derivative" in low:
         return False
-    s_count = count_sentences(text)
-    return s_count == 1
+    return count_sentences(text) == 1
+
 
 CHECKERS = {
     "int_match": check_int_match,
