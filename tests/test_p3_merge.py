@@ -46,5 +46,21 @@ class TestMerge(unittest.TestCase):
         self.assertIn("mlx-8bit-results.json", run_p3.collisions(self.d, ["mlx-8bit"])[0])
 
 
+class FinalAnswerTests(unittest.TestCase):
+    def test_strips_finished_thinking(self):
+        self.assertEqual(run_p3.final_answer("<think>\nnotes 17*23\n</think>\n391"), "391")
+
+    def test_unfinished_thinking_is_empty_not_graded(self):
+        self.assertEqual(run_p3.final_answer("<think>\nstill reasoning 391"), "")
+
+    def test_plain_answers_unchanged(self):
+        self.assertEqual(run_p3.final_answer("391"), "391")
+
+    def test_budget_scales_only_for_thinking_model(self):
+        import registry
+        self.assertEqual(registry.get_model("lfm2.5-8b-a1b").p3_budget_x, 4)
+        self.assertEqual(registry.get_model("nemotron-3.5-bolt").p3_budget_x, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -32,6 +32,15 @@ ACCURACY_MAX_TOKENS = 256
 QUALITY_MAX_TOKENS = 384
 
 
+def final_answer(text):
+    """Answer after a reasoning block. Graders and blind scoring see this, never the
+    thinking: an unfinished <think> (hit the token cap) is an empty answer, so a
+    truncated model fails honestly rather than being graded on its notes."""
+    if "</think>" in text:
+        return text.rsplit("</think>", 1)[1].strip()
+    return "" if text.lstrip().startswith("<think>") else text
+
+
 def run_single(model, tokenizer, prompt_text, template, max_tokens):
     import mlx.core as mx
     from mlx_lm import stream_generate
@@ -57,7 +66,8 @@ def run_single(model, tokenizer, prompt_text, template, max_tokens):
     gen = resp.generation_tokens if resp else 0
     prompt_tokens = resp.prompt_tokens if resp else 0
     return {
-        "text": "".join(parts).strip(),
+        "text": final_answer("".join(parts).strip()),
+        "raw_text": "".join(parts).strip(),
         "prompt_tokens": prompt_tokens,
         "generation_tokens": gen,
         "wall_s": round(wall, 4),
@@ -94,6 +104,8 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
         "params_active": cfg.params_active,
         "template_kwargs": template,
         "grader_version": GRADER_VERSION,
+        "max_tokens": {"accuracy": ACCURACY_MAX_TOKENS * cfg.p3_budget_x,
+                       "quality": QUALITY_MAX_TOKENS * cfg.p3_budget_x},
         "model_path": ckpt.local_dir,
         "load_time_s": load_time,
         "load_peak_gb": load_peak,
@@ -105,7 +117,7 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
     all_acc = MATH_PROMPTS + TOOL_PROMPTS + INSTR_PROMPTS
     print(f"   {len(all_acc)} accuracy prompts")
     for idx, item in enumerate(all_acc, 1):
-        gen = run_single(model, tokenizer, item["prompt"], template, ACCURACY_MAX_TOKENS)
+        gen = run_single(model, tokenizer, item["prompt"], template, ACCURACY_MAX_TOKENS * cfg.p3_budget_x)
         checker = CHECKERS[item["checker"]]
         target = item.get("target")
         try:
@@ -121,6 +133,7 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
             "target": target,
             "checker": item["checker"],
             "response": gen["text"],
+            **({"raw_response": gen["raw_text"]} if gen["raw_text"] != gen["text"] else {}),
             "passed": passed,
             "tokens": {"prompt": gen["prompt_tokens"], "generation": gen["generation_tokens"]},
             "metrics": {"wall_s": gen["wall_s"], "ttft_s": gen["ttft_s"], "decode_tps": gen["decode_tps"]},
@@ -129,13 +142,14 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
 
     print(f"   {len(QUALITY_PROMPTS)} quality prompts")
     for idx, item in enumerate(QUALITY_PROMPTS, 1):
-        gen = run_single(model, tokenizer, item["prompt"], template, QUALITY_MAX_TOKENS)
+        gen = run_single(model, tokenizer, item["prompt"], template, QUALITY_MAX_TOKENS * cfg.p3_budget_x)
         results["quality_runs"].append({
             "id": item["id"],
             "task": item["task"],
             "prompt": item["prompt"],
             "rubric": item["rubric"],
             "response": gen["text"],
+            **({"raw_response": gen["raw_text"]} if gen["raw_text"] != gen["text"] else {}),
             "tokens": {"prompt": gen["prompt_tokens"], "generation": gen["generation_tokens"]},
             "metrics": {"wall_s": gen["wall_s"], "ttft_s": gen["ttft_s"], "decode_tps": gen["decode_tps"]},
         })
