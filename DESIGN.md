@@ -68,18 +68,25 @@ harness now addresses the same things as `--model nemotron-3.5-bolt
 | 2 | `mlx_lm` 0.32.2 | same | HTTP (`mlx_lm.server`) |
 | 3 | `mlx_lm` 0.32.2 | `mlx-community/…OptiQ-4bit` (6.53 GB loaded / 7.49 GB download, mixed 4/8) | in-process |
 | 4 | `mlx-optiq` 0.7.3 | `mlx-community/…OptiQ-4bit` | HTTP (`optiq serve`) |
-| 5 | `mlx-optiq` 0.7.3 | OptiQ + Gemma-4 assistant drafter | HTTP |
+| 5 | `mlx-optiq` 0.7.3 | OptiQ + Gemma-4 assistant drafter | HTTP (documented; not measured) |
 
-Arm 5 uses Gemma-4's assistant drafter (or mlx-vlm MTP), **not** NVIDIA's
-DFlash. DFlash ships as one GGUF and conditions on five hidden layers of the
-target, so it needs an engine that exposes mid-layer activations — `mlx_lm`
-does not. See "What the technical report changes".
+Arm 5 is the external assistant-drafter path for the Nemotron target, distinct
+from native MTP and from DFlash. The pinned OptiQ 0.7.3 source has a Gemma-4
+assistant adapter that consumes target embeddings and hidden states, and the
+OptiQ model card documents this exact pairing. Neither compatibility on this
+checkpoint nor performance or memory was demonstrated by this study. DFlash is
+a separate block-diffusion method, with NVIDIA inference-stack integrations;
+this project has no verified DFlash integration in its pinned MLX stack. See
+"What the technical report changes".
 
 Arm 2 exists so arm 4's HTTP overhead is not mistaken for engine cost.
 Arm 3 exists only if `mlx_lm` can load the mixed-bit file at all — P0 says it can
-(4.6 s load, 6.65 GB peak), so arm 3 stays. Arm 4 does not: `optiq serve` 0.7.3
-dies on every completion with a 10.5 GiB Metal allocation on 16 GB. See `P0.md`;
-until that is fixed, arm 5 has no transport and arm 4 reports as unmeasurable.
+(4.6 s load, 6.65 GB peak), so arm 3 stays. Arm 4's no-drafter request crashes
+in the recorded P0 run with a 10.5 GiB Metal allocation on this 16 GB machine.
+Arm 5 is a separate `--drafter` path that was not attempted; do not infer its
+compatibility or memory use from arm 4. The pinned OptiQ 0.7.3 adapter supports
+Gemma-4 assistant checkpoints and the model card documents this target pairing,
+but this is not a local execution result. See `P0.md` and `REPORT.md` section 1.4.
 
 ## Metrics
 
@@ -132,8 +139,9 @@ claims a voice-assistant use case where short-prompt TTFT dominates.
 Other hardware; llama.cpp or GGUF; 64K-context behavior (KV cache would not fit
 16 GB); quantization tuning (we compare published checkpoints, we do not produce
 them); anything needing the vision tower; serving under concurrency; **DFlash**
-(GGUF + NVIDIA GPUs only). Models enter the roster only if they load in
-`mlx_lm` 0.32.2 at 4-bit and fit 16 GB with room for a KV cache.
+(no verified integration in this repo's pinned MLX stack). Models enter the roster
+only if they load in `mlx_lm` 0.32.2 at 4-bit and fit 16 GB with room for a KV
+cache.
 
 ## Phases
 
@@ -159,18 +167,22 @@ Roster (repeated per model, in this order):
 
 Read from `~/Downloads/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB-Technical-Report.pdf`.
 
-- **DFlash is out of reach and irrelevant to TTFT.** It ships as a single GGUF
-  (737 MB) and every speedup number is vLLM/NIM on RTX PRO 6000, DGX Spark,
-  RTX 5070. The paper states TTFT "changes by less than 100 ms in all
-  settings" — it shortens decode only. The 2.74× is 124.7 → 341.2 tok/s on an
-  RTX PRO 6000. The closest analogue to a 16 GB Mac is DGX Spark at 20.1 →
-  71.6 tok/s.
-- **The 1.21× is the number that matters for adoption**, not the 2.74×. The
-  2.74× is against *no* speculative decoding; Gemma-4-E4B-it ships MTP, and
-  against that Bolt is 1.21× on RTX 5070 and **1.05× on RTX Spark** — i.e.
-  nearly nothing. Bolt's edge over its parent is quality and post-training,
-  not speed. Worth testing whether plain Gemma-4-E4B-it + MTP in mlx-vlm is
-  the better deal.
+- **The earlier DFlash assessment is withdrawn.** The current NVIDIA integration
+  source describes DFlash as a block-diffusion drafter integrated through
+  Speculators/vLLM and SGLang, using target hidden states; it does not establish
+  the old GGUF-only, sub-100-ms-TTFT, or edge-hardware claims. DFlash remains out
+  of scope because this repo has no verified path in its pinned MLX stack, not
+  because those older claims were demonstrated here.
+- **The Nemotron OptiQ card documents an external Gemma-4 assistant-drafter
+  pairing**, whereas native MTP is absent from the target. The pinned OptiQ 0.7.3
+  adapter implements Gemma-4 assistant drafting using target hidden states, but
+  this study has not established that this exact target/drafter combination
+  executes correctly. Neither path has been measured here on the 16 GB M4; keep
+  the two mechanisms and evidence separate. The card's 24 GB M4 numbers are
+  upstream context only. The published
+  drafter checkpoint is 78.8M parameters; its safetensors file is 159,138,208
+  bytes (~0.159 GB), not the unsupported 3.5 GB estimate. Its end-to-end peak
+  memory and speed on this host remain unmeasured.
 - **Published evals are Q4_K_M GGUF via llama.cpp**, not these MLX
   quantizations. Their accuracy numbers are an upper reference for the
   original file, never an expected value for our arms.
@@ -180,4 +192,6 @@ Read from `~/Downloads/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB-Technical-Report.pdf`.
 ## Open
 
 - Accuracy/quality prompt authorship: mine, unless you want your own domain.
-- Arm 5's drafter is a second download (bf16, few GB).
+- Arm 5's separate Gemma-4 E4B assistant checkpoint is about 0.159 GB of
+  safetensors (upstream Hub metadata); its total live runtime memory and
+  compatibility with this Nemotron checkpoint are unmeasured here.
