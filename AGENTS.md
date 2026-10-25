@@ -115,8 +115,10 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 
 ## Known traps
 
-- NVIDIA's **DFlash** drafter is GGUF + NVIDIA GPUs only, and it barely moves
-  TTFT. Do not plan around it.
+- The separate assistant drafter, native MTP and DFlash are distinct paths. The
+  pinned OptiQ adapter and model card document a Gemma-4 assistant pairing, but
+  exact compatibility is unverified here; this repo has no verified DFlash
+  integration in its pinned MLX stack. Do not infer local results from upstream.
 - Paper evals are Q4_K_M GGUF, not these MLX quants. Their scores are an upper
   reference for a different file, not a target for ours.
 - 64K context will not fit in 16 GB. Do not test it.
