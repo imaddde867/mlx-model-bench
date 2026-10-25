@@ -81,7 +81,11 @@ def run(cmd, log_path, timeout=None):
     with open(log_path, "w") as fh:
         fh.write("$ " + " ".join(cmd) + "\n\n")
         fh.flush()
-        proc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, timeout=timeout)
+        try:
+            proc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            fh.write(f"\ntimed out after {timeout}s\n")
+            return 124
     return proc.returncode
 
 
@@ -222,6 +226,10 @@ def phase_p0(cfg, out, selected):
              "--template-kwargs", json.dumps(cfg.template_kwargs)],
             log, timeout=900,
         )
+        if rc != 0:
+            print(f"  {ckpt.tag}: p0 exited {rc}; see {log}")
+            all_ok = False
+            continue
         row = None
         for line in reversed(log.read_text().splitlines()):
             if line.startswith("{"):
@@ -246,9 +254,11 @@ def phase_p0(cfg, out, selected):
     return all_ok
 
 
-def wait_for_server(url, timeout=240):
+def wait_for_server(url, timeout=240, proc=None):
     t0 = time.time()
     while time.time() - t0 < timeout:
+        if proc is not None and proc.poll() is not None:
+            return False  # died during startup; waiting out the timeout hides the exit code
         try:
             with urllib.request.urlopen(url.rstrip("/") + "/v1/models", timeout=3) as r:
                 if r.status == 200:
@@ -290,8 +300,8 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
                 stdout=server_log, stderr=subprocess.STDOUT,
             )
         try:
-            if not wait_for_server(f"http://127.0.0.1:{port}"):
-                print(f"    server never became ready; see {slog}")
+            if not wait_for_server(f"http://127.0.0.1:{port}", proc=server):
+                print(f"    server never became ready (exit {server.poll()}); see {slog}")
                 log_tail(slog)
                 ok = False
                 continue
@@ -330,27 +340,41 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
 
     For the baseline this arm was unmeasurable (P0.md: an 11.27 GB single Metal
     allocation). Attempting it per model keeps the roster honest: either the arm
-    produces a number, or it records why it cannot. An unmeasurable arm is a
-    result, not an error, so it does not fail the run.
+    produces a number, or it records why it cannot.
+
+    Returns {checkpoint tag: outcome}. "unmeasurable" (no runtime, server never
+    ready, engine produced no measurement at all) is a result, not an error;
+    "failed" and "partial" are. Unmeasurable arms leave unmeasurable.json next to
+    where the row would have gone.
     """
     targets = [c for c in selected if "mlx-optiq" in c.engines]
     if not targets:
         print("  no OptiQ checkpoint selected — engine arm skipped")
-        return True
+        return {}
     if undownloaded(cfg, targets) or gates.refuse(cfg, targets, out):
-        return False
+        return {c.tag: "failed" for c in targets}
     exe = optiq_exe()
-    if exe is None:
-        print("  .venv-optiq not present — engine arm unmeasurable here")
-        return True
+    version = optiq_version() if exe else "mlx-optiq not installed"
 
-    version = optiq_version()
+    def unmeasurable(ckpt, run_dir, reason, **extra):
+        print(f"    {reason}; recorded as unmeasurable")
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "unmeasurable.json").write_text(json.dumps({
+            "model_id": cfg.id, "checkpoint": ckpt.tag, "engine": version,
+            "outcome": "unmeasurable", "reason": reason, **extra,
+        }, indent=2))
+        return "unmeasurable"
+
+    outcomes = {}
     for ckpt in targets:
-        port = free_port()
         # The same directory bench.py will write into, so a row and the record of
         # why it could not be produced live together.
         run_dir = out / cfg.id / f"{ckpt.tag}-http-optiq-engine"
-        run_dir.mkdir(parents=True, exist_ok=True)
+        if exe is None:
+            print(f"  {ckpt.tag}: .venv-optiq not present")
+            outcomes[ckpt.tag] = unmeasurable(ckpt, run_dir, "mlx-optiq runtime not installed (.venv-optiq)")
+            continue
+        port = free_port()
         print(f"  {ckpt.tag}: {exe.name} serve on :{port} ({version})")
         slog = out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine.log"
         cmd = [str(exe), "serve", "--model", str(ckpt.local_path), "--port", str(port)]
@@ -359,42 +383,53 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
                    "--port", str(port)]
         slog.parent.mkdir(parents=True, exist_ok=True)
         with open(slog, "w") as server_log:
-            server = subprocess.Popen(cmd, stdout=server_log, stderr=subprocess.STDOUT)
+            try:
+                server = subprocess.Popen(cmd, stdout=server_log, stderr=subprocess.STDOUT)
+            except OSError as e:
+                outcomes[ckpt.tag] = unmeasurable(ckpt, run_dir, f"cannot launch server: {e}")
+                continue
         try:
-            if not wait_for_server(f"http://127.0.0.1:{port}"):
-                print(f"    server never became ready; recorded as unmeasurable ({slog})")
+            if not wait_for_server(f"http://127.0.0.1:{port}", proc=server):
                 log_tail(slog)
-                (run_dir / "unmeasurable.json").write_text(json.dumps({
-                    "model_id": cfg.id, "checkpoint": ckpt.tag, "engine": version,
-                    "reason": "server did not answer /v1/models", "log": str(slog),
-                }, indent=2))
+                outcomes[ckpt.tag] = unmeasurable(
+                    ckpt, run_dir, "server did not answer /v1/models",
+                    server_exit=server.poll(), log=str(slog))
                 continue
             # --tag keeps the engine arm out of the plain mlx_lm HTTP row's
             # directory: two engines on one checkpoint are two rows, and one must
             # never overwrite the other.
+            blog = out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine-bench.log"
             rc = run([sys.executable, str(ROOT / "bench.py"),
                       "--model", cfg.id, "--checkpoint", ckpt.tag, "--transport", "http",
                       "--tag", "optiq-engine", "--engine", "mlx-optiq",
                       "--base-url", f"http://127.0.0.1:{port}", "--server-pid", str(server.pid),
                       "--server-version", version, "--trials", str(trials),
                       "--max-tokens", str(max_tokens), "--out", str(out),
-                      "--prompts", *prompts],
-                     out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine-bench.log")
-            if rc != 0:
-                tail = (out / cfg.id / "logs" / f"p2-{ckpt.tag}-optiq-engine-bench.log") \
-                    .read_text().strip().splitlines()[-3:]
-                print(f"    engine arm failed ({rc}); recorded as unmeasurable")
-                (run_dir / "unmeasurable.json").write_text(json.dumps({
-                    "model_id": cfg.id, "checkpoint": ckpt.tag, "engine": version,
-                    "reason": "bench exited non-zero", "tail": tail,
-                }, indent=2))
+                      "--prompts", *prompts], blog)
+            if rc == 0:
+                outcomes[ckpt.tag] = "completed"
+                continue
+            print(f"    engine arm benchmark exited {rc}; see {blog}")
+            log_tail(blog)
+            try:
+                bench_outcome = json.loads((run_dir / "summary.json").read_text()).get("outcome")
+            except (OSError, ValueError):
+                bench_outcome = None  # bench died before summarising: nothing to trust
+            if bench_outcome == "failed":
+                # Not one trial succeeded, warm-up included: the engine cannot serve
+                # this checkpoint here. The error rows stay in run_dir as evidence.
+                outcomes[ckpt.tag] = unmeasurable(
+                    ckpt, run_dir, f"bench exited {rc} with no successful trial",
+                    tail=blog.read_text().strip().splitlines()[-3:])
+            else:
+                outcomes[ckpt.tag] = "partial" if bench_outcome == "partial" else "failed"
         finally:
             server.terminate()
             try:
                 server.wait(timeout=20)
             except subprocess.TimeoutExpired:
                 server.kill()
-    return True
+    return outcomes
 
 
 def phase_p3(cfg, out, selected):
@@ -452,7 +487,9 @@ def main():
             ok = phase_p2(cfg, out, args.trials, args.prompts, args.max_tokens,
                           server_version_string(), selected)
         elif ph == "p2-optiq":
-            ok = phase_p2_optiq(cfg, out, args.trials, args.prompts, args.max_tokens, selected)
+            outcomes = phase_p2_optiq(cfg, out, args.trials, args.prompts, args.max_tokens, selected)
+            print(f"  outcomes: {json.dumps(outcomes)}")
+            ok = all(o in ("completed", "unmeasurable") for o in outcomes.values())
         elif ph == "p3":
             ok = phase_p3(cfg, out, selected)
         if not ok:

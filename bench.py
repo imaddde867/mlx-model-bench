@@ -44,6 +44,10 @@ import registry
 
 ROOT = Path(__file__).resolve().parent
 PROMPTS = ROOT / "prompts"
+MIN_PUBLISHABLE_TRIALS = 5  # AGENTS.md: median of 5 and the range
+# A trial without these is not a measurement. decode_tps and peak_gb are
+# legitimately None for one-token answers / HTTP without --server-pid.
+REQUIRED_METRICS = ("prompt_tokens", "generation_tokens", "ttft_s", "prefill_tps", "wall_s")
 
 
 def versions():
@@ -177,6 +181,7 @@ def run_http(text, args, template):
     usage = finish = None
     parts = []
     reasoning_parts = []
+    done = False
     try:
         with urllib.request.urlopen(req, timeout=900) as resp:
             for raw in resp:
@@ -185,8 +190,11 @@ def run_http(text, args, template):
                     continue
                 data = line[5:].strip()
                 if data == "[DONE]":
+                    done = True
                     break
                 chunk = json.loads(data)
+                if chunk.get("error"):
+                    raise RuntimeError(f"server reported an error mid-stream: {chunk['error']}")
                 if chunk.get("usage"):
                     usage = chunk["usage"]
                 choices = chunk.get("choices") or []
@@ -214,6 +222,8 @@ def run_http(text, args, template):
         peak = sampler.stop() if sampler else None
     wall = time.perf_counter() - t0
 
+    if not done:
+        raise RuntimeError("stream ended without [DONE]; response is truncated")
     if first is None:
         raise RuntimeError("no content or reasoning chunk in stream")
 
@@ -327,7 +337,8 @@ def main():
         from mlx_lm import load
 
         if not ckpt.available:
-            row = {**base, "ok": False, "error": f"checkpoint not downloaded: {ckpt.local_dir}"}
+            row = {**base, "ok": False, "outcome": "failed",
+                   "error": f"checkpoint not downloaded: {ckpt.local_dir}"}
             (out_dir / "load-error.json").write_text(json.dumps(row, indent=2))
             print(json.dumps(row))
             return 1
@@ -337,7 +348,7 @@ def main():
             model, tokenizer = load(str(ckpt.local_path),
                                     tokenizer_config={"trust_remote_code": False})
         except Exception as e:
-            row = {**base, "ok": False, "error": f"{type(e).__name__}: {e}",
+            row = {**base, "ok": False, "outcome": "failed", "error": f"{type(e).__name__}: {e}",
                    "traceback_tail": traceback.format_exc().strip().splitlines()[-3:]}
             (out_dir / "load-error.json").write_text(json.dumps(row, indent=2))
             print(json.dumps(row))
@@ -374,6 +385,9 @@ def main():
             row["nonce"] = not args.no_nonce
             try:
                 row.update(run(run_text, args))
+                missing = [m for m in REQUIRED_METRICS if row.get(m) is None]
+                if missing:
+                    raise RuntimeError(f"missing required metrics: {', '.join(missing)}")
                 row["ok"] = True
             except Exception as e:
                 row["ok"] = False
@@ -402,16 +416,36 @@ def main():
         "reasoning_only_runs": sum(1 for r in kept if r.get("reasoning_only")),
         "prompts": {},
     }
+    problems = []
+    if args.trials < MIN_PUBLISHABLE_TRIALS:
+        problems.append(f"{args.trials} trials < {MIN_PUBLISHABLE_TRIALS} (smoke run)")
     for name in args.prompts:
         got = [r for r in kept if r["prompt"] == name and r.get("ok")]
+        warm_ok = any(r["discarded"] and r.get("ok") for r in rows if r["prompt"] == name)
         summary["prompts"][name] = {
+            "warmup_ok": warm_ok,
+            "kept_ok": len(got),
+            "kept_expected": args.trials,
             "prompt_tokens": next((r["prompt_tokens"] for r in got), None),
             **{m: stats([r.get(m) for r in got])
                for m in ("ttft_s", "prefill_tps", "decode_tps", "generation_tokens", "peak_gb", "wall_s")},
         }
+        if not warm_ok:
+            problems.append(f"{name}: warm-up did not succeed")
+        if len(got) < args.trials:
+            problems.append(f"{name}: {len(got)}/{args.trials} kept trials succeeded")
+    # completed = everything requested was measured; partial = some measurement
+    # exists next to failures; failed = nothing usable. "unmeasurable" (runtime
+    # absent, engine cannot serve the checkpoint) is decided by run_bench.py.
+    complete = not summary["runs_failed"] and not any(
+        not p["warmup_ok"] or p["kept_ok"] < args.trials for p in summary["prompts"].values())
+    summary["outcome"] = ("completed" if complete
+                          else "partial" if any(r.get("ok") for r in rows) else "failed")
+    summary["publishable"] = complete and not problems
+    summary["non_publishable_reasons"] = problems
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps({"summary": str(out_dir / "summary.json"), **summary}))
-    return 1 if summary["runs_failed"] else 0
+    return 0 if summary["outcome"] == "completed" else 1
 
 
 if __name__ == "__main__":
