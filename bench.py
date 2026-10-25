@@ -49,6 +49,79 @@ MIN_PUBLISHABLE_TRIALS = 5  # AGENTS.md: median of 5 and the range
 # legitimately None for one-token answers / HTTP without --server-pid.
 REQUIRED_METRICS = ("prompt_tokens", "generation_tokens", "ttft_s", "prefill_tps", "wall_s")
 
+# Timing boundaries (issue #6). Historical keys keep their original meaning;
+# results/ rows already use them. Revised numbers live under new names.
+#
+# Events. "first token": in-process, the first stream_generate yield (every
+# yield is one token); HTTP, the first SSE chunk whose delta.content or
+# delta.reasoning is non-empty ("first visible delta" -- a token the server
+# strips or has not finished decoding produces no chunk, so this can lag the
+# engine's first token). "generation end": in-process, the final yield (the EOS
+# or max_tokens token); HTTP, the chunk carrying finish_reason (falls back to the
+# last visible delta). Both transports count the EOS token in generation_tokens.
+#
+# Historical (unchanged, scopes differ by transport -- see ttft_scope):
+#   ttft_s       inproc: before chat template -> first token
+#                http:   after JSON serialization, request send -> first visible delta
+#   prefill_tps  prompt_tokens / ttft_s (so it inherits ttft_s's scope)
+#   decode_tps   (gen-1) / (first token -> last token-bearing event); over HTTP the
+#                last event is the last visible delta, which on a "stop" finish
+#                precedes the EOS token, so it divides gen-1 tokens by gen-2 steps
+#   wall_s       inproc: before chat template -> stream exhausted
+#                http:   request send -> [DONE] (end-to-end user latency)
+# Revised (same boundaries on both transports unless marked):
+#   request_ttft_s     messages in hand (before chat template / before JSON
+#                      serialization) -> first token. The cross-transport TTFT;
+#                      http minus inproc = serialization + transport + server.
+#   prep_s             inproc only: chat template rendering. None over HTTP
+#                      (the server does it; not observable from the client).
+#   engine_ttft_s      inproc only: stream_generate call -> first token
+#                      (tokenize + prefill + first sample). None over HTTP.
+#   first_content_s    http only: messages in hand -> first non-empty
+#                      delta.content; later than request_ttft_s when the stream
+#                      is reasoning-first, None when reasoning-only.
+#   first_token_kind   http only: "reasoning" or "content", whichever came first.
+#   cached_prompt_tokens  prompt tokens served from a prefix cache: 0 in-process
+#                      (no prompt_cache is passed), usage.prompt_tokens_details.
+#                      cached_tokens over HTTP (None if the server omits it).
+#   decode_tokens      generation_tokens - 1 (tokens after the first)
+#   decode_s           first token -> generation end
+#   decode_window_tps  decode_tokens / decode_s; None whenever decode_flags is
+#                      non-empty, so a flagged row cannot be ranked.
+#   decode_flags       no_token_event | no_token_count | too_short (decode_tokens <
+#                      decode_min_tokens) | no_decode_window | prefix_cache_hit
+MIN_DECODE_TOKENS = 32
+TTFT_SCOPE = {
+    "inproc": "inproc: chat template + tokenize + prefill + first token; no transport",
+    "http": "http: request send + transport + server template/tokenize/prefill + first visible "
+            "SSE delta; excludes client JSON serialization",
+}
+
+
+def decode_window(t_req, first, end, gen, cached=None, nonce=True):
+    """Revised timing fields from one event timeline (see the block above)."""
+    decode_tokens = gen - 1 if gen else None
+    decode_s = end - first if first is not None and end is not None else None
+    flags = []
+    if first is None:
+        flags.append("no_token_event")
+    if not gen:
+        flags.append("no_token_count")
+    elif decode_tokens < MIN_DECODE_TOKENS:
+        flags.append("too_short")
+    if decode_s is None or decode_s <= 0:
+        flags.append("no_decode_window")
+    if nonce and cached:
+        flags.append("prefix_cache_hit")
+    return {
+        "request_ttft_s": round(first - t_req, 4) if first is not None else None,
+        "cached_prompt_tokens": cached,
+        "decode_tokens": decode_tokens,
+        "decode_s": round(decode_s, 4) if decode_s is not None else None,
+        "decode_window_tps": None if flags else round(decode_tokens / decode_s, 1),
+        "decode_flags": flags,
+    }
+
 
 def versions():
     out = {}
@@ -129,6 +202,7 @@ def run_mlx(model, tokenizer, text, args, template):
     first = last = None
     parts = []
     resp = None
+    t_engine = time.perf_counter()
     for resp in stream_generate(model, tokenizer, prompt=prompt, max_tokens=args.max_tokens,
                                 **sampling_kwargs(args)):
         now = time.perf_counter()
@@ -151,10 +225,16 @@ def run_mlx(model, tokenizer, text, args, template):
         "peak_gb_source": "mx_peak",
         "finish_reason": resp.finish_reason,
         "text": "".join(parts).strip(),
+        "prep_s": round(t_engine - t0, 4),
+        "engine_ttft_s": round(first - t_engine, 4),
+        "first_content_s": None,
+        "first_token_kind": None,
+        **decode_window(t0, first, last, gen, cached=0),
     }
 
 
 def run_http(text, args, template):
+    t_req = time.perf_counter()
     # Omit "model": mlx_lm.server falls back to its loaded checkpoint. Passing an
     # id from /v1/models is unsafe there (it lists every known alias, not the served one).
     body = {
@@ -177,7 +257,7 @@ def run_http(text, args, template):
     if sampler:
         sampler.start()
     t0 = time.perf_counter()
-    first = last = None
+    first = last = end = first_content = first_kind = None
     usage = finish = None
     parts = []
     reasoning_parts = []
@@ -200,7 +280,9 @@ def run_http(text, args, template):
                 choices = chunk.get("choices") or []
                 if not choices:
                     continue
-                finish = choices[0].get("finish_reason") or finish
+                if choices[0].get("finish_reason"):
+                    finish = choices[0]["finish_reason"]
+                    end = time.perf_counter()
                 # mlx_lm.server splits a template's thinking block into
                 # `delta.reasoning` and leaves `delta.content` null while the model
                 # is still thinking. A row that only counted content would both
@@ -213,6 +295,9 @@ def run_http(text, args, template):
                     now = time.perf_counter()
                     if first is None:
                         first = now
+                        first_kind = "reasoning" if thinking else "content"
+                    if text and first_content is None:
+                        first_content = now
                     last = now
                     if text:
                         parts.append(text)
@@ -224,18 +309,20 @@ def run_http(text, args, template):
 
     if not done:
         raise RuntimeError("stream ended without [DONE]; response is truncated")
-    if first is None:
-        raise RuntimeError("no content or reasoning chunk in stream")
+    # A usage-only stream (no visible delta) is returned, not raised: its token
+    # accounting is real, and main() fails the trial on the missing ttft_s.
 
-    prompt_tokens = (usage or {}).get("prompt_tokens")
-    gen = (usage or {}).get("completion_tokens")
+    usage = usage or {}
+    prompt_tokens = usage.get("prompt_tokens")
+    gen = usage.get("completion_tokens")
+    cached = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
     return {
         "prompt_tokens": prompt_tokens,
         "generation_tokens": gen,
-        "ttft_s": round(first - t0, 4),
-        "prefill_tps": round(prompt_tokens / (first - t0), 1) if prompt_tokens else None,
+        "ttft_s": round(first - t0, 4) if first is not None else None,
+        "prefill_tps": round(prompt_tokens / (first - t0), 1) if prompt_tokens and first is not None else None,
         "engine_prefill_tps": None,
-        "decode_tps": round((gen - 1) / (last - first), 1) if gen and gen > 1 and last > first else None,
+        "decode_tps": round((gen - 1) / (last - first), 1) if gen and gen > 1 and first is not None and last > first else None,
         "wall_s": round(wall, 3),
         "peak_gb": round(peak, 3) if peak else None,
         "peak_gb_source": "server_rss" if peak else None,
@@ -243,6 +330,12 @@ def run_http(text, args, template):
         "text": "".join(parts).strip(),
         "reasoning_chars": len("".join(reasoning_parts)),
         "reasoning_only": not parts and bool(reasoning_parts),
+        "prep_s": None,
+        "engine_ttft_s": None,
+        "first_content_s": round(first_content - t_req, 4) if first_content is not None else None,
+        "first_token_kind": first_kind,
+        **decode_window(t_req, first, end if end is not None else last, gen,
+                        cached=cached, nonce=not getattr(args, "no_nonce", False)),
     }
 
 
@@ -329,6 +422,8 @@ def main():
         "top_p": args.top_p,
         "greedy": args.temperature == 0.0,
         "trials": args.trials,
+        "ttft_scope": TTFT_SCOPE[args.transport],
+        "decode_min_tokens": MIN_DECODE_TOKENS,
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -407,7 +502,8 @@ def main():
                                 "params_total", "params_active",
                                 "run_id", "transport", "engine", "model", "host", "versions",
                                 "server_version", "max_tokens", "template_kwargs",
-                                "temperature", "top_p", "greedy", "trials")},
+                                "temperature", "top_p", "greedy", "trials",
+                                "ttft_scope", "decode_min_tokens")},
         "load_s": base.get("load_s"),
         "load_peak_gb": base.get("load_peak_gb"),
         "base_url": base.get("base_url"),
@@ -428,7 +524,11 @@ def main():
             "kept_expected": args.trials,
             "prompt_tokens": next((r["prompt_tokens"] for r in got), None),
             **{m: stats([r.get(m) for r in got])
-               for m in ("ttft_s", "prefill_tps", "decode_tps", "generation_tokens", "peak_gb", "wall_s")},
+               for m in ("ttft_s", "prefill_tps", "decode_tps", "generation_tokens", "peak_gb", "wall_s",
+                         "request_ttft_s", "prep_s", "engine_ttft_s", "first_content_s",
+                         "cached_prompt_tokens", "decode_window_tps")},
+            # decode_window_tps is None on these rows, so its stats exclude them
+            "decode_flagged": sum(1 for r in got if r.get("decode_flags")),
         }
         if not warm_ok:
             problems.append(f"{name}: warm-up did not succeed")
