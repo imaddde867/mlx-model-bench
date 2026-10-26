@@ -4,15 +4,17 @@ Apple M4 (10-core, 4P+6E), 16 GB unified memory, macOS 27.0.1, `mlx` 0.32.4, `ml
 Python 3.12.10. Greedy decoding, thinking off per model's own template, plugged in, `caffeinate`.
 
 This report covers four models that fit in 16 GB, each at the same three quantization tiers,
-through the same harness. One of them is complete; the other three are pending. A section that
-has no numbers yet says so rather than showing a blank row.
+through the same harness. Speed, memory and accuracy rows exist for all four at all three tiers
+(`python compare.py`, committed as `results/COMPARE.md`); the narrative sections for the three
+challengers and the blind quality round are still pending. A section that has no narrative yet
+says so rather than showing a blank row.
 
 | Section | Model | Weights (4-bit / OptiQ / 8-bit) | Status |
 |---|---|---|---|
-| 1 | NVIDIA Nemotron 3.5 Bolt E4B | 4.20 / 6.53 / 7.96 GB | **complete** (4-bit, OptiQ) · 8-bit pending |
-| 2 | OpenBMB MiniCPM5-2B | 1.43 / 1.94 / 2.68 GB | pending |
-| 3 | XHToken Spark-X2.5-4B | 2.32 / 3.05 / 4.38 GB | pending |
-| 4 | Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 / 9.02 GB | pending |
+| 1 | NVIDIA Nemotron 3.5 Bolt E4B | 4.20 / 6.53 / 7.96 GB | **complete** (all tiers; blind round for 8-bit pending) |
+| 2 | OpenBMB MiniCPM5-2B | 1.43 / 1.94 / 2.68 GB | numbers in `results/COMPARE.md` · narrative pending |
+| 3 | XHToken Spark-X2.5-4B | 2.32 / 3.05 / 4.38 GB | numbers in `results/COMPARE.md` · narrative pending |
+| 4 | Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 / 9.02 GB | numbers in `results/COMPARE.md` · narrative pending |
 | 5 | Cross-model comparison | — | pending |
 
 Section 1's measurements predate the checkpoint, P0, timing, memory and grader gates (PRs #13-#18) and
@@ -222,7 +224,11 @@ that is recorded rather than dropped.
 
 ## 5. Cross-model comparison — pending
 
-Fills in as each section completes. The table below is the shape, not a result.
+Generated, not hand-typed: `python compare.py` reads every committed `summary.json` and
+`accuracy_summary.json` and writes `results/COMPARE.md` (all 12 in-process rows, with prompt
+tokens, generation length, GB/s and TTFT spread). Rows say `condition: not recorded` because they
+were measured before conditions were recorded; they ran on a realistic loaded desktop. The table
+below is the older, hand-made shape and covers only the baseline.
 
 | Model | Tier | Decode tok/s | TTFT 68 / 1k / 8k | Peak GB | Accuracy /30 | Quality /5 |
 |---|---|---|---|---|---|---|

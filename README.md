@@ -16,10 +16,10 @@ a difference between models rather than between quantization budgets.
 
 | Model | Params | 4-bit | OptiQ 4/8-bit | 8-bit (reference) | Status |
 |---|---|---|---|---|---|
-| NVIDIA Nemotron 3.5 Bolt E4B | 7.46B | 4.20 GB | 6.53 GB | 7.96 GB | 4-bit + OptiQ complete · 8-bit pending |
-| OpenBMB MiniCPM5-2B | 2.52B | 1.43 GB | 1.94 GB | 2.68 GB | pending |
-| XHToken Spark-X2.5-4B | 4.11B | 2.32 GB | 3.05 GB | 4.38 GB | pending |
-| Liquid AI LFM2.5-8B-A1B | 8.47B | 4.85 GB | 5.47 GB | 9.02 GB | pending |
+| NVIDIA Nemotron 3.5 Bolt E4B | 7.46B | 4.20 GB | 6.53 GB | 7.96 GB | speed + accuracy complete, all tiers · blind round pending |
+| OpenBMB MiniCPM5-2B | 2.52B | 1.43 GB | 1.94 GB | 2.68 GB | speed + accuracy complete, all tiers · blind round pending |
+| XHToken Spark-X2.5-4B | 4.11B | 2.32 GB | 3.05 GB | 4.38 GB | speed + accuracy complete, all tiers · blind round pending |
+| Liquid AI LFM2.5-8B-A1B | 8.47B | 4.85 GB | 5.47 GB | 9.02 GB | speed + accuracy complete, all tiers · blind round pending |
 
 Per checkpoint there are three arms: `mlx_lm` in-process, `mlx_lm.server` over HTTP, and an
 `mlx-optiq` engine arm attempted for every OptiQ checkpoint (it is unmeasurable for the
@@ -59,6 +59,8 @@ Full metadata, template-control traps and the comparability protocol:
 | `p3_suite.py`, `run_p3.py` | the fixed 30 accuracy + 8 quality prompts and their runner |
 | `blind.py`, `score_quality.py` | cross-model blind set (balanced slots) and scoring summary |
 | `readiness.py` | offline go/no-go before the matrix (suite + preconditions + checklist) |
+| `sysinfo.py` | what else the machine is doing: swap, memory pressure, power, thermal, busiest processes. `python sysinfo.py` is the preflight; `bench.py` records the same snapshot per trial |
+| `compare.py` | cross-model table (REPORT section 5) generated from the committed result rows, incl. achieved GB/s and TTFT spread |
 | `visualize_p2.py` | the chart: every model on the same axes |
 | `results/` | raw per-run JSON, one directory per model |
 
@@ -93,8 +95,9 @@ historical `results/nemotron-3.5-bolt/*` baseline, count as collisions: narrow
 `--models/--tiers` or use another `--out`. `p3/accuracy_summary.json` is merged per tier by `run_p3.py`, so it collides only for tiers
 that already have an entry there; other tiers (e.g. the baseline 8-bit row, R3b) are not blocked by it.
 `READY` is not
-the independently reviewed clean run, which is a separate future action; real P0 rows
-for R1-R3 do not exist yet, so the check reports `NOT READY` on the repo today.
+the independently reviewed clean run, which is a separate future action; on this
+repo today it reports `NOT READY` because the existing matrix collides with planned output
+paths (see `verification/` on `docs/offline-results-verification`); use `--out` elsewhere.
 
 **To fetch fast, pull several checkpoints at once — not "with a faster transfer path".**
 On the pinned `huggingface_hub` 2.3.0, `HF_HUB_ENABLE_HF_TRANSFER=1` does nothing but emit a
@@ -135,6 +138,23 @@ caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase al
 
 The repository was renamed from `nemotron-bolt-bench` when the study grew from one model to
 four; its original single-model record is now section 1 of the report, unchanged.
+
+## Run conditions
+
+Rows are measured on a realistic desktop (browser, chat apps, CLIs open), not an empty
+machine, so the conditions are part of the row, not a footnote:
+
+```bash
+python sysinfo.py                                   # preflight: swap, memory pressure, power, thermal, busiest processes
+.venv-mlxlm/bin/python bench.py ... --condition loaded     # or: clean
+.venv-mlxlm/bin/python bench.py ... --max-spread 1.5       # optional: wobbly trials make the row non-publishable
+python compare.py                                   # cross-model table; TTFT spread column flags unsteady rows
+```
+
+Each trial file records `started_at` and a `system` snapshot taken just before its timed
+window; each summary records `condition`, `condition_caveats` and per-prompt `spread_ratio`.
+Rows recorded before this existed show `condition: not recorded`; `compare.py` recomputes
+their spread from the per-trial files.
 
 ## Pins
 

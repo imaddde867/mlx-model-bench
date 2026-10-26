@@ -116,7 +116,8 @@ claims a voice-assistant use case where short-prompt TTFT dominates.
 - 1 discarded warm-up run (Metal kernel compile + first-touch page faults).
 - 5 trials, **median** reported. Range shown alongside, never median alone.
 - Fixed `max_tokens`, fixed prompt files, identical across arms.
-- `caffeinate` for the duration; nothing else running; plugged in.
+- `caffeinate` for the duration; plugged in. Other apps may be open, but the run says so
+  (`--condition`) and each trial records a `sysinfo.py` snapshot.
 - Each arm in its own `uv` venv, versions pinned and recorded in the output.
 - Thinking off for the primary table; thinking on reported as a separate row,
   because it changes decode volume, not TTFT.
