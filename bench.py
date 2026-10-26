@@ -41,6 +41,7 @@ from pathlib import Path
 
 import gates
 import registry
+import sysinfo
 
 ROOT = Path(__file__).resolve().parent
 PROMPTS = ROOT / "prompts"
@@ -192,6 +193,18 @@ def stats(values):
         "max": round(max(values), 4),
         "n": len(values),
     }
+
+
+def spread_ratio(values):
+    """max / min over kept trials; 1.0 is perfectly steady. None when it cannot be computed.
+
+    A 5-trial median hides a run whose trials went 6.9, 6.2, 5.1, 2.3, 1.8 s. The ratio
+    makes that visible in the summary instead of only in the per-trial files.
+    """
+    values = [v for v in values if v]
+    if len(values) < 2:
+        return None
+    return round(max(values) / min(values), 2)
 
 
 class RssSampler:
@@ -423,6 +436,14 @@ def main():
     ap.add_argument("--no-nonce", action="store_true",
                     help="send identical prompts (measures prefix-cache hits; label with --tag cached)")
     ap.add_argument("--tag", default="", help="suffix for the output dir, e.g. cached")
+    ap.add_argument("--condition", choices=("clean", "loaded", "unspecified"), default="unspecified",
+                    help="recorded in every row: 'clean' = nothing else running, 'loaded' = a "
+                         "realistic desktop (browser, chat apps, CLIs) was open. Does not change the "
+                         "output directory; the per-trial system snapshot says what was actually busy")
+    ap.add_argument("--max-spread", type=float, default=None,
+                    help="if set, a prompt whose kept-trial TTFT or decode max/min exceeds this ratio "
+                         "makes the summary non-publishable (e.g. 1.5). Off by default: loaded runs "
+                         "are legitimate, they just have to be visible")
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
 
@@ -477,6 +498,10 @@ def main():
         "trials": args.trials,
         "ttft_scope": TTFT_SCOPE[args.transport],
         "decode_min_tokens": MIN_DECODE_TOKENS,
+        "condition": args.condition,
+        # Run start. Per-trial times are `started_at` on each row; before this the
+        # same run-start stamp was copied onto every trial, so trials could not be
+        # lined up against what else the machine was doing.
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -531,6 +556,9 @@ def main():
             # KV across identical prompts, which turned 8k-token prefill into ~0.09 s).
             run_text = text if args.no_nonce else f"[{random.randrange(10**6):06d}] {text}"
             row["nonce"] = not args.no_nonce
+            # Snapshot BEFORE the timed window opens, so it cannot slow the trial it describes.
+            row["started_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            row["system"] = sysinfo.snapshot()
             try:
                 row.update(run(run_text, args))
                 missing = [m for m in REQUIRED_METRICS if row.get(m) is None]
@@ -583,7 +611,16 @@ def main():
                          "cached_prompt_tokens", "decode_window_tps")},
             # decode_window_tps is None on these rows, so its stats exclude them
             "decode_flagged": sum(1 for r in got if r.get("decode_flags")),
+            "spread_ratio": {
+                "ttft_s": spread_ratio([r.get("ttft_s") for r in got]),
+                "decode_tps": spread_ratio([r.get("decode_tps") for r in got]),
+            },
         }
+        if args.max_spread:
+            wide = {k: v for k, v in summary["prompts"][name]["spread_ratio"].items()
+                    if v is not None and v > args.max_spread}
+            if wide:
+                problems.append(f"{name}: unstable trials, max/min {wide} > {args.max_spread}")
         if not warm_ok:
             problems.append(f"{name}: warm-up did not succeed")
         if len(got) < args.trials:
@@ -603,6 +640,10 @@ def main():
         "unavailable_rows": sum(1 for m in mem if not m["available"]),
         "weights_gb_is": "checkpoint file size, not runtime memory",
     }
+    # Conditions: the run's label plus every distinct caveat any kept trial's snapshot raised.
+    summary["condition"] = args.condition
+    summary["condition_caveats"] = sorted({w for r in kept if r.get("system")
+                                           for w in sysinfo.warnings(r["system"])})
     summary["outcome"] = ("completed" if complete
                           else "partial" if any(r.get("ok") for r in rows) else "failed")
     summary["publishable"] = complete and not problems
