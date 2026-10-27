@@ -186,6 +186,11 @@ class RunnerTests(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()),
             ):
                 self.assertEqual(bench.main(), 0)
+                before = (temp / self.cfg.id / "mlx-4bit-inproc/summary.json").read_bytes()
+                with contextlib.redirect_stderr(io.StringIO()) as err:
+                    self.assertEqual(bench.main(), 1)
+                self.assertIn("refusing to overwrite", err.getvalue())
+                self.assertEqual((temp / self.cfg.id / "mlx-4bit-inproc/summary.json").read_bytes(), before)
 
             out_dir = temp / self.cfg.id / "mlx-4bit-inproc"
             trial = json.loads((out_dir / f"{prompt.stem}-warmup.json").read_text())
@@ -284,6 +289,56 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("synthetic transport failure", trial["error"])
         self.assertEqual(summary["runs_ok"], 0)
         self.assertEqual(summary["runs_failed"], 1)
+
+    def test_p3_distinct_tier_sets_have_distinct_logs_and_allow_summary_merge(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp)
+            first = [self.cfg.checkpoint("mlx-4bit")]
+            later = [self.cfg.checkpoint("mlx-8bit")]
+            old_log = run_bench.p3_log_path(self.cfg, first, out)
+            old_log.parent.mkdir(parents=True)
+            old_log.write_text("first tier remains intact")
+            p3_dir = out / self.cfg.id / "p3"
+            p3_dir.mkdir(parents=True)
+            (p3_dir / "accuracy_summary.json").write_text(
+                json.dumps({"checkpoints": {"mlx-4bit": {"accuracy": 1}}}))
+            self.assertFalse(run_bench.refuse_existing(self.cfg, later, out, "p3"))
+            self.assertNotEqual(old_log, run_bench.p3_log_path(self.cfg, later, out))
+            self.assertTrue(run_bench.refuse_existing(self.cfg, first, out, "p3"))
+            paths = []
+
+            def fake_run(cmd, log_path, timeout=None):
+                paths.append(Path(log_path))
+                return 0
+
+            with (patch.object(run_bench, "run", side_effect=fake_run),
+                  patch.object(registry.Checkpoint, "available", new_callable=PropertyMock,
+                               return_value=True)):
+                self.assertTrue(run_bench.phase_p3(self.cfg, out, later))
+            self.assertEqual(paths, [run_bench.p3_log_path(self.cfg, later, out)])
+            self.assertEqual(old_log.read_text(), "first tier remains intact")
+
+    def test_all_preflight_refuses_published_tag_before_any_phase(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp)
+            p3 = out / self.cfg.id / "p3"
+            p3.mkdir(parents=True)
+            (p3 / "accuracy_summary.json").write_text(
+                json.dumps({"checkpoints": {"mlx-4bit": {"accuracy": 1}}}))
+            selected = [self.cfg.checkpoint("mlx-4bit")]
+            self.assertTrue(run_bench.refuse_existing(self.cfg, selected, out, "all"))
+            self.assertTrue(run_bench.refuse_existing(self.cfg, selected, out, "p3"))
+            self.assertFalse(run_bench.refuse_existing(self.cfg, selected, out, "p2"))
+
+    def test_p2_refuses_existing_output_without_launch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / self.cfg.id / "mlx-4bit-http"
+            path.mkdir(parents=True)
+            (path / "summary.json").write_text("keep")
+            with patch.object(run_bench, "run", side_effect=AssertionError("unexpected run")):
+                self.assertFalse(run_bench.phase_p2(self.cfg, Path(temp), 5, ["short"], 8,
+                    "fixture", [self.cfg.checkpoint("mlx-4bit")]))
+            self.assertEqual((path / "summary.json").read_text(), "keep")
 
     def test_p2_orchestration_propagates_http_subprocess_failure(self):
         launched = []
@@ -536,6 +591,17 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(len(commands), 1)
         self.assertEqual(commands[0][commands[0].index("--condition") + 1], "clean")
         self.assertEqual(commands[0][commands[0].index("--max-spread") + 1], "1.5")
+
+    def test_optiq_refuses_existing_output_without_launch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / self.cfg.id / "optiq-4bit-http-optiq-engine"
+            path.mkdir(parents=True)
+            (path / "unmeasurable.json").write_text("keep")
+            with patch.object(run_bench, "optiq_exe", side_effect=AssertionError("unexpected run")):
+                result = run_bench.phase_p2_optiq(self.cfg, Path(temp), 5, ["short"], 8,
+                    [self.cfg.checkpoint("optiq-4bit")])
+            self.assertEqual(result, {"optiq-4bit": "failed"})
+            self.assertEqual((path / "unmeasurable.json").read_text(), "keep")
 
     def test_missing_optiq_runtime_is_recorded_as_unmeasurable(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -65,13 +65,9 @@ def dir_digest(path):
     return len(files), h
 
 
-def planned_paths(cfg, ckpt, out):
+def planned_paths(cfg, ckpt, out, phase="all"):
     """Everything run_bench.py would write for this checkpoint, apart from logs and gate evidence."""
-    base = Path(out) / cfg.id
-    paths = [base / f"{ckpt.tag}-{arm}" for arm in ("inproc", "http", "http-cached")]
-    if "mlx-optiq" in ckpt.engines:
-        paths.append(base / f"{ckpt.tag}-http-optiq-engine")
-    return paths + [base / "p3" / f"{ckpt.tag}-results.json"]
+    return run_bench.output_paths(cfg, ckpt, out, phase)
 
 
 def version_problems(cfg, out, env):
@@ -94,9 +90,11 @@ def version_problems(cfg, out, env):
     return bad
 
 
-def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env, run_suite=unit_suite):
+def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env,
+             run_suite=unit_suite, evidence=None, phase="all"):
     """-> (blocking reasons, checklist lines). Reads `out`; writes nothing."""
     out = Path(out)
+    evidence = Path(evidence) if evidence is not None else out
     bad, lines = [], []
 
     def flag(area, msg):
@@ -109,43 +107,47 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
     for pkg in ("mlx", "mlx-lm"):
         if not env["versions"].get(pkg):
             flag("versions", f"{pkg} is not installed in this interpreter — run with the engine venv")
-    if trials < bench.MIN_PUBLISHABLE_TRIALS:
+    if phase in ("all", "p2", "p2-optiq") and trials < bench.MIN_PUBLISHABLE_TRIALS:
         flag("trials", f"--trials {trials} < {bench.MIN_PUBLISHABLE_TRIALS}: rows would not be publishable")
 
     # Prompts and report inputs.
-    speed = []
-    for name in prompts:
-        f = bench.PROMPTS / "speed" / f"{name}.txt"
+    speed, acc_n, qual_n, acc_sha, qual_sha = [], 0, 0, "not checked", "not checked"
+    if phase in ("all", "p2", "p2-optiq"):
+        speed = []
+        for name in prompts:
+            f = bench.PROMPTS / "speed" / f"{name}.txt"
+            try:
+                if f.is_file():
+                    speed.append((rel(f), sha256(f)))
+                else:
+                    flag("report inputs", f"speed prompt file missing: {f}")
+            except OSError as e:
+                flag("report inputs", f"speed prompt file unreadable: {f} ({e})")
+    if phase in ("all", "p3"):
+        acc_ids = {p["id"] for p in MATH_PROMPTS + TOOL_PROMPTS + INSTR_PROMPTS}
         try:
-            if f.is_file():
-                speed.append((rel(f), sha256(f)))
-            else:
-                flag("report inputs", f"speed prompt file missing: {f}")
+            acc_n, acc_sha = dir_digest(bench.PROMPTS / "accuracy")
+            qual_n, qual_sha = dir_digest(bench.PROMPTS / "quality")
         except OSError as e:
-            flag("report inputs", f"speed prompt file unreadable: {f} ({e})")
-    acc_ids = {p["id"] for p in MATH_PROMPTS + TOOL_PROMPTS + INSTR_PROMPTS}
-    try:
-        acc_n, acc_sha = dir_digest(bench.PROMPTS / "accuracy")
-        qual_n, qual_sha = dir_digest(bench.PROMPTS / "quality")
-    except OSError as e:
-        flag("report inputs", f"prompt file unreadable: {e}")
-        acc_n = qual_n = 0
-        acc_sha = qual_sha = "UNREADABLE"
-    if acc_n != len(acc_ids) or {f.stem for f in (bench.PROMPTS / "accuracy").glob("*.txt")} != acc_ids:
-        flag("report inputs", f"prompts/accuracy has {acc_n} files, p3_suite defines {len(acc_ids)}; ids differ")
-    try:
-        if blind.expected_ids() != sorted(p["id"] for p in QUALITY_PROMPTS):
-            flag("scoring", "prompts/quality ids differ from p3_suite.QUALITY_PROMPTS")
-    except SystemExit as e:
-        flag("scoring", str(e))
-    for doc in ("REPORT.md", "MODELS.md"):
-        if not (ROOT / doc).is_file():
-            flag("report inputs", f"{doc} missing")
-    if len(model_ids) < 2:
-        flag("scoring", "a blind round needs at least 2 models")
-    if len(model_ids) > len(blind.LABELS):
-        flag("scoring", f"{len(model_ids)} models but only {len(blind.LABELS)} blind slots")
-
+            flag("report inputs", f"prompt file unreadable: {e}")
+            acc_n = qual_n = 0
+            acc_sha = qual_sha = "UNREADABLE"
+        if acc_n != len(acc_ids) or {f.stem for f in (bench.PROMPTS / "accuracy").glob("*.txt")} != acc_ids:
+            flag("report inputs", f"prompts/accuracy has {acc_n} files, p3_suite defines {len(acc_ids)}; ids differ")
+        try:
+            if blind.expected_ids() != sorted(p["id"] for p in QUALITY_PROMPTS):
+                flag("scoring", "prompts/quality ids differ from p3_suite.QUALITY_PROMPTS")
+        except SystemExit as e:
+            flag("scoring", str(e))
+    if phase == "all":
+        for doc in ("REPORT.md", "MODELS.md"):
+            if not (ROOT / doc).is_file():
+                flag("report inputs", f"{doc} missing")
+        if len(model_ids) < 2:
+            flag("scoring", "a blind round needs at least 2 models")
+        if len(model_ids) > len(blind.LABELS):
+            flag("scoring", f"{len(model_ids)} models but only {len(blind.LABELS)} blind slots")
+    
     plan, revisions = [], []
     for mid in model_ids:
         cfg = registry.MODELS.get(mid)
@@ -159,6 +161,8 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                 flag("models", f"{mid}: no {tier} checkpoint in the registry")
             else:
                 selected.append(ck)
+        if phase == "p2-optiq":
+            selected = [ck for ck in selected if "mlx-optiq" in ck.engines]
         bad_before = len(bad)
         for ck in selected:
             who = f"{mid}/{ck.tag}"
@@ -166,16 +170,16 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                 flag("models", f"{who}: not downloaded ({ck.local_dir}) — run --phase fetch")
             if not (ck.publisher and ck.hf_repo and ck.params and ck.weights_gb):
                 flag("report inputs", f"{who}: registry lacks publisher/repo/params/size for the report table")
-            prov = gates.problems(cfg, ck, out, need_p0=False)
+            prov = gates.problems(cfg, ck, evidence, need_p0=False)
             for p in prov:
                 flag("provenance", f"{who}: {p}")
             if not prov:
-                for p in gates.problems(cfg, ck, out):
+                for p in gates.problems(cfg, ck, evidence):
                     flag("load gate", f"{who}: {p}")
-            rec, _ = gates._load(out / cfg.id / "p0" / f"{ck.tag}-provenance.json")
+            rec, _ = gates._load(evidence / cfg.id / "p0" / f"{ck.tag}-provenance.json")
             revisions.append(f"{who}: {ck.hf_repo} @ {(rec or {}).get('revision') or 'NO REVISION RECORDED'}")
 
-            for path in planned_paths(cfg, ck, out):
+            for path in planned_paths(cfg, ck, out, phase):
                 plan.append(path)
                 if not path.exists():
                     continue
@@ -189,36 +193,45 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                     flag("speed results", f"{rel(path)}: existing row is not a completed, publishable result")
                 if s and (s.get("trials") or 0) < bench.MIN_PUBLISHABLE_TRIALS:
                     flag("trials", f"{rel(path)}: row recorded {s.get('trials')} trials < {bench.MIN_PUBLISHABLE_TRIALS}")
-        summary = out / cfg.id / "p3" / "accuracy_summary.json"
-        try:
-            done = run_p3.published_tags(summary.parent) if selected else {}
-        except (OSError, ValueError, AttributeError) as e:
-            done = {}
-            flag("collision", f"{rel(summary)} unreadable ({e}); run_p3.py would refuse to merge into it")
-        for ck in selected:
-            if ck.tag in done:
-                flag("collision", f"{rel(summary)} already has an entry for {ck.tag}; run_p3.py would refuse — "
-                                  "narrow --tiers or use another --out")
+        if phase in ("all", "p3"):
+            if selected:
+                log = run_bench.p3_log_path(cfg, selected, out)
+                plan.append(log)
+                if log.exists():
+                    flag("collision", f"{rel(log)} exists; choose another --out or tier set")
+            summary = out / cfg.id / "p3" / "accuracy_summary.json"
+            try:
+                done = run_p3.published_tags(summary.parent) if selected else {}
+            except (OSError, ValueError, AttributeError) as e:
+                done = {}
+                flag("collision", f"{rel(summary)} unreadable ({e}); run_p3.py would refuse to merge into it")
+            for ck in selected:
+                if ck.tag in done:
+                    flag("collision", f"{rel(summary)} already has an entry for {ck.tag}; run_p3.py would refuse — "
+                                      "narrow --tiers or use another --out")
+            plan.append(summary)
         for p in version_problems(cfg, out, env):
             flag("versions", p)
-        plan.append(summary)
         lines.append(f"{mid}: {len(selected)} checkpoint(s) checked, "
                      f"{'ok' if len(bad) == bad_before else 'BLOCKED'}")
 
-    rd = out / f"blind-{round_name}"
-    if rd.exists():
-        flag("collision", f"{rel(rd)} exists; pick a new --round")
-        if (rd / "key.json").is_file() and (rd / "scores.json").is_file():
-            k, _ = gates._load(rd / "key.json")
-            d, _ = gates._load(rd / "scores.json")
-            if k and d:
-                for p in score_quality.validate(d, k):
-                    flag("scoring", f"{rd.name}: {p}")
-            else:
-                flag("scoring", f"{rd.name}: key.json or scores.json unreadable")
-    plan.append(rd)
-
+    if phase == "all":
+        rd = out / f"blind-{round_name}"
+        if rd.exists():
+            flag("collision", f"{rel(rd)} exists; pick a new --round")
+            if (rd / "key.json").is_file() and (rd / "scores.json").is_file():
+                k, _ = gates._load(rd / "key.json")
+                d, _ = gates._load(rd / "scores.json")
+                if k and d:
+                    for p in score_quality.validate(d, k):
+                        flag("scoring", f"{rd.name}: {p}")
+                else:
+                    flag("scoring", f"{rd.name}: key.json or scores.json unreadable")
+        plan.append(rd)
+    
     lines += ["", "Reproducibility checklist",
+              f"  phase:     {phase}",
+              f"  evidence:  {evidence}",
               f"  host:      {env['host']}",
               "  runtimes:  " + ", ".join(f"{k} {v or 'NOT INSTALLED'}" for k, v in env["versions"].items())
               + f"; {env['optiq']} (separate venv)",
@@ -246,10 +259,13 @@ def main(argv=None):
     ap.add_argument("--prompts", nargs="+", default=run_bench.DEFAULT_PROMPTS)
     ap.add_argument("--round", default="r1", help="blind round label the matrix will create")
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--evidence", help="verified P0 input location (default: --out)")
+    ap.add_argument("--phase", choices=("all", "p2", "p2-optiq", "p3"), default="all")
     args = ap.parse_args(argv)
 
     bad, lines = evaluate(args.models, args.out, args.tiers, args.trials, args.max_tokens,
-                          args.prompts, args.round, environment(), unit_suite)
+                          args.prompts, args.round, environment(), unit_suite,
+                          evidence=args.evidence, phase=args.phase)
     print("\n".join(lines))
     print("\nNot done here: a clean, independently reviewed run is a separate future action; "
           "no benchmark was run and no model was loaded.")

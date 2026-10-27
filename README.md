@@ -89,23 +89,32 @@ every Hub repo, and `--phase fetch` downloads and verifies them.
 ### Readiness check before the matrix
 
 ```bash
-.venv-mlxlm/bin/python readiness.py [--models ...] [--tiers ...] [--out results] [--round r1]
+.venv-mlxlm/bin/python readiness.py --models minicpm5-2b --tiers 4bit --phase p2 \
+  --evidence results --out results/runs/r2-minicpm
 ```
 
-One offline go/no-go: runs the unit suite above, then checks the planned run against
-`--out` read-only (registry and downloaded checkpoints, `gates.problems` provenance and
-P0 evidence, `--trials` >= 5, one mlx / mlx-lm / host across a model's rows, prompt files,
-blind-round inputs, and that no planned output path already exists). It loads no model,
+One offline go/no-go: checks verified P0 evidence at `--evidence` and output
+collisions at `--out`, read-only. `--phase p2`, `p2-optiq`, and `p3` check only
+that phase, supporting single-model runs without blind-scoring prerequisites.
+`--phase all` also checks blind inputs. P2 requires five kept trials. Both the
+runner and the benchmark CLI reject existing output paths before measuring. It loads no model,
 runs no benchmark and uses no network. Prints `READY` (exit 0) or `NOT READY` with every
 reason (exit 1), then the reproducibility checklist (host, runtimes, Hub revisions, prompt
 sha256, generation settings, trials, output paths). Existing results, including the
 historical `results/nemotron-3.5-bolt/*` baseline, count as collisions: narrow
 `--models/--tiers` or use another `--out`. `p3/accuracy_summary.json` is merged per tier by `run_p3.py`, so it collides only for tiers
 that already have an entry there; other tiers (e.g. the baseline 8-bit row, R3b) are not blocked by it.
-`READY` is not
-the independently reviewed clean run, which is a separate future action; on this
-repo today it reports `NOT READY` because the existing matrix collides with planned output
-paths (see `verification/` on `docs/offline-results-verification`); use `--out` elsewhere.
+`READY` does not imply an independently reviewed run. Keep published measurements
+under `results/` immutable; use a unique output location for each rerun:
+
+```bash
+caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b \
+  --tiers 4bit --phase p2 --evidence results --out results/runs/r2-minicpm \
+  --condition clean --max-spread 1.5
+```
+
+`--phase fetch` and `--phase p0` refresh records under `--evidence`;
+P2/P3 only read those records. Historical results are never overwritten.
 
 **To fetch fast, pull several checkpoints at once — not "with a faster transfer path".**
 On the pinned `huggingface_hub` 2.3.0, `HF_HUB_ENABLE_HF_TRANSFER=1` does nothing but emit a

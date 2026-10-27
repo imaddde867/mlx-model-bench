@@ -18,6 +18,7 @@ import blind
 import gates
 import readiness
 import registry
+import run_bench
 
 WEIGHTS = b"fixture weights"
 SHA = hashlib.sha256(WEIGHTS).hexdigest()
@@ -89,6 +90,56 @@ class ReadinessTests(unittest.TestCase):
     def assertBlocked(self, area, text="", **kw):
         bad, _ = self.run_ev(**kw)
         self.assertTrue(any(b.startswith(f"[{area}]") and text in b for b in bad), bad)
+
+    def test_targeted_phase_checks_external_evidence_and_single_model(self):
+        new = Path(self.tmp) / "fresh"
+        p3 = new / "fx-a" / "p3"
+        p3.mkdir(parents=True)
+        (p3 / "mlx-4bit-results.json").write_text("leave untouched")
+        bad, lines = readiness.evaluate(["fx-a"], new, ["4bit"], 5, 256, ["short"],
+            "r1", ENV, SUITE_OK, evidence=self.out, phase="p2")
+        self.assertEqual(bad, [])
+        self.assertIn(str(self.out), "\n".join(lines))
+        summary(new, "fx-a", "mlx-4bit-inproc")
+        bad, _ = readiness.evaluate(["fx-a"], new, ["4bit"], 1, 256, ["short"],
+            "r1", ENV, SUITE_OK, evidence=self.out, phase="p3")
+        self.assertTrue(any(b.startswith("[collision]") for b in bad))
+        new2 = Path(self.tmp) / "p3fresh"
+        bad, _ = readiness.evaluate(["fx-a"], new2, ["4bit"], 1, 256, ["short"],
+            "r1", ENV, SUITE_OK, evidence=self.out, phase="p3")
+        self.assertEqual(bad, [])
+        bad, _ = readiness.evaluate(["fx-a"], new2, ["4bit"], 5, 256, ["short"],
+            "r1", ENV, SUITE_OK, evidence=new2, phase="p2")
+        self.assertTrue(any(b.startswith("[provenance]") for b in bad))
+
+    def test_optiq_readiness_ignores_unused_tiers(self):
+        other = self.a.checkpoints["mlx-4bit"]
+        (Path(other.local_dir) / "config.json").unlink()
+        (self.out / self.a.id / "p0" / "mlx-4bit-provenance.json").unlink()
+        bad, lines = readiness.evaluate(
+            ["fx-a"], Path(self.tmp) / "fresh-optiq", ["4bit", "optiq-4bit"],
+            5, 256, ["short"], "r1", ENV, SUITE_OK,
+            evidence=self.out, phase="p2-optiq")
+        self.assertEqual(bad, [])
+        self.assertIn("1 checkpoint(s) checked", "\n".join(lines))
+        self.assertFalse(any("mlx-4bit" in line for line in lines))
+
+    def test_p3_new_tier_reuses_summary_with_own_log(self):
+        dest = Path(self.tmp) / "p3-rerun"
+        out = dest / "fx-a"
+        p3 = out / "p3"
+        p3.mkdir(parents=True)
+        (p3 / "accuracy_summary.json").write_text(
+            json.dumps({"checkpoints": {"mlx-4bit": {"accuracy": 1}}}))
+        first_log = run_bench.p3_log_path(self.a, [self.a.checkpoint("mlx-4bit")], dest)
+        first_log.parent.mkdir(parents=True)
+        first_log.write_text("historical log")
+        bad, _ = readiness.evaluate(["fx-a"], dest, ["optiq-4bit"], 5,
+            256, ["short"], "r1", ENV, SUITE_OK, evidence=self.out, phase="p3")
+        self.assertEqual(bad, [])
+        bad, _ = readiness.evaluate(["fx-a"], dest, ["4bit"], 5,
+            256, ["short"], "r1", ENV, SUITE_OK, evidence=self.out, phase="p3")
+        self.assertTrue(any(b.startswith("[collision]") for b in bad))
 
     def test_ready_and_checklist(self):
         bad, lines = self.run_ev()

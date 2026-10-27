@@ -158,7 +158,8 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
         })
         print(f"   [{idx:02d}/{len(QUALITY_PROMPTS)}] {item['id']:22s} {gen['generation_tokens']} tok")
 
-    (out_dir / f"{ckpt.tag}-results.json").write_text(json.dumps(results, indent=2))
+    with (out_dir / f"{ckpt.tag}-results.json").open("x") as fh:
+        fh.write(json.dumps(results, indent=2))
 
     del model, tokenizer
     mx.clear_cache()
@@ -213,6 +214,7 @@ def main():
     ap.add_argument("--model", required=True, help="registry id, HF repo or local path")
     ap.add_argument("--checkpoints", nargs="+", help="checkpoint tags (default: all downloaded)")
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--evidence", help="verified P0 input location (default: --out)")
     args = ap.parse_args()
 
     cfg = registry.get_model(args.model)
@@ -221,7 +223,7 @@ def main():
         print(f"no checkpoint of {cfg.id} is downloaded under models/", file=sys.stderr)
         return 1
 
-    if gates.refuse(cfg, [cfg.checkpoint(t) for t in tags], args.out):
+    if gates.refuse(cfg, [cfg.checkpoint(t) for t in tags], args.evidence or args.out):
         print("refusing to measure: provenance/P0 gate failed", file=sys.stderr)
         return 1
 
