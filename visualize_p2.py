@@ -66,7 +66,8 @@ def discover(models, include_http, results_dir):
         rest = name[len(ckpt) + 1:] if name.startswith(ckpt + "-") else ""
         # Keep separately tagged repeats out of the matrix chart; compare.py
         # reports those in their own table, never as replacement matrix rows.
-        if rest not in {"inproc", "in-process", "http", "http-cached"}:
+        # Engine arms are measurements, not repeats, so --include-http keeps them.
+        if rest not in {"inproc", "in-process", "http", "http-cached", "http-optiq-engine"}:
             continue
         cached = rest.endswith("cached")
         transport = s.get("transport") or rest.replace("-cached", "") or "inproc"

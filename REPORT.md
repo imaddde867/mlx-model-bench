@@ -187,15 +187,15 @@ pick for any of those workloads is decided in section 5, against rows that have 
 
 A 2.517B dense Llama (42 layers, 2 KV heads) provides the smallest weights and runtime peak in
 the matrix. Its long-prompt TTFT is not correspondingly small: the 8.35k-token prompt takes
-14.606 s, close to the larger Nemotron and LFM rows. At 4-bit it has the highest short-prompt
-decode median (69.0 tok/s) among the non-historical challenger rows and 54.6 tok/s on the
-8.37k-token decode prompt, with a 2.465 GB in-process allocator peak.
+14.606 s, close to the larger Nemotron and LFM rows. At 4-bit its short-prompt decode median
+is 69.0 tok/s and 54.6 tok/s on the 8.37k-token decode prompt, with a 2.465 GB in-process
+allocator peak.
 
-| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
+| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s [range] | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
 |---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 4-bit (`mlx-4bit`) | 1.43 | 4.55 | vendor (`openbmb`) | 54.6 [54.5–55.5] | 14.606 | 8,354 | 256 | 2.465 | 3 | 10 | 6 | 19 |
-| OptiQ 4/8 (`optiq-4bit`) | 1.94 | 6.17 | mlx-community | 44.4 [41.3–44.9] | 14.042 | 8,354 | 256 | 2.975 | 1 | 10 | 6 | 17 |
-| 8-bit (reference) | 2.68 | 8.52 | mlx-community | 32.6 [23.7–33.5] | 14.768 | 8,354 | 256 | 3.723 | 2 | 10 | 6 | 18 |
+| 4-bit (`mlx-4bit`) | 1.43 | 4.55 | vendor (`openbmb`) | 54.6 [54.5–55.5] | 14.606 [13.979–14.782] | 8,354 | 256 | 2.465 | 3 | 10 | 6 | 19 |
+| OptiQ 4/8 (`optiq-4bit`) | 1.94 | 6.17 | mlx-community | 44.4 [41.3–44.9] | 14.042 [13.906–14.334] | 8,354 | 256 | 2.975 | 1 | 10 | 6 | 17 |
+| 8-bit (reference) | 2.68 | 8.52 | mlx-community | 32.6 [23.7–33.5] | 14.768 [14.743–14.869] | 8,354 | 256 | 3.723 | 2 | 10 | 6 | 18 |
 
 On this 30-prompt set, all three tiers pass all ten tool-call cases, while mathematical correctness
 and strict-format compliance are much lower. The numbers do not establish broad capability or an
@@ -222,11 +222,11 @@ the roster: about 26.7–27.6 s for 8,631 tokens, versus 9.3–14.6 s for the ot
 The model's longer-than-cap generations on several quality prompts also mean the single-rater
 scores sometimes judge truncated text (see section 5).
 
-| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
+| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s [range] | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
 |---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 4-bit (`mlx-4bit`) | 2.32 | 4.51 | **third-party** (`abenzerps`) | 29.4 [28.7–30.5] | 26.663 | 8,631 | 256 | 3.971 | 2 | 10 | 6 | 18 |
-| OptiQ 4/8 (`optiq-4bit`) | 3.05 | 5.93 | mlx-community | 25.6 [23.5–25.7] | 27.603 | 8,631 | 256 | 4.698 | 2 | 9 | 7 | 18 |
-| 8-bit (reference) | 4.38 | 8.52 | **third-party** (`abenzerps`) | 20.6 [19.6–20.7] | 27.387 | 8,631 | 256 | 6.027 | 4 | 10 | 7 | 21 |
+| 4-bit (`mlx-4bit`) | 2.32 | 4.51 | **third-party** (`abenzerps`) | 29.4 [28.7–30.5] | 26.663 [26.594–26.865] | 8,631 | 256 | 3.971 | 2 | 10 | 6 | 18 |
+| OptiQ 4/8 (`optiq-4bit`) | 3.05 | 5.93 | mlx-community | 25.6 [23.5–25.7] | 27.603 [27.217–33.074] | 8,631 | 256 | 4.698 | 2 | 9 | 7 | 18 |
+| 8-bit (reference) | 4.38 | 8.52 | **third-party** (`abenzerps`) | 20.6 [19.6–20.7] | 27.387 [26.799–28.275] | 8,631 | 256 | 6.027 | 4 | 10 | 7 | 21 |
 
 There is no vendor MLX conversion for Spark, so its plain 4-bit and 8-bit rows use third-party
 weights; the OptiQ row is from mlx-community. This publisher difference is a confound in any
@@ -242,18 +242,18 @@ lowest long-prompt TTFT (9.285 s for 8,510 tokenizer-specific prompt tokens). Th
 fits in this run: its peak is 9.947 GB, the highest in the matrix but below the machine's 16 GB
 unified-memory capacity. Peak figures are MLX allocator values, not whole-process RSS.
 
-| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
+| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s [range] | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
 |---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 4-bit (`mlx-4bit`) | 4.85 | 4.58 | vendor | 68.8 [63.8–73.9] | 9.285 | 8,510 | 256 | 5.779 | 4 | 10 | 6 | 20 |
-| OptiQ 4/8 (`optiq-4bit`) | 5.47 | 5.17 | mlx-community | 59.6 [49.7–63.5] | 9.277 | 8,510 | 256 | 6.370 | 4 | 10 | 7 | 21 |
-| 8-bit (reference) | 9.02 | 8.52 | vendor | 37.9 [36.4–44.8] | 9.347 | 8,510 | 256 | 9.947 | 5 | 10 | 6 | 21 |
+| 4-bit (`mlx-4bit`) | 4.85 | 4.58 | vendor | 68.8 [63.8–73.9] | 9.285 [9.186–9.547] | 8,510 | 256 | 5.779 | 4 | 10 | 6 | 20 |
+| OptiQ 4/8 (`optiq-4bit`) | 5.47 | 5.17 | mlx-community | 59.6 [49.7–63.5] | 9.277 [8.919–9.855] | 8,510 | 256 | 6.370 | 4 | 10 | 7 | 21 |
+| 8-bit (reference) | 9.02 | 8.52 | vendor | 37.9 [36.4–44.8] | 9.347 [9.215–9.510] | 8,510 | 256 | 9.947 | 5 | 10 | 6 | 21 |
 
 **Thinking and end-to-end latency caveat.** LFM emits a reasoning block; the template has no
 switch to turn that behavior off. The speed `decode_tps` measures generation throughput including
 reasoning tokens, not time to a useful final answer. On the 4-bit `decode-short` prompt (53
 prompt tokens, 256 generated tokens), raw decode is 70.9 tok/s [69.8–73.1], while total `wall_s`
 from before template rendering through stream completion is 3.734 s [3.627–3.798]. A later,
-separately tagged repeat measured 86.1 tok/s [82.6–86.6] and 3.006 s wall [2.962–3.081]; it is
+separately tagged repeat measured 86.1 tok/s [82.6–86.6] and 3.096 s wall [3.075–3.208]; it is
 not a replacement for the full matrix row. Both generations hit the 256-token cap; the prompt asks
 for at least 400 words, so this measures raw generation throughput and time to finish a truncated
 stream, not time to a useful completed answer. The measured long-prompt TTFT is time to first
@@ -321,20 +321,20 @@ post-hoc numerical audit parses the final numeric claim only; it does not infer 
 intermediate calculations is valid. It is a transparent diagnostic, not a replacement grader:
 any ambiguity or missing final number remains a failed audited value.
 
-| Model / tier | Arithmetic strict pass /12 | Numeric final answer correct on audit /12 | Function-call JSON /10 | Output-format constraints /8 | Original total /30 |
-|---|---:|---:|---:|---:|---:|
-| Nemotron 4-bit (historical) | 6 | 6 | 10 | 8 | 24 |
-| Nemotron OptiQ (historical) | 7 | 7 | 10 | 8 | 25 |
-| Nemotron 8-bit | 6 | 6 | 10 | 8 | 24 |
-| MiniCPM5 4-bit | 3 | 5 | 10 | 6 | 19 |
-| MiniCPM5 OptiQ | 1 | 3 | 10 | 6 | 17 |
-| MiniCPM5 8-bit | 2 | 5 | 10 | 6 | 18 |
-| Spark-X2.5 4-bit | 2 | 3 | 10 | 6 | 18 |
-| Spark-X2.5 OptiQ | 2 | 3 | 9 | 7 | 18 |
-| Spark-X2.5 8-bit | 4 | 4 | 10 | 7 | 21 |
-| LFM2.5 4-bit | 4 | 12 | 10 | 6 | 20 |
-| LFM2.5 OptiQ | 4 | 11 | 10 | 7 | 21 |
-| LFM2.5 8-bit | 5 | 11 | 10 | 6 | 21 |
+| Model / tier | Publisher | bpw | Arithmetic strict pass /12 | Numeric final answer correct on audit /12 | Function-call JSON /10 | Output-format constraints /8 | Original total /30 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Nemotron 4-bit (historical) | **third-party** (`rapid-mlx`) | 4.50 | 6 | 6 | 10 | 8 | 24 |
+| Nemotron OptiQ (historical) | mlx-community | 7.00 | 7 | 7 | 10 | 8 | 25 |
+| Nemotron 8-bit | **third-party** (`rapid-mlx`) | 8.53 | 6 | 6 | 10 | 8 | 24 |
+| MiniCPM5 4-bit | vendor (`openbmb`) | 4.55 | 3 | 5 | 10 | 6 | 19 |
+| MiniCPM5 OptiQ | mlx-community | 6.17 | 1 | 3 | 10 | 6 | 17 |
+| MiniCPM5 8-bit | mlx-community | 8.52 | 2 | 5 | 10 | 6 | 18 |
+| Spark-X2.5 4-bit | **third-party** (`abenzerps`) | 4.51 | 2 | 3 | 10 | 6 | 18 |
+| Spark-X2.5 OptiQ | mlx-community | 5.93 | 2 | 3 | 9 | 7 | 18 |
+| Spark-X2.5 8-bit | **third-party** (`abenzerps`) | 8.52 | 4 | 4 | 10 | 7 | 21 |
+| LFM2.5 4-bit | vendor | 4.58 | 4 | 12 | 10 | 6 | 20 |
+| LFM2.5 OptiQ | mlx-community | 5.17 | 4 | 11 | 10 | 7 | 21 |
+| LFM2.5 8-bit | vendor | 8.52 | 5 | 11 | 10 | 6 | 21 |
 
 “Arithmetic strict” is the committed `int_match`/`float_match` verdict: the entire response must
 be a single numeric literal, so a correct number inside `\\boxed{...}` or explanatory prose still
@@ -344,7 +344,8 @@ or edit any committed verdict. In particular, LFM2.5's correct values often appe
 while other models sometimes include the correct value in prose. The arithmetic score must
 therefore not be presented as numerical correctness alone. The 8 instruction-following prompts
 are strict, mechanically checked output constraints (e.g. sentence count, word/character bans and
-format), not a general measure of following instructions.
+format), not a general measure of following instructions. Per-prompt extracted values and verdicts
+are reproducible with `python audit_p3_numeric.py`; `--check` asserts the totals above.
 
 ### Blind quality round r1 — exploratory, single rater
 
@@ -372,12 +373,12 @@ same four 4-bit answer files, but it did not normalize answer length or truncate
 
 The mean category scores (/5) add context but do not cure the small sample or slot effect:
 
-| 4-bit row | Technical accuracy | Coherence | Instruction fit |
-|---|---:|---:|---:|
-| LFM2.5-8B-A1B | 3.75 | 4.00 | 3.62 |
-| MiniCPM5-2B | 3.25 | 3.50 | 3.50 |
-| Spark-X2.5-4B | 3.25 | 3.62 | 3.25 |
-| Nemotron 3.5 Bolt | 3.25 | 3.88 | 2.88 |
+| 4-bit row | Publisher | bpw | Technical accuracy | Coherence | Instruction fit |
+|---|---|---:|---:|---:|---:|
+| LFM2.5-8B-A1B | vendor | 4.58 | 3.75 | 4.00 | 3.62 |
+| MiniCPM5-2B | vendor (`openbmb`) | 4.55 | 3.25 | 3.50 | 3.50 |
+| Spark-X2.5-4B | **third-party** (`abenzerps`) | 4.51 | 3.25 | 3.62 | 3.25 |
+| Nemotron 3.5 Bolt | **third-party** (`rapid-mlx`) | 4.50 | 3.25 | 3.88 | 2.88 |
 
 Do not declare a quality winner from these means. The scores and slot imbalance warning are
 reported together; additional raters and a repeat round would be needed to test whether the
