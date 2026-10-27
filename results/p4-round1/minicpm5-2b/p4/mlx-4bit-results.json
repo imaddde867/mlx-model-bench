@@ -1,0 +1,1046 @@
+{
+  "model_id": "minicpm5-2b",
+  "checkpoint": "mlx-4bit",
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "publisher": "vendor",
+  "bits_per_weight": 4.55,
+  "weights_gb": 1.43,
+  "fixture_sha256": "5c7b429dcd0a4b36516d18854b88cd6075db41d0da20a976f9bbfaad3b106bea",
+  "evidence_dir": "results",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "condition": "clean",
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0,
+  "per_turn_max_tokens": 256,
+  "time_utc": "2026-10-27T20:13:38Z",
+  "status": "pilot_unvalidated",
+  "total": 20,
+  "passed": 0,
+  "tasks": [
+    {
+      "id": "read-workers",
+      "category": "operations",
+      "passed": false,
+      "final": "WORKERS",
+      "steps": [
+        {
+          "response": "{\"final\":\"WORKERS\"}",
+          "raw_response": "{\"final\":\"WORKERS\"}",
+          "wall_s": 0.3659,
+          "ttft_s": 0.2696,
+          "prompt_tokens": 131,
+          "generation_tokens": 7,
+          "peak_gb": 1.634
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3659,
+      "time_to_first_token_s": 0.2696,
+      "peak_mlx_gb": 1.634,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 66,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.63,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 224.6
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 10.7
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 9.7
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 3.7
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 2.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "read-error",
+      "category": "incident",
+      "passed": false,
+      "final": "ERROR_CODE",
+      "steps": [
+        {
+          "response": "{\"final\":\"ERROR_CODE\"}",
+          "raw_response": "{\"final\":\"ERROR_CODE\"}",
+          "wall_s": 0.3171,
+          "ttft_s": 0.2211,
+          "prompt_tokens": 132,
+          "generation_tokens": 7,
+          "peak_gb": 1.635
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3171,
+      "time_to_first_token_s": 0.2211,
+      "peak_mlx_gb": 1.635,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 66,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.63,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 223.8
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 12.0
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 8.9
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 4.1
+          },
+          {
+            "proc": "locationd",
+            "cpu_pct": 2.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "read-port",
+      "category": "operations",
+      "passed": false,
+      "final": "final",
+      "steps": [
+        {
+          "response": "{\"final\":\"final\"}",
+          "raw_response": "{\"final\":\"final\"}",
+          "wall_s": 0.3079,
+          "ttft_s": 0.2216,
+          "prompt_tokens": 130,
+          "generation_tokens": 6,
+          "peak_gb": 1.633
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3079,
+      "time_to_first_token_s": 0.2216,
+      "peak_mlx_gb": 1.633,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 66,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.63,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 223.5
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 22.0
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 11.0
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 8.8
+          },
+          {
+            "proc": "loginwindow",
+            "cpu_pct": 3.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "read-dag",
+      "category": "data",
+      "passed": false,
+      "final": "...",
+      "steps": [
+        {
+          "response": "{\"final\":\"...\"}",
+          "raw_response": "{\"final\":\"...\"}",
+          "wall_s": 0.3071,
+          "ttft_s": 0.2216,
+          "prompt_tokens": 130,
+          "generation_tokens": 6,
+          "peak_gb": 1.633
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3071,
+      "time_to_first_token_s": 0.2216,
+      "peak_mlx_gb": 1.633,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 66,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.63,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 220.4
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 23.4
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 11.9
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 9.6
+          },
+          {
+            "proc": "loginwindow",
+            "cpu_pct": 3.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "read-retries",
+      "category": "coding",
+      "passed": false,
+      "final": "...",
+      "steps": [
+        {
+          "response": "{\"final\":\"...\"}",
+          "raw_response": "{\"final\":\"...\"}",
+          "wall_s": 0.3182,
+          "ttft_s": 0.2307,
+          "prompt_tokens": 133,
+          "generation_tokens": 6,
+          "peak_gb": 1.635
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3182,
+      "time_to_first_token_s": 0.2307,
+      "peak_mlx_gb": 1.635,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 66,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.63,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 201.4
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 30.8
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 20.8
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 16.5
+          },
+          {
+            "proc": "BiomeAgent",
+            "cpu_pct": 14.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "read-schema",
+      "category": "data",
+      "passed": false,
+      "final": "Revenue type is not specified in the file.",
+      "steps": [
+        {
+          "response": "{\"final\":\"Revenue type is not specified in the file.\"}",
+          "raw_response": "{\"final\":\"Revenue type is not specified in the file.\"}",
+          "wall_s": 0.4497,
+          "ttft_s": 0.2311,
+          "prompt_tokens": 130,
+          "generation_tokens": 15,
+          "peak_gb": 1.633
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.4497,
+      "time_to_first_token_s": 0.2311,
+      "peak_mlx_gb": 1.633,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 65,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.63,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 221.0
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 15.8
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 14.0
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 8.4
+          },
+          {
+            "proc": "loginwindow",
+            "cpu_pct": 5.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix-timeout",
+      "category": "operations",
+      "passed": false,
+      "final": "DONE",
+      "steps": [
+        {
+          "response": "{\"final\":\"DONE\"}",
+          "raw_response": "{\"final\":\"DONE\"}",
+          "wall_s": 0.3253,
+          "ttft_s": 0.2255,
+          "prompt_tokens": 154,
+          "generation_tokens": 7,
+          "peak_gb": 1.67
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3253,
+      "time_to_first_token_s": 0.2255,
+      "peak_mlx_gb": 1.67,
+      "files_correct": false,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 65,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 222.0
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 18.0
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 11.0
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 6.7
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 6.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "enable-flag",
+      "category": "operations",
+      "passed": false,
+      "final": "DONE",
+      "steps": [
+        {
+          "response": "{\"final\":\"DONE\"}",
+          "raw_response": "{\"final\":\"DONE\"}",
+          "wall_s": 0.3222,
+          "ttft_s": 0.2242,
+          "prompt_tokens": 151,
+          "generation_tokens": 7,
+          "peak_gb": 1.665
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3222,
+      "time_to_first_token_s": 0.2242,
+      "peak_mlx_gb": 1.665,
+      "files_correct": false,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 65,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 223.9
+          },
+          {
+            "proc": "com.apple.WebKit.WebContent",
+            "cpu_pct": 17.3
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 11.0
+          },
+          {
+            "proc": "Safari",
+            "cpu_pct": 7.2
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 2.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix-addition",
+      "category": "coding",
+      "passed": false,
+      "final": "DONE",
+      "steps": [
+        {
+          "response": "{\"final\":\"DONE\"}",
+          "raw_response": "{\"final\":\"DONE\"}",
+          "wall_s": 0.3481,
+          "ttft_s": 0.2248,
+          "prompt_tokens": 152,
+          "generation_tokens": 7,
+          "peak_gb": 1.666
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3481,
+      "time_to_first_token_s": 0.2248,
+      "peak_mlx_gb": 1.666,
+      "files_correct": false,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 179.3
+          },
+          {
+            "proc": "biomesyncd",
+            "cpu_pct": 35.5
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 16.3
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 14.0
+          },
+          {
+            "proc": "MenuBarAgent",
+            "cpu_pct": 11.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix-port",
+      "category": "operations",
+      "passed": false,
+      "final": "DONE",
+      "steps": [
+        {
+          "response": "{\"final\":\"DONE\"}",
+          "raw_response": "{\"final\":\"DONE\"}",
+          "wall_s": 0.3239,
+          "ttft_s": 0.2257,
+          "prompt_tokens": 154,
+          "generation_tokens": 7,
+          "peak_gb": 1.67
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3239,
+      "time_to_first_token_s": 0.2257,
+      "peak_mlx_gb": 1.67,
+      "files_correct": false,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 191.6
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 18.6
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 12.1
+          },
+          {
+            "proc": "biomesyncd",
+            "cpu_pct": 8.3
+          },
+          {
+            "proc": "dasd",
+            "cpu_pct": 6.1
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix-version",
+      "category": "coding",
+      "passed": false,
+      "final": "DONE",
+      "steps": [
+        {
+          "response": "{\"final\":\"DONE\"}",
+          "raw_response": "{\"final\":\"DONE\"}",
+          "wall_s": 0.3258,
+          "ttft_s": 0.2254,
+          "prompt_tokens": 154,
+          "generation_tokens": 7,
+          "peak_gb": 1.67
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3258,
+      "time_to_first_token_s": 0.2254,
+      "peak_mlx_gb": 1.67,
+      "files_correct": false,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 68,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 217.7
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 17.6
+          },
+          {
+            "proc": "fseventsd",
+            "cpu_pct": 7.0
+          },
+          {
+            "proc": "ghostty",
+            "cpu_pct": 4.2
+          },
+          {
+            "proc": "dasd",
+            "cpu_pct": 2.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix-retry-delay",
+      "category": "coding",
+      "passed": false,
+      "final": "DONE",
+      "steps": [
+        {
+          "response": "{\"final\":\"DONE\"}",
+          "raw_response": "{\"final\":\"DONE\"}",
+          "wall_s": 0.3364,
+          "ttft_s": 0.2409,
+          "prompt_tokens": 161,
+          "generation_tokens": 7,
+          "peak_gb": 1.678
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3364,
+      "time_to_first_token_s": 0.2409,
+      "peak_mlx_gb": 1.678,
+      "files_correct": false,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 68,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 224.5
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 6.9
+          },
+          {
+            "proc": "fseventsd",
+            "cpu_pct": 2.0
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 1.9
+          },
+          {
+            "proc": "ghostty",
+            "cpu_pct": 1.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "compare-cache",
+      "category": "operations",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"},{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"},{\"final\":\"\"}",
+          "wall_s": 0.3306,
+          "ttft_s": 0.2207,
+          "prompt_tokens": 142,
+          "generation_tokens": 8,
+          "peak_gb": 1.652,
+          "error": "Extra data: line 1 column 13 (char 12)"
+        },
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.3287,
+          "ttft_s": 0.261,
+          "prompt_tokens": 191,
+          "generation_tokens": 5,
+          "peak_gb": 1.727
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 1,
+      "model_wall_s": 0.6593,
+      "time_to_first_token_s": 0.2207,
+      "peak_mlx_gb": 1.727,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 68,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 221.9
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 3.2
+          },
+          {
+            "proc": "PerfPowerServices",
+            "cpu_pct": 2.2
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 1.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "compare-function",
+      "category": "coding",
+      "passed": false,
+      "final": "The function missing from current is not specified as files were not provided in the simulated workspace. No tool results were given to inspect /src/expected.txt and /src/current.txt, so the missing function cannot be determined.",
+      "steps": [
+        {
+          "response": "{\"final\":\"The function missing from current is not specified as files were not provided in the simulated workspace. No tool results were given to inspect /src/expected.txt and /src/current.txt, so the missing function cannot be determined.\"}",
+          "raw_response": "{\"final\":\"The function missing from current is not specified as files were not provided in the simulated workspace. No tool results were given to inspect /src/expected.txt and /src/current.txt, so the missing function cannot be determined.\"}",
+          "wall_s": 0.9392,
+          "ttft_s": 0.2197,
+          "prompt_tokens": 138,
+          "generation_tokens": 50,
+          "peak_gb": 1.645
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.9392,
+      "time_to_first_token_s": 0.2197,
+      "peak_mlx_gb": 1.645,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 225.3
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 2.1
+          },
+          {
+            "proc": "logd",
+            "cpu_pct": 1.1
+          }
+        ]
+      }
+    },
+    {
+      "id": "compare-schema",
+      "category": "data",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.2947,
+          "ttft_s": 0.2287,
+          "prompt_tokens": 136,
+          "generation_tokens": 5,
+          "peak_gb": 1.641
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.2947,
+      "time_to_first_token_s": 0.2287,
+      "peak_mlx_gb": 1.641,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 227.3
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 2.6
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 2.1
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 1.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "compare-region",
+      "category": "operations",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.2952,
+          "ttft_s": 0.229,
+          "prompt_tokens": 138,
+          "generation_tokens": 5,
+          "peak_gb": 1.645
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.2952,
+      "time_to_first_token_s": 0.229,
+      "peak_mlx_gb": 1.645,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 226.0
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 1.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "search-alert",
+      "category": "incident",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.2955,
+          "ttft_s": 0.2288,
+          "prompt_tokens": 133,
+          "generation_tokens": 5,
+          "peak_gb": 1.635
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.2955,
+      "time_to_first_token_s": 0.2288,
+      "peak_mlx_gb": 1.635,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.58,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 225.9
+          },
+          {
+            "proc": "locationd",
+            "cpu_pct": 5.1
+          },
+          {
+            "proc": "duetexpertd",
+            "cpu_pct": 4.2
+          },
+          {
+            "proc": "cfprefsd",
+            "cpu_pct": 2.2
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 2.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "search-reset",
+      "category": "incident",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.2962,
+          "ttft_s": 0.2285,
+          "prompt_tokens": 130,
+          "generation_tokens": 5,
+          "peak_gb": 1.633
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.2962,
+      "time_to_first_token_s": 0.2285,
+      "peak_mlx_gb": 1.633,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 69,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.69,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 224.3
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 2.3
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 1.8
+          },
+          {
+            "proc": "duetexpertd",
+            "cpu_pct": 1.5
+          },
+          {
+            "proc": "Finder",
+            "cpu_pct": 1.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "search-deprecation",
+      "category": "coding",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.2938,
+          "ttft_s": 0.227,
+          "prompt_tokens": 130,
+          "generation_tokens": 5,
+          "peak_gb": 1.633
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.2938,
+      "time_to_first_token_s": 0.227,
+      "peak_mlx_gb": 1.633,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 68,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.69,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 226.1
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 4.6
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 2.9
+          },
+          {
+            "proc": "Siri AI",
+            "cpu_pct": 1.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "search-drift",
+      "category": "data",
+      "passed": false,
+      "final": "",
+      "steps": [
+        {
+          "response": "{\"final\":\"\"}",
+          "raw_response": "{\"final\":\"\"}",
+          "wall_s": 0.3167,
+          "ttft_s": 0.2416,
+          "prompt_tokens": 131,
+          "generation_tokens": 5,
+          "peak_gb": 1.634
+        }
+      ],
+      "tool_calls": 0,
+      "tool_errors": 0,
+      "model_wall_s": 0.3167,
+      "time_to_first_token_s": 0.2416,
+      "peak_mlx_gb": 1.634,
+      "files_correct": true,
+      "system": {
+        "swap_used_gb": 0.77,
+        "mem_free_pct": 68,
+        "power": "ac",
+        "cpu_speed_limit_pct": null,
+        "load_1m": 3.69,
+        "top_cpu": [
+          {
+            "proc": "mediaanalysisd",
+            "cpu_pct": 221.0
+          },
+          {
+            "proc": "WindowServer",
+            "cpu_pct": 26.7
+          },
+          {
+            "proc": "zsh",
+            "cpu_pct": 13.2
+          },
+          {
+            "proc": "ghostty",
+            "cpu_pct": 10.5
+          },
+          {
+            "proc": "spotlightknowledged.updater",
+            "cpu_pct": 7.4
+          }
+        ]
+      }
+    }
+  ]
+}
