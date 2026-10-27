@@ -179,7 +179,7 @@ Evaluated on 8 core NLP/ML engineering tasks. **Exploratory:** one rater, 8 prom
 | **Multi-turn Conversational Service** | **Arm 2 (`mlx_lm.server`)** | Warm-prefix row (`--no-nonce`): 0.068–0.094 s TTFT vs ~14 s cold at 8k (~150x, arithmetic on historical `ttft_s`). Applies only when the prefix repeats; server RSS peak 4.02–4.03 GB (`mlx-4bit-http-cached/summary.json`; process RSS, a different basis from the in-process MLX allocator peaks above). |
 
 These recommendations are **within this model only**. Whether the 4-bit Nemotron is the right
-pick for any of those workloads is decided in section 5, against rows that have not run yet.
+pick for any of those workloads is now decided in section 5, against the 12 completed checkpoint rows.
 
 ---
 

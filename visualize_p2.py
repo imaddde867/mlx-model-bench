@@ -173,10 +173,10 @@ def main():
     fig.legend(handles.values(), handles.keys(), ncol=min(4, len(handles)),
                fontsize=8.5, loc="lower center", frameon=False)
     fig.suptitle(
-        "Nemotron 3.5 Bolt E4B and challengers on M4 / 16 GB · greedy, thinking off, "
+        "Nemotron 3.5 Bolt E4B and challengers on M4 / 16 GB · greedy decoding; LFM2.5 emits reasoning tokens\n"
+        "TTFT and decode tok/s time prefill and token generation, not time to a completed answer · "
         "median with min-max whiskers (warm-up discarded)\n"
-        "prompt-token counts are each model's own tokenizer — compare within a bar group, "
-        "not across the x-axis",
+        "prompt-token counts are each model's own tokenizer — compare within a bar group, not across the x-axis",
         fontsize=11.5,
     )
     fig.tight_layout(rect=(0, 0.06, 1, 0.94))
