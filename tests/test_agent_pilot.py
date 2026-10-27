@@ -1,7 +1,10 @@
 """P4 pilot protocol regression tests; no model, network, or disk writes by tools."""
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -12,7 +15,7 @@ def scripted(*answers):
     responses = iter(answers)
     def generate(_messages):
         return {"text": next(responses), "wall_s": 0.1, "ttft_s": 0.02,
-                "generation_tokens": 5, "peak_gb": 1.5}
+                "prompt_tokens": 42, "generation_tokens": 5, "peak_gb": 1.5}
     return generate
 
 
@@ -33,6 +36,39 @@ class AgentPilotTests(unittest.TestCase):
         self.assertTrue(result["passed"])
         self.assertEqual(result["tool_calls"], 1)
         self.assertEqual(result["model_wall_s"], 0.2)
+        self.assertEqual(result["steps"][0]["prompt_tokens"], 42)
+
+    def test_write_before_read_is_rejected(self):
+        case = next(t for t in run_p4.tasks() if t["id"] == "fix-timeout")
+        after = case["expected_files"]["/config/service.env"]
+        result = run_p4.run_task(case, scripted(
+            '{"tool":"write_file","arguments":{"path":"/config/service.env","content":'
+            + json.dumps(after) + '}}',
+            '{"tool":"read_file","arguments":{"path":"/config/service.env"}}',
+            '{"final":"DONE"}'))
+        self.assertFalse(result["passed"])
+        self.assertIn("read", result["steps"][0]["error"])
+
+    def test_each_task_records_a_system_snapshot(self):
+        case = next(t for t in run_p4.tasks() if t["id"] == "read-workers")
+        with mock.patch.object(run_p4.sysinfo, "snapshot", return_value={"power": "ac"}):
+            result = run_p4.run_task(case, scripted('{"final":"6"}'))
+        self.assertEqual(result["system"], {"power": "ac"})
+
+    def test_report_files_are_created_exclusively(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "report.json"
+            self.assertTrue(run_p4.write_report(path, {"run": 1}))
+            with mock.patch("sys.stderr"):
+                self.assertFalse(run_p4.write_report(path, {"run": 2}))
+            self.assertEqual(json.loads(path.read_text()), {"run": 1})
+
+    def test_duplicate_checkpoint_tags_are_rejected(self):
+        with mock.patch.object(run_p4.registry, "get_model", return_value=mock.Mock()), \
+                mock.patch("sys.stderr"):
+            with self.assertRaises(SystemExit) as raised:
+                run_p4.main(["--model", "x", "--checkpoints", "mlx-4bit", "mlx-4bit"])
+        self.assertEqual(raised.exception.code, 2)
 
     def test_edit_requires_correct_file_and_read(self):
         case = next(t for t in run_p4.tasks() if t["id"] == "fix-timeout")

@@ -17,6 +17,7 @@ import bench
 import gates
 import registry
 import run_p3
+import sysinfo
 
 ROOT = Path(__file__).resolve().parent
 TASK_FILE = ROOT / "prompts" / "agent" / "tasks.json"
@@ -74,6 +75,7 @@ def run_task(task, generate, max_steps=7):
         response = gen["text"].strip()
         step = {"response": response, "raw_response": gen.get("raw_text", response),
                 "wall_s": gen.get("wall_s"), "ttft_s": gen.get("ttft_s"),
+                "prompt_tokens": gen.get("prompt_tokens"),
                 "generation_tokens": gen.get("generation_tokens"),
                 "peak_gb": gen.get("peak_gb")}
         steps.append(step)
@@ -85,6 +87,10 @@ def run_task(task, generate, max_steps=7):
             if set(action) == {"final"} and isinstance(action["final"], str):
                 answer = action["final"]
                 break
+            if (action.get("tool") == "write_file"
+                    and isinstance(action.get("arguments"), dict)
+                    and action["arguments"].get("path") not in reads):
+                raise ValueError("read the file before editing it")
             output = tool_call(action, files)
             name, arguments = action["tool"], action["arguments"]
             if name == "read_file":
@@ -115,7 +121,19 @@ def run_task(task, generate, max_steps=7):
         "time_to_first_token_s": steps[0].get("ttft_s") if steps else None,
         "peak_mlx_gb": max((s.get("peak_gb") or 0 for s in steps), default=0),
         "files_correct": files == expected,
+        "system": sysinfo.snapshot(),
     }
+
+
+def write_report(path, report):
+    """Create the report exclusively: a repeated or concurrent run never replaces one."""
+    try:
+        with path.open("x") as fh:
+            fh.write(json.dumps(report, indent=2) + "\n")
+    except FileExistsError:
+        print(f"refusing to overwrite {path}", file=sys.stderr)
+        return False
+    return True
 
 
 def main(argv=None):
@@ -132,6 +150,8 @@ def main(argv=None):
     tags = args.checkpoints or [c.tag for c in cfg.available_checkpoints]
     if not tags:
         ap.error("no downloaded checkpoints selected")
+    if len(tags) != len(set(tags)):
+        ap.error("duplicate checkpoint tags: " + ", ".join(tags))
     chosen = [cfg.checkpoint(tag) for tag in tags]
     if gates.refuse(cfg, chosen, args.evidence):
         return 1
@@ -164,7 +184,8 @@ def main(argv=None):
                   "time_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                   "status": "pilot_unvalidated", "total": len(records),
                   "passed": sum(r["passed"] for r in records), "tasks": records}
-        path.write_text(json.dumps(report, indent=2) + "\n")
+        if not write_report(path, report):
+            return 1
         print(f"{cfg.id}/{ckpt.tag}: {report['passed']}/{len(records)} pilot tasks -> {path}")
         del model, tokenizer
         mx.clear_cache()
