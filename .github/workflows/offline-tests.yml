@@ -23,3 +23,7 @@ jobs:
         run: |
           python compare.py --out /tmp/mlx-model-compare.md
           diff -u results/COMPARE.md /tmp/mlx-model-compare.md
+      - name: Validate complete statistical study against committed evidence
+        run: |
+          python study.py --out /tmp/mlx-model-study.md
+          test -s /tmp/mlx-model-study.md
