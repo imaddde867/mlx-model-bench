@@ -89,8 +89,7 @@ Reproducibility checklist
 
 Not done here: a clean, independently reviewed run is a separate future action; no benchmark was run and no model was loaded.
 
-NOT READY: 61 blocking problem(s)
-  [load gate] nemotron-3.5-bolt/mlx-4bit: missing mlx-4bit.json — run --phase p0
+NOT READY: 60 blocking problem(s)
   [collision] results/nemotron-3.5-bolt/mlx-4bit-inproc exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
   [collision] results/nemotron-3.5-bolt/mlx-4bit-http exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
   [collision] results/nemotron-3.5-bolt/mlx-4bit-http-cached exists (outcome=not recorded (legacy summary), publishable=not recorded); a new run would overwrite it — narrow --models/--tiers or use another --out
@@ -151,5 +150,3 @@ NOT READY: 61 blocking problem(s)
   [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for mlx-4bit; run_p3.py would refuse — narrow --tiers or use another --out
   [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for optiq-4bit; run_p3.py would refuse — narrow --tiers or use another --out
   [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for mlx-8bit; run_p3.py would refuse — narrow --tiers or use another --out
-
-readiness_exit=1

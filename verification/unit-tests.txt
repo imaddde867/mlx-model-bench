@@ -151,7 +151,7 @@ test_prefix_cache_hit_flags_a_nonce_row_only (test_timing.TimingTests.test_prefi
 test_too_short_completion_is_flagged_not_ranked (test_timing.TimingTests.test_too_short_completion_is_flagged_not_ranked) ... ok
 
 ----------------------------------------------------------------------
-Ran 151 tests in 4.182s
+Ran 151 tests in 4.262s
 
 OK
   mlx-4bit: in-process
@@ -164,5 +164,5 @@ OK
   mlx-4bit: HTTP, cache-busted
   mlx-4bit: HTTP, prefix-cache hit (labelled row)
   mlx-4bit: in-process
-    exited 1; see /var/folders/81/vw07xvx93g58v6nwmy2n02b00000gn/T/tmp3t4b7jcf/nemotron-3.5-bolt/logs/p2-mlx-4bit-inproc.log
+    exited 1; see /var/folders/81/vw07xvx93g58v6nwmy2n02b00000gn/T/tmpfkgc1yay/nemotron-3.5-bolt/logs/p2-mlx-4bit-inproc.log
     synthetic in-process failure
