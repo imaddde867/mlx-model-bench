@@ -167,8 +167,10 @@ Roster (repeated per model, in this order):
 - **R*n* · one model end to end** — fetch → P0 gate → P2 → P3. Stop at the gate if
   it does not load, does not fit, or answers nonsense; a blocked row keeps its
   error record.
-- **R4 · cross-model report** — one table, every row carrying bpw, publisher,
-  prompt tokens, generation length and peak memory; blind quality round r1.
+- **R4 · cross-model report** — 12 checkpoint rows, each with bpw, publisher,
+  tokenizer-specific prompt tokens, generation length and peak memory; exploratory,
+  single-rater blind quality round r1 for the four plain 4-bit checkpoints. LFM's
+  larger P3 token budget is disclosed.
 
 ## What the technical report changes
 

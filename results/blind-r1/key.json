@@ -1,0 +1,97 @@
+{
+  "round": "r1",
+  "seed": 1337,
+  "rows": [
+    "lfm2.5-8b-a1b/mlx-4bit",
+    "minicpm5-2b/mlx-4bit",
+    "nemotron-3.5-bolt/mlx-4bit",
+    "spark-x2.5-4b/mlx-4bit"
+  ],
+  "expected_prompt_ids": [
+    "qual-01-explanation",
+    "qual-02-summarization",
+    "qual-03-rewrite",
+    "qual-04-persona",
+    "qual-05-refusal",
+    "qual-06-code-explanation",
+    "qual-07-correction",
+    "qual-08-story"
+  ],
+  "prompts_sha256": "e69fcd71ac5666b9e347c50a044b71143d6e1f411994f886a4394172776eca37",
+  "slot_balance": {
+    "minicpm5-2b/mlx-4bit": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "lfm2.5-8b-a1b/mlx-4bit": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "spark-x2.5-4b/mlx-4bit": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "nemotron-3.5-bolt/mlx-4bit": [
+      2,
+      2,
+      2,
+      2
+    ]
+  },
+  "key": {
+    "qual-01-explanation": {
+      "Model A": "minicpm5-2b/mlx-4bit",
+      "Model B": "lfm2.5-8b-a1b/mlx-4bit",
+      "Model C": "spark-x2.5-4b/mlx-4bit",
+      "Model D": "nemotron-3.5-bolt/mlx-4bit"
+    },
+    "qual-02-summarization": {
+      "Model A": "lfm2.5-8b-a1b/mlx-4bit",
+      "Model B": "spark-x2.5-4b/mlx-4bit",
+      "Model C": "nemotron-3.5-bolt/mlx-4bit",
+      "Model D": "minicpm5-2b/mlx-4bit"
+    },
+    "qual-03-rewrite": {
+      "Model A": "spark-x2.5-4b/mlx-4bit",
+      "Model B": "nemotron-3.5-bolt/mlx-4bit",
+      "Model C": "minicpm5-2b/mlx-4bit",
+      "Model D": "lfm2.5-8b-a1b/mlx-4bit"
+    },
+    "qual-04-persona": {
+      "Model A": "nemotron-3.5-bolt/mlx-4bit",
+      "Model B": "minicpm5-2b/mlx-4bit",
+      "Model C": "lfm2.5-8b-a1b/mlx-4bit",
+      "Model D": "spark-x2.5-4b/mlx-4bit"
+    },
+    "qual-05-refusal": {
+      "Model A": "minicpm5-2b/mlx-4bit",
+      "Model B": "lfm2.5-8b-a1b/mlx-4bit",
+      "Model C": "spark-x2.5-4b/mlx-4bit",
+      "Model D": "nemotron-3.5-bolt/mlx-4bit"
+    },
+    "qual-06-code-explanation": {
+      "Model A": "lfm2.5-8b-a1b/mlx-4bit",
+      "Model B": "spark-x2.5-4b/mlx-4bit",
+      "Model C": "nemotron-3.5-bolt/mlx-4bit",
+      "Model D": "minicpm5-2b/mlx-4bit"
+    },
+    "qual-07-correction": {
+      "Model A": "spark-x2.5-4b/mlx-4bit",
+      "Model B": "nemotron-3.5-bolt/mlx-4bit",
+      "Model C": "minicpm5-2b/mlx-4bit",
+      "Model D": "lfm2.5-8b-a1b/mlx-4bit"
+    },
+    "qual-08-story": {
+      "Model A": "nemotron-3.5-bolt/mlx-4bit",
+      "Model B": "minicpm5-2b/mlx-4bit",
+      "Model C": "lfm2.5-8b-a1b/mlx-4bit",
+      "Model D": "spark-x2.5-4b/mlx-4bit"
+    }
+  }
+}

@@ -16,10 +16,18 @@ a difference between models rather than between quantization budgets.
 
 | Model | Params | 4-bit | OptiQ 4/8-bit | 8-bit (reference) | Status |
 |---|---|---|---|---|---|
-| NVIDIA Nemotron 3.5 Bolt E4B | 7.46B | 4.20 GB | 6.53 GB | 7.96 GB | speed + accuracy complete, all tiers · blind round pending |
-| OpenBMB MiniCPM5-2B | 2.52B | 1.43 GB | 1.94 GB | 2.68 GB | speed + accuracy complete, all tiers · blind round pending |
-| XHToken Spark-X2.5-4B | 4.11B | 2.32 GB | 3.05 GB | 4.38 GB | speed + accuracy complete, all tiers · blind round pending |
-| Liquid AI LFM2.5-8B-A1B | 8.47B | 4.85 GB | 5.47 GB | 9.02 GB | speed + accuracy complete, all tiers · blind round pending |
+| NVIDIA Nemotron 3.5 Bolt E4B | 7.46B | 4.20 GB | 6.53 GB | 7.96 GB | 3 tiers reported · historical baseline caveat · blind r1 scored |
+| OpenBMB MiniCPM5-2B | 2.52B | 1.43 GB | 1.94 GB | 2.68 GB | 3 tiers reported · blind r1 scored |
+| XHToken Spark-X2.5-4B | 4.11B | 2.32 GB | 3.05 GB | 4.38 GB | 3 tiers reported · third-party plain quants · blind r1 scored |
+| Liquid AI LFM2.5-8B-A1B | 8.47B | 4.85 GB | 5.47 GB | 9.02 GB | 3 tiers reported · reasoning tokens included · blind r1 scored |
+
+The cross-model report covers the 12 in-process model/tier rows. Matrix run conditions are
+`not recorded` for the historical runs that predate per-trial snapshots. The run operator recalls
+many other apps were open; this may have slowed the measurements, but without system snapshots the
+effect cannot be quantified or corrected.
+The blind r1 comparison is exploratory and single-rater, and LFM receives a 4× quality token cap
+because its reasoning block precedes its final answer. See [`REPORT.md`](REPORT.md) for the
+results, caveats, strict-format versus numerical scoring distinction, and blind scores.
 
 Per checkpoint there are three arms: `mlx_lm` in-process, `mlx_lm.server` over HTTP, and an
 `mlx-optiq` engine arm attempted for every OptiQ checkpoint (it is unmeasurable for the
@@ -60,7 +68,7 @@ Full metadata, template-control traps and the comparability protocol:
 | `blind.py`, `score_quality.py` | cross-model blind set (balanced slots) and scoring summary |
 | `readiness.py` | offline go/no-go before the matrix (suite + preconditions + checklist) |
 | `sysinfo.py` | what else the machine is doing: swap, memory pressure, power, thermal, busiest processes. `python sysinfo.py` is the preflight; `bench.py` records the same snapshot per trial |
-| `compare.py` | cross-model table (REPORT section 5) generated from the committed result rows, incl. achieved GB/s and TTFT spread |
+| `compare.py` | cross-model table (REPORT section 5) generated from committed rows, incl. the labelled weight-read proxy and TTFT spread |
 | `visualize_p2.py` | the chart: every model on the same axes |
 | `results/` | raw per-run JSON, one directory per model |
 
@@ -136,13 +144,18 @@ caffeinate -i .venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase al
 .venv-mlxlm/bin/python score_quality.py --round r1
 ```
 
+Blind quality round r1 (four plain 4-bit rows; exploratory, single rater): see `results/blind-r1/`.
+The scored summary warns of a 1.37-point spread across blind slots, above the 1-point position-bias
+threshold. The results are a preference signal, not a ranking.
+
 The repository was renamed from `nemotron-bolt-bench` when the study grew from one model to
 four; its original single-model record is now section 1 of the report, unchanged.
 
 ## Run conditions
 
-Rows are measured on a realistic desktop (browser, chat apps, CLIs open), not an empty
-machine, so the conditions are part of the row, not a footnote:
+Future runs should record whether other applications are open, rather than assume a clean
+machine. The historical matrix rows have no per-trial snapshots; the operator recalls many apps
+were open, which may have slowed them, but the impact cannot be reconstructed:
 
 ```bash
 python sysinfo.py                                   # preflight: swap, memory pressure, power, thermal, busiest processes
@@ -154,7 +167,8 @@ python compare.py                                   # cross-model table; TTFT sp
 Each trial file records `started_at` and a `system` snapshot taken just before its timed
 window; each summary records `condition`, `condition_caveats` and per-prompt `spread_ratio`.
 Rows recorded before this existed show `condition: not recorded`; `compare.py` recomputes
-their spread from the per-trial files.
+their spread from the per-trial files. Do not interpret historical rows as clean runs or apply an
+estimated slowdown; no such estimate can be supported by the available records.
 
 ## Pins
 

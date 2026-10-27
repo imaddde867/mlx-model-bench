@@ -1,21 +1,25 @@
 # Four local models on a 16 GB M4 — speed, memory, accuracy, quality
 
 Apple M4 (10-core, 4P+6E), 16 GB unified memory, macOS 27.0.1, `mlx` 0.32.4, `mlx-lm` 0.32.2,
-Python 3.12.10. Greedy decoding, thinking off per model's own template, plugged in, `caffeinate`.
+Python 3.12.10. Greedy decoding and per-model template controls; the intended protocol uses a
+plugged-in Mac with `caffeinate`. The historical P2 matrix rows do not record run conditions.
+LFM2.5 emits reasoning tokens by design; see sections 4–5.
 
-This report covers four models that fit in 16 GB, each at the same three quantization tiers,
-through the same harness. Speed, memory and accuracy rows exist for all four at all three tiers
-(`python compare.py`, committed as `results/COMPARE.md`); the narrative sections for the three
-challengers and the blind quality round are still pending. A section that has no narrative yet
-says so rather than showing a blank row.
+This report covers four models at three quantization tiers. Sections 2–4 present the challengers;
+section 5 compares all 12 in-process checkpoint rows. The P2 matrix rows predate condition
+snapshots and are labelled `not recorded`. The run operator recalls that many other apps were open during those runs; this may have slowed
+the measurements, but it is not a per-trial system measurement. The records do not support a
+slowdown estimate or clean-vs-loaded comparison. Focused repeats remain separate.
+The r1 blind scores cover the four plain 4-bit checkpoints only and are exploratory, single-rater
+results.
 
 | Section | Model | Weights (4-bit / OptiQ / 8-bit) | Status |
 |---|---|---|---|
-| 1 | NVIDIA Nemotron 3.5 Bolt E4B | 4.20 / 6.53 / 7.96 GB | **complete** (all tiers; blind round for 8-bit pending) |
-| 2 | OpenBMB MiniCPM5-2B | 1.43 / 1.94 / 2.68 GB | numbers in `results/COMPARE.md` · narrative pending |
-| 3 | XHToken Spark-X2.5-4B | 2.32 / 3.05 / 4.38 GB | numbers in `results/COMPARE.md` · narrative pending |
-| 4 | Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 / 9.02 GB | numbers in `results/COMPARE.md` · narrative pending |
-| 5 | Cross-model comparison | — | pending |
+| 1 | NVIDIA Nemotron 3.5 Bolt E4B | 4.20 / 6.53 / 7.96 GB | baseline complete; historical 4-bit/OptiQ and 8-bit matrix rows |
+| 2 | OpenBMB MiniCPM5-2B | 1.43 / 1.94 / 2.68 GB | complete |
+| 3 | XHToken Spark-X2.5-4B | 2.32 / 3.05 / 4.38 GB | complete; plain tiers are third-party quants |
+| 4 | Liquid AI LFM2.5-8B-A1B | 4.85 / 5.47 / 9.02 GB | complete; thinking tokens are included in generation |
+| 5 | Cross-model comparison | — | complete; 12 checkpoint rows and blind r1 |
 
 Section 1's measurements predate the checkpoint, P0, timing, memory and grader gates (PRs #13-#18) and
 are historical, not re-validated by them. Checkpoints: Arm 1 `rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit`
@@ -179,19 +183,23 @@ pick for any of those workloads is decided in section 5, against rows that have 
 
 ---
 
-## 2. OpenBMB MiniCPM5-2B — pending
+## 2. OpenBMB MiniCPM5-2B
 
-2.52B dense Llama, 42 layers, 2 KV heads, 131k vocab. The cheapest complete row in the study:
-1.43 GB at 4-bit, and still only 2.68 GB at 8-bit.
+A 2.517B dense Llama (42 layers, 2 KV heads) provides the smallest weights and runtime peak in
+the matrix. Its long-prompt TTFT is not correspondingly small: the 8.35k-token prompt takes
+14.606 s, close to the larger Nemotron and LFM rows. At 4-bit its short-prompt decode median
+is 69.0 tok/s and 54.6 tok/s on the 8.37k-token decode prompt, with a 2.465 GB in-process
+allocator peak.
 
-| Tier | Weights | bpw | Publisher | P0 | P2 | P3 |
-|---|---|---|---|---|---|---|
-| 4-bit (`mlx-4bit`) | 1.43 GB | 4.55 | vendor (`openbmb`) | — | — | — |
-| OptiQ 4/8 (`optiq-4bit`) | 1.94 GB | 6.17 | mlx-community | — | — | — |
-| 8-bit (reference) | 2.68 GB | 8.52 | mlx-community | — | — | — |
+| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s [range] | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
+|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 4-bit (`mlx-4bit`) | 1.43 | 4.55 | vendor (`openbmb`) | 54.6 [54.5–55.5] | 14.606 [13.979–14.782] | 8,354 | 256 | 2.465 | 3 | 10 | 6 | 19 |
+| OptiQ 4/8 (`optiq-4bit`) | 1.94 | 6.17 | mlx-community | 44.4 [41.3–44.9] | 14.042 [13.906–14.334] | 8,354 | 256 | 2.975 | 1 | 10 | 6 | 17 |
+| 8-bit (reference) | 2.68 | 8.52 | mlx-community | 32.6 [23.7–33.5] | 14.768 [14.743–14.869] | 8,354 | 256 | 3.723 | 2 | 10 | 6 | 18 |
 
-Open question this row is designed to answer: does a 2.5B model at 1.43 GB hold tool-calling and
-constraint-following parity with a 7.46B model at 4.20 GB, and at what TTFT.
+On this 30-prompt set, all three tiers pass all ten tool-call cases, while mathematical correctness
+and strict-format compliance are much lower. The numbers do not establish broad capability or an
+intelligence-per-GB ranking. The format column is only the eight objective output constraints.
 
 #### Focused 4-bit decode repeat (not a replacement for the matrix row)
 
@@ -206,70 +214,195 @@ CPU and 0.611 GB swap in use (not proof that the model was paging). The original
 per-trial condition snapshots, so the two runs' background conditions cannot be matched. Raw
 repeat rows and summary: `results/minicpm5-2b/mlx-4bit-inproc-decode-check/`.
 
-## 3. XHToken Spark-X2.5-4B — pending
+## 3. XHToken Spark-X2.5-4B
 
-4.11B dense with 3:1 sliding:full attention, head_dim 256, 1M-token trained context.
+A 4.112B dense model with 3:1 sliding-to-full attention has the slowest long-prompt prefill in
+the roster: about 26.7–27.6 s for 8,631 tokens, versus 9.3–14.6 s for the other 4-bit rows. Its
+4-bit decode is 29.4 tok/s on the long decode prompt, with a 3.971 GB in-process allocator peak.
+The model's longer-than-cap generations on several quality prompts also mean the single-rater
+scores sometimes judge truncated text (see section 5).
 
-| Tier | Weights | bpw | Publisher | P0 | P2 | P3 |
-|---|---|---|---|---|---|---|
-| 4-bit (`mlx-4bit`) | 2.32 GB | 4.51 | **third-party** (`abenzerps`) | — | — | — |
-| OptiQ 4/8 (`optiq-4bit`) | 3.05 GB | 5.93 | mlx-community | — | — | — |
-| 8-bit (reference) | 4.38 GB | 8.52 | **third-party** (`abenzerps`) | — | — | — |
+| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s [range] | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
+|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 4-bit (`mlx-4bit`) | 2.32 | 4.51 | **third-party** (`abenzerps`) | 29.4 [28.7–30.5] | 26.663 [26.594–26.865] | 8,631 | 256 | 3.971 | 2 | 10 | 6 | 18 |
+| OptiQ 4/8 (`optiq-4bit`) | 3.05 | 5.93 | mlx-community | 25.6 [23.5–25.7] | 27.603 [27.217–33.074] | 8,631 | 256 | 4.698 | 2 | 9 | 7 | 18 |
+| 8-bit (reference) | 4.38 | 8.52 | **third-party** (`abenzerps`) | 20.6 [19.6–20.7] | 27.387 [26.799–28.275] | 8,631 | 256 | 6.027 | 4 | 10 | 7 | 21 |
 
-Fairness caveat that cannot be engineered away: no vendor MLX conversion is published, so both
-non-OptiQ tiers are community quants. Every table carrying this model must repeat that.
+There is no vendor MLX conversion for Spark, so its plain 4-bit and 8-bit rows use third-party
+weights; the OptiQ row is from mlx-community. This publisher difference is a confound in any
+plain-versus-OptiQ conclusion. The objective set shows perfect tool-call pass rates for the plain
+4-bit and 8-bit checkpoints, not for OptiQ (9/10); arithmetic scores remain low across tiers.
 
-## 4. Liquid AI LFM2.5-8B-A1B — pending
+## 4. Liquid AI LFM2.5-8B-A1B
 
-8.47B hybrid conv+attention MoE, 18 of 24 layers convolutional, 32 experts top-4.
+LFM2.5 combines 8.468B total parameters with a vendor-labelled ~1.3B active per token (the
+registry's label, not a locally counted parameter total), in a hybrid architecture with 18 of
+24 convolutional layers. It has the highest 4-bit long-prompt decode median (68.8 tok/s) and
+lowest long-prompt TTFT (9.285 s for 8,510 tokenizer-specific prompt tokens). The 8-bit checkpoint
+fits in this run: its peak is 9.947 GB, the highest in the matrix but below the machine's 16 GB
+unified-memory capacity. Peak figures are MLX allocator values, not whole-process RSS.
 
-| Tier | Weights | bpw | Publisher | P0 | P2 | P3 |
-|---|---|---|---|---|---|---|
-| 4-bit (`mlx-4bit`) | 4.85 GB | 4.58 | vendor | — | — | — |
-| OptiQ 4/8 (`optiq-4bit`) | 5.47 GB | 5.17 | mlx-community | — | — | — |
-| 8-bit (reference) | 9.02 GB | 8.52 | vendor | — | — | — |
+| Tier | Weights GB | bpw | Publisher | Decode long tok/s [range] | TTFT long s [range] | Prompt tok | Gen tok | Peak GB | Math strict /12 | Tool /10 | Format /8 | Total /30 |
+|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 4-bit (`mlx-4bit`) | 4.85 | 4.58 | vendor | 68.8 [63.8–73.9] | 9.285 [9.186–9.547] | 8,510 | 256 | 5.779 | 4 | 10 | 6 | 20 |
+| OptiQ 4/8 (`optiq-4bit`) | 5.47 | 5.17 | mlx-community | 59.6 [49.7–63.5] | 9.277 [8.919–9.855] | 8,510 | 256 | 6.370 | 4 | 10 | 7 | 21 |
+| 8-bit (reference) | 9.02 | 8.52 | vendor | 37.9 [36.4–44.8] | 9.347 [9.215–9.510] | 8,510 | 256 | 9.947 | 5 | 10 | 6 | 21 |
 
-The speed hypothesis: 8.5B of weights but ~1.3B active per token should out-decode every dense
-row here. The 9.02 GB 8-bit tier may not survive the P0 memory gate on 16 GB; if it does not,
-that is recorded rather than dropped.
+**Thinking and end-to-end latency caveat.** LFM emits a reasoning block; the template has no
+switch to turn that behavior off. The speed `decode_tps` measures generation throughput including
+reasoning tokens, not time to a useful final answer. On the 4-bit `decode-short` prompt (53
+prompt tokens, 256 generated tokens), raw decode is 70.9 tok/s [69.8–73.1], while total `wall_s`
+from before template rendering through stream completion is 3.734 s [3.627–3.798]. A later,
+separately tagged repeat measured 86.1 tok/s [82.6–86.6] and 3.096 s wall [3.075–3.208]; it is
+not a replacement for the full matrix row. Both generations hit the 256-token cap; the prompt asks
+for at least 400 words, so this measures raw generation throughput and time to finish a truncated
+stream, not time to a useful completed answer. The measured long-prompt TTFT is time to first
+generated token (often reasoning), not time to the first user-visible answer.
+
+For P3, LFM's accuracy and quality budgets are 1,024 and 1,536 generated tokens respectively,
+four times the 256/384 caps used by other models. The reasoning tokens count toward the reported
+generation volume and elapsed wall time; `response` contains the extracted text after the thinking
+block when that block closes. Two of eight 4-bit quality answers hit the 1,536-token cap, so some
+scored content can still be truncated. This budget difference is disclosed and makes cross-model
+quality scores less like-for-like.
 
 #### Focused 4-bit decode repeat (not a replacement for the matrix row)
 
 The full P2 `decode-short` row reports **70.9 tok/s [69.8–73.1]** over five kept trials
 (53 prompt tokens, 256 generated tokens). A separately tagged five-trial repeat measured
-**86.1 tok/s [82.6–86.6]**, with TTFT **0.1163 s [0.1158–0.1434]** and peak MLX allocator memory
-**4.918 GB**. All five repeat decode rates (82.6–86.6 tok/s) exceed the original maximum
-(73.1 tok/s); this is a repeatable discrepancy, not proof that the original row is invalid or
-that LFM2.5 is generally faster under all conditions. Keep both measurements visible pending
-an investigation or a comparable full P2 rerun.
+**86.1 tok/s [82.6–86.6]**, with TTFT **0.1163 s [0.1158–0.1434]**, wall **3.096 s [3.075–3.208]**,
+and peak MLX allocator memory **4.918 GB**. All five repeat decode rates (82.6–86.6 tok/s) exceed
+the original maximum (73.1 tok/s); this is a repeatable discrepancy, not proof that the original
+row is invalid or that LFM2.5 is generally faster under all conditions. The repeat was labelled
+`loaded`, with WindowServer activity up to 31% CPU and 0.611 GB swap in use. This does not prove
+the model paged or that background apps caused the speed difference. Keep both measurements
+visible pending an investigation or a comparable full P2 rerun.
 
-The repeat was labelled `loaded`; snapshots recorded WindowServer activity up to 31% CPU and
-0.611 GB swap in use (not proof that the model was paging). The original run predates per-trial
-condition snapshots, so the background load cannot be matched between runs. Raw repeat rows and
-summary: `results/lfm2.5-8b-a1b/mlx-4bit-inproc-decode-check/`.
+The original run predates per-trial condition snapshots, so its background load cannot be matched
+to this repeat. Raw repeat rows and summary: `results/lfm2.5-8b-a1b/mlx-4bit-inproc-decode-check/`.
 
 ---
 
-## 5. Cross-model comparison — pending
+## 5. Cross-model comparison
 
-Generated, not hand-typed: `python compare.py` reads committed `summary.json` and
-`accuracy_summary.json` files and writes `results/COMPARE.md` (the 12 full-matrix in-process rows,
-with prompt tokens, generation length, GB/s and TTFT spread). Rows say `condition: not recorded`
-because they predate condition recording; their actual overlap with other processes is unknown.
-The generated table also has a separate confirmation section for the five-trial MiniCPM5 and
-LFM2.5 `decode-short` reruns. Those narrow repeat measurements do not replace the original matrix
-rows. The table below is the older, hand-made shape and covers only the baseline.
+`results/COMPARE.md` is generated from the committed P2 summaries and trial files. It contains the
+12 in-process model/checkpoint rows, each with tier, bpw, publisher, long-prompt token count,
+generation length, median decode rates with the short-prompt range, long-prompt TTFT and memory,
+TTFT spread, accuracy total, and the recorded condition. The two focused decode repeats (MiniCPM5
+and LFM2.5) are shown separately and do not replace their matrix rows. The file labels the
+weight-read proxy explicitly: `weights GB × decode tok/s` is a size-based estimate, not measured
+memory bandwidth. The `~` prefix on LFM rows marks an upper bound because only a subset of its MoE
+weights is active per token.
 
-| Model | Tier | Decode tok/s | TTFT 68 / 1k / 8k | Peak GB | Accuracy /30 | Quality /5 |
-|---|---|---|---|---|---|---|
-| Nemotron 3.5 Bolt | 4-bit | 34.4 | 0.195 / 1.62 / 14.3 | 5.09 | 24 (80.0%) | 4.29 |
-| Nemotron 3.5 Bolt | OptiQ | 25.7 | 0.217 / 1.68 / 14.6 | 7.42 | 25 (83.3%) | 4.67 |
-| Nemotron 3.5 Bolt | 8-bit | — | — | — | — | — |
-| MiniCPM5-2B | all | — | — | — | — | — |
-| Spark-X2.5-4B | all | — | — | — | — | — |
-| LFM2.5-8B-A1B | all | — | — | — | — | — |
+Rows recorded before condition snapshots say `not recorded`. The run operator recalls that many other apps
+were open while these measurements ran. That recollection is noted for context, but the trial files
+do not contain snapshots for these rows; the report cannot quantify the load, attribute a speed
+penalty, or compare the results to a clean-machine run. No historical measurement has been edited.
+The repeated MiniCPM5 and LFM decode checks are explicitly tagged `loaded`; their snapshots show
+background activity and swap in use, which is not proof the model itself paged. These repeats also
+remain separate from the full matrix.
 
-What this table will **not** claim: a single "best model". 30 checkable prompts separate 50%
-from 100%; they do not separate 83% from 87%, and a blind score from one rater over 8 prompts is
-a preference signal. The Nemotron rows above are historical (pre-gate); new rows will carry
-`request_ttft_s`, `decode_window_tps` and memory provenance, and are not mixed with them. Differences smaller than a row's own min–max range are not differences.
+### Matrix readout and scoring distinctions
+
+Across the 4-bit tier, LFM2.5 has the highest long-prompt decode median (68.8 tok/s on its
+8,525-token decode prompt, with 256 generated tokens) and the lowest prefill TTFT for the separate
+8,510-token `long` prompt (9.285 s). Its
+`decode_tps` includes reasoning tokens, however, and is not a measure of time to a useful answer;
+section 4 reports wall time and the unequal reasoning-token budget. Spark-X2.5 has the slowest
+long-prompt TTFT at every tier (26.663–27.603 s for its tokenizer's 8,631-token prompt). MiniCPM5
+has the smallest 4-bit peak (2.465 GB) and 69.0 tok/s short decode, but its long-prompt TTFT is
+14.606 s. Nemotron's 4-bit and OptiQ values are historical; its 8-bit row was measured in the
+later registry-driven matrix. Do not interpret small differences in TTFT as rankings without
+considering the within-row trial ranges and differing per-model tokenizers.
+
+The P3 total remains the original strict checker score out of 30. It combines three distinct
+things, so the report separates them rather than calling the whole total “accuracy”. The
+post-hoc numerical audit parses the final numeric claim only; it does not infer that a chain of
+intermediate calculations is valid. It is a transparent diagnostic, not a replacement grader:
+any ambiguity or missing final number remains a failed audited value.
+
+| Model / tier | Publisher | bpw | Arithmetic strict pass /12 | Numeric final answer correct on audit /12 | Function-call JSON /10 | Output-format constraints /8 | Original total /30 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Nemotron 4-bit (historical) | **third-party** (`rapid-mlx`) | 4.50 | 6 | 6 | 10 | 8 | 24 |
+| Nemotron OptiQ (historical) | mlx-community | 7.00 | 7 | 7 | 10 | 8 | 25 |
+| Nemotron 8-bit | **third-party** (`rapid-mlx`) | 8.53 | 6 | 6 | 10 | 8 | 24 |
+| MiniCPM5 4-bit | vendor (`openbmb`) | 4.55 | 3 | 5 | 10 | 6 | 19 |
+| MiniCPM5 OptiQ | mlx-community | 6.17 | 1 | 3 | 10 | 6 | 17 |
+| MiniCPM5 8-bit | mlx-community | 8.52 | 2 | 5 | 10 | 6 | 18 |
+| Spark-X2.5 4-bit | **third-party** (`abenzerps`) | 4.51 | 2 | 3 | 10 | 6 | 18 |
+| Spark-X2.5 OptiQ | mlx-community | 5.93 | 2 | 3 | 9 | 7 | 18 |
+| Spark-X2.5 8-bit | **third-party** (`abenzerps`) | 8.52 | 4 | 4 | 10 | 7 | 21 |
+| LFM2.5 4-bit | vendor | 4.58 | 4 | 12 | 10 | 6 | 20 |
+| LFM2.5 OptiQ | mlx-community | 5.17 | 4 | 11 | 10 | 7 | 21 |
+| LFM2.5 8-bit | vendor | 8.52 | 5 | 11 | 10 | 6 | 21 |
+
+“Arithmetic strict” is the committed `int_match`/`float_match` verdict: the entire response must
+be a single numeric literal, so a correct number inside `\\boxed{...}` or explanatory prose still
+fails that original check. “Numerical answer correct on audit” is a separate post-hoc read of the
+final answer in the raw result files against the same numeric target; it does not replace, rescore,
+or edit any committed verdict. In particular, LFM2.5's correct values often appear as LaTeX boxes,
+while other models sometimes include the correct value in prose. The arithmetic score must
+therefore not be presented as numerical correctness alone. The 8 instruction-following prompts
+are strict, mechanically checked output constraints (e.g. sentence count, word/character bans and
+format), not a general measure of following instructions. Per-prompt extracted values and verdicts
+are reproducible with `python audit_p3_numeric.py`; `--check` asserts the totals above.
+
+### Blind quality round r1 — exploratory, single rater
+
+The 8-prompt blind set compares only the four plain 4-bit checkpoints. It is a preference signal,
+not a statistically established ranking: one rater, eight hand-authored prompts, and one output per
+prompt. Slots were balanced (each checkpoint appeared twice in each of A–D), but the scorer reports
+slot means A=9.75, B=9.88, C=11.12, D=11.00 on the 15-point-per-prompt scale. The 1.37-point
+spread exceeds the project's 1-point position-bias warning threshold; treat the ordering as
+especially tentative. The sealed key is in `results/blind-r1/key.json`, scores in
+`results/blind-r1/scores.json`, and generated summary in `results/blind-r1/summary.json`.
+
+| 4-bit row | Mean /5 | Total /120 | Per-prompt range /15 | Top-scoring prompts (shared wins) |
+|---|---:|---:|---:|---:|
+| LFM2.5-8B-A1B (vendor) | 3.79 | 91 | 8–13 | 3 |
+| MiniCPM5-2B (vendor) | 3.42 | 82 | 4–15 | 1 |
+| Spark-X2.5-4B (third-party `abenzerps`) | 3.38 | 81 | 7–15 | 2 |
+| Nemotron 3.5 Bolt (third-party `rapid-mlx`) | 3.33 | 80 | 7–15 | 2 |
+
+LFM's quality cap was 1,536 generated tokens, versus 384 for each other model (four times as
+large), because its reasoning block must finish before the final answer can be extracted. Its
+median generated volume was 915.5 tokens (range 154–1,536); two answers reached the cap. Spark's
+four answers also reached its 384-token cap, so truncation may affect both models' ratings. These
+scores are not a like-for-like latency or completion-quality comparison. The blind run used the
+same four 4-bit answer files, but it did not normalize answer length or truncate/re-run responses.
+
+The mean category scores (/5) add context but do not cure the small sample or slot effect:
+
+| 4-bit row | Publisher | bpw | Technical accuracy | Coherence | Instruction fit |
+|---|---|---:|---:|---:|---:|
+| LFM2.5-8B-A1B | vendor | 4.58 | 3.75 | 4.00 | 3.62 |
+| MiniCPM5-2B | vendor (`openbmb`) | 4.55 | 3.25 | 3.50 | 3.50 |
+| Spark-X2.5-4B | **third-party** (`abenzerps`) | 4.51 | 3.25 | 3.62 | 3.25 |
+| Nemotron 3.5 Bolt | **third-party** (`rapid-mlx`) | 4.50 | 3.25 | 3.88 | 2.88 |
+
+Do not declare a quality winner from these means. The scores and slot imbalance warning are
+reported together; additional raters and a repeat round would be needed to test whether the
+observed preferences persist.
+
+### Scope and limits
+
+The 30-prompt set is a small, hand-authored ML/data-engineering sample, not a general capability
+evaluation. Strict-format accuracy, numeric answer correctness, tool-call JSON matching, and
+human-rated quality answer different questions. Checkpoint comparisons also mix different
+publishers and bit budgets, especially Spark's third-party plain quants. The results support
+observations about these files, prompts, settings and this M4 only, not a universal model ranking.
+
+The decode-short repeats were measured with other applications open (`--condition loaded`). Their
+per-trial snapshots show background activity but do not establish a measured slowdown caused by
+those apps. The earlier P2 matrix rows lack system snapshots; the operator recalls many apps were
+open, which may have slowed them, but the extent cannot be reconstructed or corrected. Do not
+interpret those historical rows as clean-machine measurements.
+
+P2 memory values in the generated comparison are `mx.get_peak_memory()` allocator peaks for the
+in-process rows; historical Nemotron 4-bit and OptiQ summaries predate the structured provenance
+field, so their allocator basis is inferred from the recorded in-process transport. These numbers
+are not process RSS or GPU VRAM. P2 conditions are not recorded in the old matrix, as noted above.
+
+No number in `results/COMPARE.md` substitutes for the individual row's model, checkpoint, bpw,
+publisher, tokenizer-specific prompt length, generation length and memory basis. The raw JSON is
+the source of truth; these summaries are not a leaderboard.

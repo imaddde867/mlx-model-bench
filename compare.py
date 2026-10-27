@@ -9,11 +9,11 @@ Every number comes from a summary.json or accuracy_summary.json under results/, 
 table cannot drift from the data. Each row carries model, tier, bpw, publisher, prompt
 tokens and generation length (AGENTS.md: no number leaves the house without them).
 
-`GB/s` is weights_gb x decode tok/s. For a dense model, decode reads about every weight
-once per token, so it estimates the memory bandwidth the run actually achieved, to compare
-with the chip's spec (120 GB/s for the base M4). For MoE (LFM2.5) and other models whose
-active parameters are far below the total it is NOT a bandwidth, only a ceiling check, and
-the table marks those rows with `~`.
+The weight-read proxy is `weights_gb × decode tok/s`, assuming each generated token reads
+the loaded checkpoint's file-size worth of weights once. It is not measured memory bandwidth:
+it omits cache reuse, tensor metadata, activations and other traffic. For MoE (LFM2.5), only a
+subset of weights is active per token, so the value is an upper bound rather than achieved
+traffic; those cells are marked `~`.
 """
 
 import argparse
@@ -182,9 +182,10 @@ def _fmt(v, spec="{}"):
 def to_markdown(rows, transport="inproc", repeat_rows=()):
     head = ("| Model | Tier | bpw | Publisher | Params | Weights GB | Decode short tok/s [min-max] | "
             "Decode long tok/s | TTFT long s | Prompt tok (long) | Gen tok (decode-long) | "
-            "Peak GB (long) | GB/s | TTFT spread | Condition | Acc /30 |")
+            "Peak GB (long) | Weight-read proxy GB/s | TTFT spread | Condition | Acc /30 |")
     lines = [f"Transport: {transport}. Medians of 5 kept trials; spread = max/min of kept TTFT, "
-             "'not recorded' = the row predates condition recording.", "", head,
+             "'not recorded' = the row predates condition recording.",
+             "Weight-read proxy = checkpoint weights GB × short-prompt decode tok/s; it is a size-based estimate, not measured memory bandwidth. `~` marks the MoE upper bound because only a subset of experts is active per token.", "", head,
              "|" + "---|" * (head.count("|") - 1)]
     for r in rows:
         rng = r["decode_short_range"]

@@ -59,7 +59,9 @@ third-party. That distinction goes in every table the row appears in.
 - `caffeinate` on, plugged in. One model per run, to completion, before the next
   starts. Say what else was running: `--condition clean|loaded` is recorded in the
   summary and every trial stores a `sysinfo.py` snapshot. A `loaded` row is
-  legitimate; an unlabelled one is not. Check `compare.py`'s TTFT spread column
+  legitimate; an unlabelled one is not. Before a timed run, tell the operator and
+  give them a chance to close other apps or explicitly choose `loaded`. Check
+  `compare.py`'s TTFT spread column
   before trusting a median.
 - No number leaves the house without its model, checkpoint, prompt-token count
   and generation length printed next to it.
@@ -121,7 +123,7 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 - [x] R2 — Spark-X2.5-4B: same. Remember: its 4-bit and 8-bit tiers are community quants, no vendor conversion exists.
 - [x] R3 — LFM2.5-8B-A1B: same. The 9.02 GB 8-bit tier may fail the P0 memory gate on 16 GB — record that, do not drop the row.
 - [x] R3b — baseline 8-bit reference row: `--model nemotron-3.5-bolt --tiers 8bit`. Retrofit parity; the original study omitted it.
-- [ ] R4 — cross-model report: one table, each row carrying tier, bpw, publisher, prompt tokens, peak memory; blind quality round r1 across all four.
+- [x] R4 — cross-model report: 12 in-process checkpoint rows, exploratory blind quality round r1 across all four 4-bit tiers, score distinctions, charts, and report. Historical condition gaps and LFM's larger reasoning budget are disclosed.
 
 ## Known traps
 
