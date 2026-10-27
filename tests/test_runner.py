@@ -290,6 +290,44 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(summary["runs_ok"], 0)
         self.assertEqual(summary["runs_failed"], 1)
 
+    def test_p3_distinct_tier_sets_have_distinct_logs_and_allow_summary_merge(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp)
+            first = [self.cfg.checkpoint("mlx-4bit")]
+            later = [self.cfg.checkpoint("mlx-8bit")]
+            old_log = run_bench.p3_log_path(self.cfg, first, out)
+            old_log.parent.mkdir(parents=True)
+            old_log.write_text("first tier remains intact")
+            p3_dir = out / self.cfg.id / "p3"
+            p3_dir.mkdir(parents=True)
+            (p3_dir / "accuracy_summary.json").write_text(
+                json.dumps({"checkpoints": {"mlx-4bit": {"accuracy": 1}}}))
+            self.assertFalse(run_bench.refuse_existing(self.cfg, later, out, "p3"))
+            self.assertNotEqual(old_log, run_bench.p3_log_path(self.cfg, later, out))
+            self.assertTrue(run_bench.refuse_existing(self.cfg, first, out, "p3"))
+            paths = []
+
+            def fake_run(cmd, log_path, timeout=None):
+                paths.append(Path(log_path))
+                return 0
+
+            with patch.object(run_bench, "run", side_effect=fake_run):
+                self.assertTrue(run_bench.phase_p3(self.cfg, out, later))
+            self.assertEqual(paths, [run_bench.p3_log_path(self.cfg, later, out)])
+            self.assertEqual(old_log.read_text(), "first tier remains intact")
+
+    def test_all_preflight_refuses_published_tag_before_any_phase(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp)
+            p3 = out / self.cfg.id / "p3"
+            p3.mkdir(parents=True)
+            (p3 / "accuracy_summary.json").write_text(
+                json.dumps({"checkpoints": {"mlx-4bit": {"accuracy": 1}}}))
+            selected = [self.cfg.checkpoint("mlx-4bit")]
+            self.assertTrue(run_bench.refuse_existing(self.cfg, selected, out, "all"))
+            self.assertTrue(run_bench.refuse_existing(self.cfg, selected, out, "p3"))
+            self.assertFalse(run_bench.refuse_existing(self.cfg, selected, out, "p2"))
+
     def test_p2_refuses_existing_output_without_launch(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / self.cfg.id / "mlx-4bit-http"
