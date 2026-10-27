@@ -1,0 +1,285 @@
+[
+  {
+    "id": "read-workers",
+    "category": "operations",
+    "prompt": "Read /config/worker.env and return the WORKERS value only.",
+    "files": {
+      "/config/worker.env": "WORKERS=6\nTIMEOUT=30\n"
+    },
+    "reads": [
+      "/config/worker.env"
+    ],
+    "expected_final": "6"
+  },
+  {
+    "id": "read-error",
+    "category": "incident",
+    "prompt": "Read /logs/worker.log and return the ERROR_CODE value only.",
+    "files": {
+      "/logs/worker.log": "2026-10-03 startup ok\n2026-10-04 ERROR_CODE=E429\n"
+    },
+    "reads": [
+      "/logs/worker.log"
+    ],
+    "expected_final": "E429"
+  },
+  {
+    "id": "read-port",
+    "category": "operations",
+    "prompt": "Read /docs/deploy.txt and return its port number only.",
+    "files": {
+      "/docs/deploy.txt": "service=chat\nport=8087\nregion=eu\n"
+    },
+    "reads": [
+      "/docs/deploy.txt"
+    ],
+    "expected_final": "8087"
+  },
+  {
+    "id": "read-dag",
+    "category": "data",
+    "prompt": "Read /ops/schedule.txt and return the nightly job name.",
+    "files": {
+      "/ops/schedule.txt": "nightly=features_v2\ndaily=warehouse_refresh\n"
+    },
+    "reads": [
+      "/ops/schedule.txt"
+    ],
+    "expected_final": "features_v2"
+  },
+  {
+    "id": "read-retries",
+    "category": "coding",
+    "prompt": "Read /src/settings.py and return MAX_RETRIES as digits only.",
+    "files": {
+      "/src/settings.py": "MAX_RETRIES = 5\nRETRY_DELAY = 2\n"
+    },
+    "reads": [
+      "/src/settings.py"
+    ],
+    "expected_final": "5"
+  },
+  {
+    "id": "read-schema",
+    "category": "data",
+    "prompt": "Read /data/schema.txt and return the type of revenue.",
+    "files": {
+      "/data/schema.txt": "customer_id:int64\nrevenue:float32\ncreated_at:timestamp\n"
+    },
+    "reads": [
+      "/data/schema.txt"
+    ],
+    "expected_final": "float32"
+  },
+  {
+    "id": "fix-timeout",
+    "category": "operations",
+    "prompt": "Set TIMEOUT to 15 in /config/service.env without altering other lines. First read the file, then write the complete replacement. Return DONE after a successful edit.",
+    "files": {
+      "/config/service.env": "WORKERS=2\nTIMEOUT=1\nLOG_LEVEL=info\n"
+    },
+    "reads": [
+      "/config/service.env"
+    ],
+    "writes": [
+      "/config/service.env"
+    ],
+    "expected_files": {
+      "/config/service.env": "WORKERS=2\nTIMEOUT=15\nLOG_LEVEL=info\n"
+    },
+    "expected_final": "DONE"
+  },
+  {
+    "id": "enable-flag",
+    "category": "operations",
+    "prompt": "Enable FEATURE_X in /config/features.env, preserving the rest. First read the file, then write the complete replacement. Return DONE after a successful edit.",
+    "files": {
+      "/config/features.env": "FEATURE_X=0\nFEATURE_Y=1\n"
+    },
+    "reads": [
+      "/config/features.env"
+    ],
+    "writes": [
+      "/config/features.env"
+    ],
+    "expected_files": {
+      "/config/features.env": "FEATURE_X=1\nFEATURE_Y=1\n"
+    },
+    "expected_final": "DONE"
+  },
+  {
+    "id": "fix-addition",
+    "category": "coding",
+    "prompt": "Fix add() in /src/math_ops.py so it adds its arguments. First read the file, then write the complete replacement. Return DONE after a successful edit.",
+    "files": {
+      "/src/math_ops.py": "def add(a, b):\n    return a - b\n"
+    },
+    "reads": [
+      "/src/math_ops.py"
+    ],
+    "writes": [
+      "/src/math_ops.py"
+    ],
+    "expected_files": {
+      "/src/math_ops.py": "def add(a, b):\n    return a + b\n"
+    },
+    "expected_final": "DONE"
+  },
+  {
+    "id": "fix-port",
+    "category": "operations",
+    "prompt": "Change PORT to 8000 in /deploy/runtime.env and preserve HOST. First read the file, then write the complete replacement. Return DONE after a successful edit.",
+    "files": {
+      "/deploy/runtime.env": "HOST=localhost\nPORT=8010\n"
+    },
+    "reads": [
+      "/deploy/runtime.env"
+    ],
+    "writes": [
+      "/deploy/runtime.env"
+    ],
+    "expected_files": {
+      "/deploy/runtime.env": "HOST=localhost\nPORT=8000\n"
+    },
+    "expected_final": "DONE"
+  },
+  {
+    "id": "fix-version",
+    "category": "coding",
+    "prompt": "Update Version to 0.5 in /README.txt, keeping the other lines unchanged. First read the file, then write the complete replacement. Return DONE after a successful edit.",
+    "files": {
+      "/README.txt": "Project: Agent\nVersion: 0.4\nLicense: MIT\n"
+    },
+    "reads": [
+      "/README.txt"
+    ],
+    "writes": [
+      "/README.txt"
+    ],
+    "expected_files": {
+      "/README.txt": "Project: Agent\nVersion: 0.5\nLicense: MIT\n"
+    },
+    "expected_final": "DONE"
+  },
+  {
+    "id": "fix-retry-delay",
+    "category": "coding",
+    "prompt": "Fix /src/retry.py so DELAY_SECONDS is 2, without changing MAX_ATTEMPTS. First read the file, then write the complete replacement. Return DONE after a successful edit.",
+    "files": {
+      "/src/retry.py": "MAX_ATTEMPTS = 3\nDELAY_SECONDS = 0\n"
+    },
+    "reads": [
+      "/src/retry.py"
+    ],
+    "writes": [
+      "/src/retry.py"
+    ],
+    "expected_files": {
+      "/src/retry.py": "MAX_ATTEMPTS = 3\nDELAY_SECONDS = 2\n"
+    },
+    "expected_final": "DONE"
+  },
+  {
+    "id": "compare-cache",
+    "category": "operations",
+    "prompt": "Compare /env/prod.txt and /env/stage.txt; return only the name of the setting with a different value.",
+    "files": {
+      "/env/prod.txt": "CACHE_TTL=60\nWORKERS=4\n",
+      "/env/stage.txt": "CACHE_TTL=30\nWORKERS=4\n"
+    },
+    "reads": [
+      "/env/prod.txt",
+      "/env/stage.txt"
+    ],
+    "expected_final": "CACHE_TTL"
+  },
+  {
+    "id": "compare-function",
+    "category": "coding",
+    "prompt": "Read both /src/expected.txt and /src/current.txt and report the function missing from current.",
+    "files": {
+      "/src/expected.txt": "add\nsubtract\nmultiply\n",
+      "/src/current.txt": "add\nsubtract\n"
+    },
+    "reads": [
+      "/src/expected.txt",
+      "/src/current.txt"
+    ],
+    "expected_final": "multiply"
+  },
+  {
+    "id": "compare-schema",
+    "category": "data",
+    "prompt": "Read train and eval schemas in /data and return only the name of the mismatched field.",
+    "files": {
+      "/data/train.txt": "id:int64\nscore:float32\n",
+      "/data/eval.txt": "id:int64\nscore:string\n"
+    },
+    "reads": [
+      "/data/train.txt",
+      "/data/eval.txt"
+    ],
+    "expected_final": "score"
+  },
+  {
+    "id": "compare-region",
+    "category": "operations",
+    "prompt": "Compare /config/primary.txt and /config/fallback.txt; return the mismatched setting name only.",
+    "files": {
+      "/config/primary.txt": "REGION=eu-north\nREPLICAS=2\n",
+      "/config/fallback.txt": "REGION=eu-west\nREPLICAS=2\n"
+    },
+    "reads": [
+      "/config/primary.txt",
+      "/config/fallback.txt"
+    ],
+    "expected_final": "REGION"
+  },
+  {
+    "id": "search-alert",
+    "category": "incident",
+    "prompt": "Search the sandbox files for ALERT and return the matching absolute file path.",
+    "files": {
+      "/logs/api.log": "INFO started\n",
+      "/logs/db.log": "ALERT saturation\n",
+      "/logs/cache.log": "INFO ok\n"
+    },
+    "search": "ALERT",
+    "expected_final": "/logs/db.log"
+  },
+  {
+    "id": "search-reset",
+    "category": "incident",
+    "prompt": "Search files for ConnectionResetError and return its absolute file path.",
+    "files": {
+      "/logs/frontend.log": "INFO ready\n",
+      "/logs/backend.log": "ConnectionResetError by peer\n",
+      "/logs/worker.log": "INFO idle\n"
+    },
+    "search": "ConnectionResetError",
+    "expected_final": "/logs/backend.log"
+  },
+  {
+    "id": "search-deprecation",
+    "category": "coding",
+    "prompt": "Find the file containing deprecated_api; return only the absolute path.",
+    "files": {
+      "/src/helper.txt": "new_api enabled\n",
+      "/src/legacy.txt": "deprecated_api usage\n"
+    },
+    "search": "deprecated_api",
+    "expected_final": "/src/legacy.txt"
+  },
+  {
+    "id": "search-drift",
+    "category": "data",
+    "prompt": "Search the files for drift_warning and return only the absolute path.",
+    "files": {
+      "/reports/etl.txt": "table OK\n",
+      "/reports/validation.txt": "drift_warning feature age\n",
+      "/reports/perf.txt": "latency OK\n"
+    },
+    "search": "drift_warning",
+    "expected_final": "/reports/validation.txt"
+  }
+]
