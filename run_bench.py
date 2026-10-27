@@ -272,6 +272,31 @@ def wait_for_server(url, timeout=240, proc=None):
     return False
 
 
+def output_paths(cfg, ckpt, out, phase="all"):
+    """Shared run/preflight output manifest, excluding refreshable P0 evidence."""
+    base = Path(out) / cfg.id
+    paths = []
+    if phase in ("all", "p2"):
+        paths += [base / f"{ckpt.tag}-{arm}" for arm in ("inproc", "http", "http-cached")]
+        paths += [base / "logs" / f"p2-{ckpt.tag}-{arm}.log" for arm in
+                  ("inproc", "server", "http", "http-cached")]
+    if phase in ("all", "p2-optiq") and "mlx-optiq" in ckpt.engines:
+        paths += [base / f"{ckpt.tag}-http-optiq-engine"]
+        paths += [base / "logs" / f"p2-{ckpt.tag}-{arm}.log" for arm in
+                  ("optiq-engine", "optiq-engine-bench")]
+    if phase in ("all", "p3"):
+        paths += [base / "p3" / f"{ckpt.tag}-results.json", base / "logs" / "p3.log"]
+    return paths
+
+
+def refuse_existing(cfg, selected, out, phase):
+    collisions = sorted({str(path) for ck in selected
+                         for path in output_paths(cfg, ck, out, phase) if path.exists()})
+    for path in collisions:
+        print(f"refusing to overwrite {path}; select a new --out", file=sys.stderr)
+    return bool(collisions)
+
+
 def measurement_flags(condition, max_spread):
     flags = ["--condition", condition]
     if max_spread is not None:
@@ -280,9 +305,11 @@ def measurement_flags(condition, max_spread):
 
 
 def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected,
-             condition="unspecified", max_spread=None):
+             condition="unspecified", max_spread=None, evidence=None):
     ok = True
-    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, out):
+    if refuse_existing(cfg, selected, out, "p2"):
+        return False
+    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, evidence or out):
         return False
     for ckpt in selected:
         # --out must be on every call: without it a smoke run overwrites the real
@@ -290,7 +317,8 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected,
         args = [sys.executable, str(ROOT / "bench.py"),
                 "--model", cfg.id, "--checkpoint", ckpt.tag,
                 "--trials", str(trials), "--max-tokens", str(max_tokens),
-                "--out", str(out), *measurement_flags(condition, max_spread)]
+                "--out", str(out), "--evidence", str(evidence or out),
+                *measurement_flags(condition, max_spread)]
         print(f"  {ckpt.tag}: in-process")
         log = out / cfg.id / "logs" / f"p2-{ckpt.tag}-inproc.log"
         rc = run([*args, "--transport", "inproc", "--prompts", *prompts], log)
@@ -347,7 +375,7 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected,
 
 
 def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected,
-                   condition="unspecified", max_spread=None):
+                   condition="unspecified", max_spread=None, evidence=None):
     """The engine arm: mlx-optiq serving an OptiQ checkpoint.
 
     For the baseline this arm was unmeasurable (P0.md: an 11.27 GB single Metal
@@ -363,7 +391,9 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected,
     if not targets:
         print("  no OptiQ checkpoint selected — engine arm skipped")
         return {}
-    if undownloaded(cfg, targets) or gates.refuse(cfg, targets, out):
+    if refuse_existing(cfg, targets, out, "p2-optiq"):
+        return {c.tag: "failed" for c in targets}
+    if undownloaded(cfg, targets) or gates.refuse(cfg, targets, evidence or out):
         return {c.tag: "failed" for c in targets}
     exe = optiq_exe()
     version = optiq_version() if exe else "mlx-optiq not installed"
@@ -417,6 +447,7 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected,
                       "--base-url", f"http://127.0.0.1:{port}", "--server-pid", str(server.pid),
                       "--server-version", version, "--trials", str(trials),
                       "--max-tokens", str(max_tokens), "--out", str(out),
+                      "--evidence", str(evidence or out),
                       *measurement_flags(condition, max_spread), "--prompts", *prompts], blog)
             if rc == 0:
                 outcomes[ckpt.tag] = "completed"
@@ -444,13 +475,16 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected,
     return outcomes
 
 
-def phase_p3(cfg, out, selected):
-    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, out):
+def phase_p3(cfg, out, selected, evidence=None):
+    if refuse_existing(cfg, selected, out, "p3"):
+        return False
+    if undownloaded(cfg, selected) or gates.refuse(cfg, selected, evidence or out):
         return False
     tags = [c.tag for c in selected]
     log = out / cfg.id / "logs" / "p3.log"
     rc = run([sys.executable, str(ROOT / "run_p3.py"), "--model", cfg.id,
-              "--checkpoints", *tags, "--out", str(out)], log, timeout=3600)
+              "--checkpoints", *tags, "--out", str(out),
+              "--evidence", str(evidence or out)], log, timeout=3600)
     if rc != 0:
         print(f"  exited {rc}; see {log}")
         log_tail(log)
@@ -476,6 +510,7 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
     ap.add_argument("--prompts", nargs="+", default=DEFAULT_PROMPTS)
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--evidence", default=str(ROOT / "results"), help="read/write P0 evidence; P2/P3 read only")
     ap.add_argument("--condition", choices=("clean", "loaded", "unspecified"),
                     default="unspecified", help="record the actual run condition")
     ap.add_argument("--max-spread", type=float, help="fail runs with unstable TTFT/decode trials")
@@ -484,6 +519,9 @@ def main():
     cfg = registry.get_model(args.model)
     selected = [c for c in cfg.checkpoints.values() if c.tier in args.tiers]
     out = Path(args.out)
+    evidence = Path(args.evidence)
+    if args.phase == "all" and refuse_existing(cfg, selected, out, "all"):
+        return 1
     print(f"\n{cfg.id} · {cfg.name} · template {json.dumps(cfg.template_kwargs)}")
     print(f"engine {server_version_string()} · python {sys.version.split()[0]}")
     if args.phase in ("p2", "all") and args.trials < 5:
@@ -495,22 +533,22 @@ def main():
     for ph in phases:
         print(f"\n[{ph}]")   
         if ph == "fetch":
-            ok = phase_fetch(cfg, out, selected)
+            ok = phase_fetch(cfg, evidence, selected)
         elif ph == "p0":
-            ok = phase_p0(cfg, out, selected)
+            ok = phase_p0(cfg, evidence, selected)
         elif ph == "p2":
             ok = phase_p2(cfg, out, args.trials, args.prompts, args.max_tokens,
                           server_version_string(), selected,
-                          condition=args.condition, max_spread=args.max_spread)
+                          condition=args.condition, max_spread=args.max_spread, evidence=evidence)
         elif ph == "p2-optiq":
             outcomes = phase_p2_optiq(
                 cfg, out, args.trials, args.prompts, args.max_tokens, selected,
-                condition=args.condition, max_spread=args.max_spread,
+                condition=args.condition, max_spread=args.max_spread, evidence=evidence,
             )
             print(f"  outcomes: {json.dumps(outcomes)}")
             ok = all(o in ("completed", "unmeasurable") for o in outcomes.values())
         elif ph == "p3":
-            ok = phase_p3(cfg, out, selected)
+            ok = phase_p3(cfg, out, selected, evidence=evidence)
         if not ok:
             print(f"\n[{ph}] did not complete cleanly — stopping here so the failure is cheap.")
             return 1

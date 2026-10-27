@@ -445,6 +445,7 @@ def main():
                          "makes the summary non-publishable (e.g. 1.5). Off by default: loaded runs "
                          "are legitimate, they just have to be visible")
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--evidence", help="verified provenance/P0 inputs (default: --out)")
     args = ap.parse_args()
 
     if args.list:
@@ -456,7 +457,7 @@ def main():
     cfg = registry.get_model(args.model)
     ckpt = cfg.checkpoint(args.checkpoint)
     template = json.loads(args.template_kwargs) if args.template_kwargs else cfg.template_kwargs
-    if gates.refuse(cfg, [ckpt], args.out):
+    if gates.refuse(cfg, [ckpt], args.evidence or args.out):
         print("refusing to measure: provenance/P0 gate failed", file=sys.stderr)
         return 1
 
@@ -470,7 +471,11 @@ def main():
             sampling_tag += f"-p{args.top_p:g}"
     run_id = f"{ckpt.tag}-{args.transport}{sampling_tag}" + (f"-{args.tag}" if args.tag else "")
     out_dir = Path(args.out) / cfg.id / run_id
-    out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        out_dir.mkdir(parents=True, exist_ok=False)  # atomic reservation; no overwrites or racing runs
+    except FileExistsError:
+        print(f"refusing to overwrite {out_dir}; choose a new --out", file=sys.stderr)
+        return 1
 
     base = {
         "model_id": cfg.id,
@@ -485,6 +490,7 @@ def main():
         "params_total": cfg.params_total,
         "params_active": cfg.params_active,
         "run_id": run_id,
+        "evidence_dir": str(args.evidence or args.out),
         "transport": args.transport,
         "engine": args.engine,
         "host": host_string(),
@@ -581,7 +587,7 @@ def main():
         **{k: base[k] for k in ("model_id", "model_name", "hf_repo", "checkpoint", "tier",
                                 "official", "weights_gb", "bits_per_weight", "publisher",
                                 "params_total", "params_active",
-                                "run_id", "transport", "engine", "model", "host", "versions",
+                                "run_id", "evidence_dir", "transport", "engine", "model", "host", "versions",
                                 "server_version", "max_tokens", "template_kwargs",
                                 "temperature", "top_p", "greedy", "trials",
                                 "ttft_scope", "decode_min_tokens")},
