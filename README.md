@@ -151,6 +151,34 @@ threshold. The results are a preference signal, not a ranking.
 The repository was renamed from `nemotron-bolt-bench` when the study grew from one model to
 four; its original single-model record is now section 1 of the report, unchanged.
 
+## P4 — agent pilot (not yet measured)
+
+The optional [P4 pilot](run_p4.py) includes 20 small simulated file-tool
+tasks in [prompts/agent/tasks.json](prompts/agent/tasks.json): reading, searching,
+comparing files and editing existing files. Tools operate only on in-memory
+copies of fixture files. No shell, network, or real file modification occurs.
+
+Tasks require exact final answers, required tool calls and exact final file
+contents. Tool calls use a **JSON text protocol**, not native model API tool
+calls. This is a pilot, not a representative agent benchmark or model ranking.
+**No P4 inference measurements have been recorded.**
+
+After checkpoint and P0 verification on the Mac:
+
+```bash
+.venv-mlxlm/bin/python run_p4.py --model minicpm5-2b \
+  --checkpoints mlx-4bit --evidence results --out results/p4-pilot \
+  --condition clean
+```
+
+Use a new `--out` directory for every round. Review the task outcomes, raw
+answers, token budgets and system conditions before publishing. The pilot
+records model inference wall time, first-turn TTFT and MLX allocator peaks;
+it does not include simulated tool overhead or cold model-loading latency.
+Do not combine P4 scores with P3 accuracy or blind r1 quality. Future
+validation should include independent sessions, richer code/tool tasks,
+native tool-call evaluation, and end-to-end wall time.
+
 ## Run conditions
 
 Future runs should record whether other applications are open, rather than assume a clean
@@ -160,7 +188,9 @@ were open, which may have slowed them, but the impact cannot be reconstructed:
 ```bash
 python sysinfo.py                                   # preflight: swap, memory pressure, power, thermal, busiest processes
 .venv-mlxlm/bin/python bench.py ... --condition loaded     # or: clean
-.venv-mlxlm/bin/python bench.py ... --max-spread 1.5       # optional: wobbly trials make the row non-publishable
+.venv-mlxlm/bin/python run_bench.py --model minicpm5-2b --phase p2 \
+    --condition clean --max-spread 1.5 --out results/rerun-clean
+# unstable trials are non-publishable and return a nonzero exit status
 python compare.py                                   # cross-model table; TTFT spread column flags unsteady rows
 ```
 
