@@ -151,3 +151,5 @@ NOT READY: 61 blocking problem(s)
   [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for mlx-4bit; run_p3.py would refuse — narrow --tiers or use another --out
   [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for optiq-4bit; run_p3.py would refuse — narrow --tiers or use another --out
   [collision] results/lfm2.5-8b-a1b/p3/accuracy_summary.json already has an entry for mlx-8bit; run_p3.py would refuse — narrow --tiers or use another --out
+
+readiness_exit=1

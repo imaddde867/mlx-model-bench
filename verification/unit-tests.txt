@@ -12,6 +12,26 @@ test_incomplete_round (test_blind.Scoring.test_incomplete_round) ... ok
 test_missing_cell (test_blind.Scoring.test_missing_cell) ... ok
 test_missing_slot (test_blind.Scoring.test_missing_slot) ... ok
 test_out_of_scale (test_blind.Scoring.test_out_of_scale) ... ok
+test_accuracy_reads_new_and_historical_layouts (test_compare.CompareTests.test_accuracy_reads_new_and_historical_layouts) ... ok
+test_http_rows_are_a_separate_selection (test_compare.CompareTests.test_http_rows_are_a_separate_selection) ... ok
+test_legacy_summary_metadata_comes_from_the_registry (test_compare.CompareTests.test_legacy_summary_metadata_comes_from_the_registry) ... ok
+test_moe_bandwidth_is_marked_as_a_ceiling_not_a_measurement (test_compare.CompareTests.test_moe_bandwidth_is_marked_as_a_ceiling_not_a_measurement) ... ok
+test_row_carries_identity_tokens_and_effective_bandwidth (test_compare.CompareTests.test_row_carries_identity_tokens_and_effective_bandwidth) ... ok
+test_spread_ignores_the_discarded_warmup (test_compare.CompareTests.test_spread_ignores_the_discarded_warmup) ... ok
+test_memory_free_percentage (test_conditions.ParserTests.test_memory_free_percentage) ... ok
+test_power_source (test_conditions.ParserTests.test_power_source) ... ok
+test_snapshot_never_raises_when_commands_are_missing (test_conditions.ParserTests.test_snapshot_never_raises_when_commands_are_missing) ... ok
+test_swap_megabytes_and_gigabytes (test_conditions.ParserTests.test_swap_megabytes_and_gigabytes) ... ok
+test_thermal_limit_absent_is_unknown_not_100 (test_conditions.ParserTests.test_thermal_limit_absent_is_unknown_not_100) ... ok
+test_top_cpu_excludes_self_sorts_and_uses_basename (test_conditions.ParserTests.test_top_cpu_excludes_self_sorts_and_uses_basename) ... ok
+test_warnings_name_each_cause (test_conditions.ParserTests.test_warnings_name_each_cause) ... ok
+test_condition_label_and_caveats_reach_the_summary (test_conditions.RecordingTests.test_condition_label_and_caveats_reach_the_summary) ... ok
+test_default_condition_is_unspecified_and_quiet_has_no_caveats (test_conditions.RecordingTests.test_default_condition_is_unspecified_and_quiet_has_no_caveats) ... ok
+test_every_trial_records_its_own_start_and_the_system_snapshot (test_conditions.RecordingTests.test_every_trial_records_its_own_start_and_the_system_snapshot) ... ok
+test_max_spread_makes_a_wobbly_run_non_publishable (test_conditions.RecordingTests.test_max_spread_makes_a_wobbly_run_non_publishable) ... ok
+test_max_spread_passes_a_steady_run (test_conditions.RecordingTests.test_max_spread_passes_a_steady_run) ... ok
+test_spread_is_recorded_and_does_not_block_by_default (test_conditions.RecordingTests.test_spread_is_recorded_and_does_not_block_by_default) ... ok
+test_spread_ratio (test_conditions.SpreadTests.test_spread_ratio) ... ok
 test_direct_bench_refuses_without_evidence (test_gates.EnforcementTests.test_direct_bench_refuses_without_evidence) ... ok
 test_fetch_honors_tier_selection (test_gates.EnforcementTests.test_fetch_honors_tier_selection) ... ok
 test_phases_refuse_without_evidence (test_gates.EnforcementTests.test_phases_refuse_without_evidence) ... ok
@@ -130,7 +150,7 @@ test_prefix_cache_hit_flags_a_nonce_row_only (test_timing.TimingTests.test_prefi
 test_too_short_completion_is_flagged_not_ranked (test_timing.TimingTests.test_too_short_completion_is_flagged_not_ranked) ... ok
 
 ----------------------------------------------------------------------
-Ran 130 tests in 2.535s
+Ran 150 tests in 4.351s
 
 OK
   mlx-4bit: in-process
@@ -143,5 +163,5 @@ OK
   mlx-4bit: HTTP, cache-busted
   mlx-4bit: HTTP, prefix-cache hit (labelled row)
   mlx-4bit: in-process
-    exited 1; see /var/folders/81/vw07xvx93g58v6nwmy2n02b00000gn/T/tmp54n_ojg9/nemotron-3.5-bolt/logs/p2-mlx-4bit-inproc.log
+    exited 1; see /var/folders/81/vw07xvx93g58v6nwmy2n02b00000gn/T/tmpa14glafa/nemotron-3.5-bolt/logs/p2-mlx-4bit-inproc.log
     synthetic in-process failure
