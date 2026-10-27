@@ -64,6 +64,10 @@ def discover(models, include_http, results_dir):
         if not ckpt:
             ckpt = next((t for t in tags if name.startswith(t + "-")), name.split("-")[0])
         rest = name[len(ckpt) + 1:] if name.startswith(ckpt + "-") else ""
+        # Keep separately tagged repeats out of the matrix chart; compare.py
+        # reports those in their own table, never as replacement matrix rows.
+        if rest not in {"inproc", "in-process", "http", "http-cached"}:
+            continue
         cached = rest.endswith("cached")
         transport = s.get("transport") or rest.replace("-cached", "") or "inproc"
         if transport == "http" and not include_http:
