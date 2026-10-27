@@ -111,6 +111,7 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
         flag("trials", f"--trials {trials} < {bench.MIN_PUBLISHABLE_TRIALS}: rows would not be publishable")
 
     # Prompts and report inputs.
+    speed, acc_n, qual_n, acc_sha, qual_sha = [], 0, 0, "not checked", "not checked"
     if phase in ("all", "p2", "p2-optiq"):
         speed = []
         for name in prompts:
@@ -160,6 +161,8 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                 flag("models", f"{mid}: no {tier} checkpoint in the registry")
             else:
                 selected.append(ck)
+        if phase == "p2-optiq":
+            selected = [ck for ck in selected if "mlx-optiq" in ck.engines]
         bad_before = len(bad)
         for ck in selected:
             who = f"{mid}/{ck.tag}"
@@ -190,7 +193,12 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                     flag("speed results", f"{rel(path)}: existing row is not a completed, publishable result")
                 if s and (s.get("trials") or 0) < bench.MIN_PUBLISHABLE_TRIALS:
                     flag("trials", f"{rel(path)}: row recorded {s.get('trials')} trials < {bench.MIN_PUBLISHABLE_TRIALS}")
-    if phase in ("all", "p3"):
+        if phase in ("all", "p3"):
+            if selected:
+                log = run_bench.p3_log_path(cfg, selected, out)
+                plan.append(log)
+                if log.exists():
+                    flag("collision", f"{rel(log)} exists; choose another --out or tier set")
             summary = out / cfg.id / "p3" / "accuracy_summary.json"
             try:
                 done = run_p3.published_tags(summary.parent) if selected else {}
@@ -201,9 +209,9 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
                 if ck.tag in done:
                     flag("collision", f"{rel(summary)} already has an entry for {ck.tag}; run_p3.py would refuse — "
                                       "narrow --tiers or use another --out")
+            plan.append(summary)
         for p in version_problems(cfg, out, env):
             flag("versions", p)
-        plan.append(summary)
         lines.append(f"{mid}: {len(selected)} checkpoint(s) checked, "
                      f"{'ok' if len(bad) == bad_before else 'BLOCKED'}")
 
