@@ -272,7 +272,15 @@ def wait_for_server(url, timeout=240, proc=None):
     return False
 
 
-def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
+def measurement_flags(condition, max_spread):
+    flags = ["--condition", condition]
+    if max_spread is not None:
+        flags += ["--max-spread", str(max_spread)]
+    return flags
+
+
+def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected,
+             condition="unspecified", max_spread=None):
     ok = True
     if undownloaded(cfg, selected) or gates.refuse(cfg, selected, out):
         return False
@@ -282,7 +290,7 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
         args = [sys.executable, str(ROOT / "bench.py"),
                 "--model", cfg.id, "--checkpoint", ckpt.tag,
                 "--trials", str(trials), "--max-tokens", str(max_tokens),
-                "--out", str(out)]
+                "--out", str(out), *measurement_flags(condition, max_spread)]
         print(f"  {ckpt.tag}: in-process")
         log = out / cfg.id / "logs" / f"p2-{ckpt.tag}-inproc.log"
         rc = run([*args, "--transport", "inproc", "--prompts", *prompts], log)
@@ -338,7 +346,8 @@ def phase_p2(cfg, out, trials, prompts, max_tokens, server_version, selected):
     return ok
 
 
-def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
+def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected,
+                   condition="unspecified", max_spread=None):
     """The engine arm: mlx-optiq serving an OptiQ checkpoint.
 
     For the baseline this arm was unmeasurable (P0.md: an 11.27 GB single Metal
@@ -408,7 +417,7 @@ def phase_p2_optiq(cfg, out, trials, prompts, max_tokens, selected):
                       "--base-url", f"http://127.0.0.1:{port}", "--server-pid", str(server.pid),
                       "--server-version", version, "--trials", str(trials),
                       "--max-tokens", str(max_tokens), "--out", str(out),
-                      "--prompts", *prompts], blog)
+                      *measurement_flags(condition, max_spread), "--prompts", *prompts], blog)
             if rc == 0:
                 outcomes[ckpt.tag] = "completed"
                 continue
@@ -467,6 +476,9 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
     ap.add_argument("--prompts", nargs="+", default=DEFAULT_PROMPTS)
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--condition", choices=("clean", "loaded", "unspecified"),
+                    default="unspecified", help="record the actual run condition")
+    ap.add_argument("--max-spread", type=float, help="fail runs with unstable TTFT/decode trials")
     args = ap.parse_args()
 
     cfg = registry.get_model(args.model)
@@ -488,9 +500,13 @@ def main():
             ok = phase_p0(cfg, out, selected)
         elif ph == "p2":
             ok = phase_p2(cfg, out, args.trials, args.prompts, args.max_tokens,
-                          server_version_string(), selected)
+                          server_version_string(), selected,
+                          condition=args.condition, max_spread=args.max_spread)
         elif ph == "p2-optiq":
-            outcomes = phase_p2_optiq(cfg, out, args.trials, args.prompts, args.max_tokens, selected)
+            outcomes = phase_p2_optiq(
+                cfg, out, args.trials, args.prompts, args.max_tokens, selected,
+                condition=args.condition, max_spread=args.max_spread,
+            )
             print(f"  outcomes: {json.dumps(outcomes)}")
             ok = all(o in ("completed", "unmeasurable") for o in outcomes.values())
         elif ph == "p3":

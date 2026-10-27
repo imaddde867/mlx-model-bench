@@ -650,7 +650,9 @@ def main():
     summary["non_publishable_reasons"] = problems
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps({"summary": str(out_dir / "summary.json"), **summary}))
-    return 0 if summary["outcome"] == "completed" else 1
+    return 0 if summary["outcome"] == "completed" and (
+        args.max_spread is None or summary["publishable"]
+    ) else 1
 
 
 if __name__ == "__main__":

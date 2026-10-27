@@ -139,7 +139,8 @@ class RecordingTests(unittest.TestCase):
         self.assertTrue(summary["publishable"])
 
     def test_max_spread_makes_a_wobbly_run_non_publishable(self):
-        _, summary, _ = self.run_cli([6.857, 6.2372, 5.0529, 2.29, 1.8398], ["--max-spread", "1.5"])
+        status, summary, _ = self.run_cli([6.857, 6.2372, 5.0529, 2.29, 1.8398], ["--max-spread", "1.5"])
+        self.assertEqual(status, 1)
         self.assertFalse(summary["publishable"])
         self.assertTrue(any("unstable trials" in r for r in summary["non_publishable_reasons"]))
 
