@@ -193,6 +193,19 @@ pick for any of those workloads is decided in section 5, against rows that have 
 Open question this row is designed to answer: does a 2.5B model at 1.43 GB hold tool-calling and
 constraint-following parity with a 7.46B model at 4.20 GB, and at what TTFT.
 
+#### Focused 4-bit decode repeat (not a replacement for the matrix row)
+
+The full P2 `decode-short` row reports **69.0 tok/s [54.7–71.7]** over five kept trials
+(55 prompt tokens, 256 generated tokens). A separately tagged five-trial repeat measured
+**71.6 tok/s [71.4–72.1]**, with TTFT **0.1133 s [0.1107–0.1180]** and peak MLX allocator memory
+**1.652 GB**. The repeat's decode range is narrow and overlaps the original range; the original
+range is wide, so this supports the original estimate but is not evidence of a higher speed.
+
+The repeat was labelled `loaded`; its snapshots recorded Spotlight indexing activity up to 17%
+CPU and 0.611 GB swap in use (not proof that the model was paging). The original run predates
+per-trial condition snapshots, so the two runs' background conditions cannot be matched. Raw
+repeat rows and summary: `results/minicpm5-2b/mlx-4bit-inproc-decode-check/`.
+
 ## 3. XHToken Spark-X2.5-4B — pending
 
 4.11B dense with 3:1 sliding:full attention, head_dim 256, 1M-token trained context.
@@ -220,15 +233,32 @@ The speed hypothesis: 8.5B of weights but ~1.3B active per token should out-deco
 row here. The 9.02 GB 8-bit tier may not survive the P0 memory gate on 16 GB; if it does not,
 that is recorded rather than dropped.
 
+#### Focused 4-bit decode repeat (not a replacement for the matrix row)
+
+The full P2 `decode-short` row reports **70.9 tok/s [69.8–73.1]** over five kept trials
+(53 prompt tokens, 256 generated tokens). A separately tagged five-trial repeat measured
+**86.1 tok/s [82.6–86.6]**, with TTFT **0.1163 s [0.1158–0.1434]** and peak MLX allocator memory
+**4.918 GB**. All five repeat decode rates (82.6–86.6 tok/s) exceed the original maximum
+(73.1 tok/s); this is a repeatable discrepancy, not proof that the original row is invalid or
+that LFM2.5 is generally faster under all conditions. Keep both measurements visible pending
+an investigation or a comparable full P2 rerun.
+
+The repeat was labelled `loaded`; snapshots recorded WindowServer activity up to 31% CPU and
+0.611 GB swap in use (not proof that the model was paging). The original run predates per-trial
+condition snapshots, so the background load cannot be matched between runs. Raw repeat rows and
+summary: `results/lfm2.5-8b-a1b/mlx-4bit-inproc-decode-check/`.
+
 ---
 
 ## 5. Cross-model comparison — pending
 
-Generated, not hand-typed: `python compare.py` reads every committed `summary.json` and
-`accuracy_summary.json` and writes `results/COMPARE.md` (all 12 in-process rows, with prompt
-tokens, generation length, GB/s and TTFT spread). Rows say `condition: not recorded` because they
-were measured before conditions were recorded; they ran on a realistic loaded desktop. The table
-below is the older, hand-made shape and covers only the baseline.
+Generated, not hand-typed: `python compare.py` reads committed `summary.json` and
+`accuracy_summary.json` files and writes `results/COMPARE.md` (the 12 full-matrix in-process rows,
+with prompt tokens, generation length, GB/s and TTFT spread). Rows say `condition: not recorded`
+because they predate condition recording; their actual overlap with other processes is unknown.
+The generated table also has a separate confirmation section for the five-trial MiniCPM5 and
+LFM2.5 `decode-short` reruns. Those narrow repeat measurements do not replace the original matrix
+rows. The table below is the older, hand-made shape and covers only the baseline.
 
 | Model | Tier | Decode tok/s | TTFT 68 / 1k / 8k | Peak GB | Accuracy /30 | Quality /5 |
 |---|---|---|---|---|---|---|

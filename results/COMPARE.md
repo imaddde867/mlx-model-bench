@@ -14,3 +14,10 @@ Transport: inproc. Medians of 5 kept trials; spread = max/min of kept TTFT, 'not
 | Spark-X2.5-4B | 4bit | 4.51 | third-party:abenzerps | 4.112B/4.112B active | 2.32 | 39.8 [33.4-40.4] | 29.4 | 26.6625 | 8631 | 256 | 3.971 | 92.3 | 1.09 | not recorded | 18/30 |
 | Spark-X2.5-4B | optiq-4bit | 5.93 | mlx-community | 4.112B/4.112B active | 3.05 | 31.3 [29.5-31.4] | 25.6 | 27.6026 | 8631 | 256 | 4.698 | 95.5 | 1.22 | not recorded | 18/30 |
 | Spark-X2.5-4B | 8bit | 8.52 | third-party:abenzerps | 4.112B/4.112B active | 4.38 | 18.6 [18.4-20.7] | 20.6 | 27.3866 | 8631 | 256 | 6.027 | 81.5 | 1.26 | not recorded | 21/30 |
+
+Repeat decode-short checks (five kept trials; separate from full-matrix rows).
+
+| Model | Checkpoint | bpw | Publisher | Prompt tok | Gen tok | Original decode tok/s [min-max] | Repeat decode tok/s [min-max] | Change | Original / repeat TTFT s | Rerun summary | Recorded caveats |
+|---|---|---:|---|---:|---:|---|---|---:|---|---|---|
+| LFM2.5-8B-A1B | mlx-4bit | 4.58 | vendor | 53 | 256 | 70.9 [69.8-73.1] | 86.1 [82.6-86.6] | +21.4% | 0.1341 / 0.1163 | [summary.json](lfm2.5-8b-a1b/mlx-4bit-inproc-decode-check/summary.json) | busy: WindowServer 31%; swap in use: 0.611 GB (the model may be paging) |
+| MiniCPM5-2B | mlx-4bit | 4.55 | vendor | 55 | 256 | 69.0 [54.7-71.7] | 71.6 [71.4-72.1] | +3.8% | 0.1143 / 0.1133 | [summary.json](minicpm5-2b/mlx-4bit-inproc-decode-check/summary.json) | busy: spotlightknowledged.updater 17%; swap in use: 0.611 GB (the model may be paging) |

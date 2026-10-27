@@ -93,6 +93,28 @@ class CompareTests(unittest.TestCase):
                 "arm1": {"accuracy": {"total_passed": 24, "total_prompts": 30}}}))
             self.assertEqual(compare._accuracy(old), {"mlx-4bit": "24/30"})
 
+    def test_repeat_run_is_listed_separately_without_replacing_matrix_row(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.make(tmp, ttfts=(1.0, 1.0, 1.1, 1.0, 1.0))
+            repeat_dir = Path(tmp) / "minicpm5-2b" / "mlx-4bit-inproc-decode-check"
+            repeat_dir.mkdir()
+            repeat = summary(condition="loaded", prompts={
+                "decode-short": {"prompt_tokens": 55, "decode_tps": block(71.6, 71.4, 72.1),
+                                 "generation_tokens": block(256), "ttft_s": block(0.1133, 0.1107, 0.118)},
+            })
+            (repeat_dir / "summary.json").write_text(json.dumps(repeat))
+            (repeat_dir / "decode-short-trial1.json").write_text(json.dumps({"ok": True, "discarded": False}))
+            rows = compare.build_rows(tmp)
+            repeats = compare.build_repeat_rows(tmp)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["decode_short"], 69.0)
+            self.assertEqual(len(repeats), 1)
+            self.assertEqual(repeats[0]["repeat_decode"], 71.6)
+            text = compare.to_markdown(rows, repeat_rows=repeats)
+            self.assertIn("Repeat decode-short checks", text)
+            self.assertIn("71.6 [71.4-72.1]", text)
+            self.assertIn("69.0 [54.7-71.7]", text)
+
     def test_http_rows_are_a_separate_selection(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.make(tmp, run="mlx-4bit-http")

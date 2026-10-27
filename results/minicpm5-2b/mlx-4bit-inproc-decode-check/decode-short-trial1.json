@@ -1,0 +1,106 @@
+{
+  "model_id": "minicpm5-2b",
+  "model_name": "MiniCPM5-2B",
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 1.43,
+  "bits_per_weight": 4.55,
+  "publisher": "vendor",
+  "params_total": 2.517,
+  "params_active": 2.517,
+  "run_id": "mlx-4bit-inproc-decode-check",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "condition": "loaded",
+  "timestamp": "2026-10-27T16:56:43+00:00",
+  "model": "models/minicpm5-2b-4bit",
+  "load_s": 0.83,
+  "load_peak_gb": 1.416,
+  "prompt": "decode-short",
+  "prompt_file": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/prompts/speed/decode-short.txt",
+  "trial": 1,
+  "discarded": false,
+  "nonce": true,
+  "started_at": "2026-10-27T16:56:49+00:00",
+  "system": {
+    "swap_used_gb": 0.611,
+    "mem_free_pct": 71,
+    "power": "ac",
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.87,
+    "top_cpu": [
+      {
+        "proc": "spotlightknowledged.updater",
+        "cpu_pct": 17.3
+      },
+      {
+        "proc": "WindowServer",
+        "cpu_pct": 13.4
+      },
+      {
+        "proc": "suggestd",
+        "cpu_pct": 10.3
+      },
+      {
+        "proc": "freebuff",
+        "cpu_pct": 7.0
+      },
+      {
+        "proc": "IMDPersistenceAgent",
+        "cpu_pct": 3.1
+      }
+    ]
+  },
+  "prompt_tokens": 55,
+  "generation_tokens": 256,
+  "ttft_s": 0.118,
+  "prefill_tps": 466.3,
+  "engine_prefill_tps": 472.4,
+  "decode_tps": 72.1,
+  "wall_s": 3.663,
+  "peak_gb": 1.652,
+  "peak_gb_source": "mx_peak",
+  "memory": {
+    "value_gb": 1.652,
+    "source": "mx_peak",
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "available": true,
+    "unavailable_reason": null
+  },
+  "finish_reason": "length",
+  "text": "To understand how a refrigerator maintains the cold we need, we have to step away from the idea of it simply being a small freezer. Instead, we must view it as a sophisticated thermodynamic machine, a closed system designed to manage heat with precision. The magic of a refrigerator isn't about freezing food, but about creating a temperature differential\u2014making the interior of the unit feel cooler than the surrounding room. This process relies on a cycle of compression, expansion, and condensation, all of which work in unison to move heat from the inside of the fridge to the outside, where it is then released into the air.\n\nThe journey begins with the compressor, the mechanical heart of the refrigeration system. Inside the compressor, a small electric motor spins a copper or steel cylinder, compressing a low-pressure refrigerant gas. This compression is a physical act of force; the pressure inside the cylinder rises dramatically, and the gas itself heats up. As the refrigerant heats up, it becomes a high-pressure, high-temperature gas. This is the first step in the cycle, and it's crucial because the refrigerant needs to be hot enough to absorb heat from the cold interior of the fridge. Without this initial heating, the system wouldn't have the thermal energy to do the work of cooling the food",
+  "prep_s": 0.0003,
+  "engine_ttft_s": 0.1177,
+  "first_content_s": null,
+  "first_token_kind": null,
+  "request_ttft_s": 0.118,
+  "cached_prompt_tokens": 0,
+  "decode_tokens": 255,
+  "decode_s": 3.5363,
+  "decode_window_tps": 72.1,
+  "decode_flags": [],
+  "ok": true
+}
