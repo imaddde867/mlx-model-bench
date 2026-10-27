@@ -45,8 +45,11 @@ def run_single(model, tokenizer, prompt_text, template, max_tokens):
     import mlx.core as mx
     from mlx_lm import stream_generate
 
+    messages = prompt_text if isinstance(prompt_text, list) else [
+        {"role": "user", "content": prompt_text}
+    ]
     formatted = tokenizer.apply_chat_template(
-        [{"role": "user", "content": prompt_text}],
+        messages,
         add_generation_prompt=True,
         tokenize=False,
         **template,

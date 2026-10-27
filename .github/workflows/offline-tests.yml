@@ -17,3 +17,9 @@ jobs:
           python-version: "3.12"
       - name: Run offline regression suite
         run: python -m unittest discover -s tests -v
+      - name: Verify committed numerical audit
+        run: python audit_p3_numeric.py --check
+      - name: Verify generated comparison is current
+        run: |
+          python compare.py --out /tmp/mlx-model-compare.md
+          diff -u results/COMPARE.md /tmp/mlx-model-compare.md

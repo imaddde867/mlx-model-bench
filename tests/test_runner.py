@@ -378,6 +378,7 @@ class RunnerTests(unittest.TestCase):
                 self.cfg, Path(temp_dir), trials=5, prompts=["short", "decode-short"],
                 max_tokens=16, server_version="mlx-lm fixture",
                 selected=[self.cfg.checkpoint("mlx-4bit")],
+                condition="loaded", max_spread=1.5,
             )
 
         self.assertTrue(ok)
@@ -388,6 +389,9 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("--no-nonce", commands[2])
         self.assertEqual(commands[2][commands[2].index("--tag") + 1], "cached")
         self.assertEqual(commands[2][commands[2].index("--prompts") + 1:], ["short"])
+        for cmd in commands:
+            self.assertEqual(cmd[cmd.index("--condition") + 1], "loaded")
+            self.assertEqual(cmd[cmd.index("--max-spread") + 1], "1.5")
         self.assertTrue(launched[0].terminated)
         self.assertTrue(launched[0].waited)
 
@@ -489,11 +493,14 @@ class RunnerTests(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
-    def phase_optiq(self, out, exe=None, run_rc=0, summary=None, ready=True):
+    def phase_optiq(self, out, exe=None, run_rc=0, summary=None, ready=True,
+                    commands=None, condition="unspecified", max_spread=None):
         ckpt = self.cfg.checkpoint("optiq-4bit")
         run_dir = Path(out) / self.cfg.id / "optiq-4bit-http-optiq-engine"
 
         def fake_run(cmd, log_path, timeout=None):
+            if commands is not None:
+                commands.append(cmd)
             Path(log_path).parent.mkdir(parents=True, exist_ok=True)
             Path(log_path).write_text("synthetic bench log\n")
             if summary:
@@ -512,8 +519,23 @@ class RunnerTests(unittest.TestCase):
             patch.object(run_bench.subprocess, "Popen", side_effect=FakeProcess),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            outcomes = run_bench.phase_p2_optiq(self.cfg, Path(out), 5, ["short"], 8, [ckpt])
+            outcomes = run_bench.phase_p2_optiq(
+                self.cfg, Path(out), 5, ["short"], 8, [ckpt],
+                condition=condition, max_spread=max_spread,
+            )
         return outcomes, run_dir
+
+    def test_optiq_engine_forwards_measurement_controls(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            commands = []
+            outcomes, _ = self.phase_optiq(
+                temp_dir, exe=Path("/fake/optiq"), commands=commands,
+                condition="clean", max_spread=1.5,
+            )
+        self.assertEqual(outcomes, {"optiq-4bit": "completed"})
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0][commands[0].index("--condition") + 1], "clean")
+        self.assertEqual(commands[0][commands[0].index("--max-spread") + 1], "1.5")
 
     def test_missing_optiq_runtime_is_recorded_as_unmeasurable(self):
         with tempfile.TemporaryDirectory() as temp_dir:

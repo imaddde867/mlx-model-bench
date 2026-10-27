@@ -18,7 +18,7 @@ reintroduce it.
 ## Machine
 
 Apple M4, 10-core, 16 GB unified, macOS 27.0.1. Python 3.12.10, uv 0.10.9.
-119 GB free disk is enough for all four models (≈29 GB of weights).
+The README reports about 54 GB of downloads (51 GiB on disk) for the full 12-checkpoint roster. Check actual free disk space before fetching.
 
 ## Pins
 
@@ -124,6 +124,7 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 - [x] R3 — LFM2.5-8B-A1B: same. The 9.02 GB 8-bit tier may fail the P0 memory gate on 16 GB — record that, do not drop the row.
 - [x] R3b — baseline 8-bit reference row: `--model nemotron-3.5-bolt --tiers 8bit`. Retrofit parity; the original study omitted it.
 - [x] R4 — cross-model report: 12 in-process checkpoint rows, exploratory blind quality round r1 across all four 4-bit tiers, score distinctions, charts, and report. Historical condition gaps and LFM's larger reasoning budget are disclosed.
+- [x] P4 harness — 20 simulated agent tasks and offline tests. **No model inference or validated P4 scores yet.**
 
 ## Known traps
 
