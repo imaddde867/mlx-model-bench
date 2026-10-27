@@ -36,7 +36,6 @@ from pathlib import Path
 
 import gates
 import registry
-import run_p3
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_PROMPTS = ["short", "medium", "long", "decode-short", "decode-long"]
@@ -286,31 +285,14 @@ def output_paths(cfg, ckpt, out, phase="all"):
         paths += [base / "logs" / f"p2-{ckpt.tag}-{arm}.log" for arm in
                   ("optiq-engine", "optiq-engine-bench")]
     if phase in ("all", "p3"):
-        paths.append(base / "p3" / f"{ckpt.tag}-results.json")
+        paths += [base / "p3" / f"{ckpt.tag}-results.json", base / "logs" / "p3.log"]
     return paths
 
 
-def p3_log_path(cfg, selected, out):
-    """A single P3 run may contain several tiers; its log belongs to that exact set."""
-    tags = "__".join(sorted(ck.tag for ck in selected))
-    return Path(out) / cfg.id / "logs" / f"p3-{tags}.log"
-
-
 def refuse_existing(cfg, selected, out, phase):
-    collisions = {str(path) for ck in selected
-                  for path in output_paths(cfg, ck, out, phase) if path.exists()}
-    if phase in ("all", "p3") and selected:
-        log = p3_log_path(cfg, selected, out)
-        if log.exists():
-            collisions.add(str(log))
-        # Check published tags before a whole run refreshes P0 or spends time in P2.
-        try:
-            p3_conflicts = run_p3.collisions(Path(out) / cfg.id / "p3",
-                                             [ck.tag for ck in selected])
-        except (OSError, ValueError, TypeError, AttributeError) as exc:
-            p3_conflicts = [f"unreadable accuracy_summary.json: {exc}"]
-        collisions.update(f"{cfg.id}/p3: {reason}" for reason in p3_conflicts)
-    for path in sorted(collisions):
+    collisions = sorted({str(path) for ck in selected
+                         for path in output_paths(cfg, ck, out, phase) if path.exists()})
+    for path in collisions:
         print(f"refusing to overwrite {path}; select a new --out", file=sys.stderr)
     return bool(collisions)
 
@@ -499,7 +481,7 @@ def phase_p3(cfg, out, selected, evidence=None):
     if undownloaded(cfg, selected) or gates.refuse(cfg, selected, evidence or out):
         return False
     tags = [c.tag for c in selected]
-    log = p3_log_path(cfg, selected, out)
+    log = out / cfg.id / "logs" / "p3.log"
     rc = run([sys.executable, str(ROOT / "run_p3.py"), "--model", cfg.id,
               "--checkpoints", *tags, "--out", str(out),
               "--evidence", str(evidence or out)], log, timeout=3600)

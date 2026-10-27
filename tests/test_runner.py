@@ -311,7 +311,9 @@ class RunnerTests(unittest.TestCase):
                 paths.append(Path(log_path))
                 return 0
 
-            with patch.object(run_bench, "run", side_effect=fake_run):
+            with (patch.object(run_bench, "run", side_effect=fake_run),
+                  patch.object(registry.Checkpoint, "available", new_callable=PropertyMock,
+                               return_value=True)):
                 self.assertTrue(run_bench.phase_p3(self.cfg, out, later))
             self.assertEqual(paths, [run_bench.p3_log_path(self.cfg, later, out)])
             self.assertEqual(old_log.read_text(), "first tier remains intact")
