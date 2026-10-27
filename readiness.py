@@ -111,6 +111,7 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
         flag("trials", f"--trials {trials} < {bench.MIN_PUBLISHABLE_TRIALS}: rows would not be publishable")
 
     # Prompts and report inputs.
+    speed, acc_n, qual_n, acc_sha, qual_sha = [], 0, 0, "not checked", "not checked"
     if phase in ("all", "p2", "p2-optiq"):
         speed = []
         for name in prompts:
@@ -147,7 +148,6 @@ def evaluate(model_ids, out, tiers, trials, max_tokens, prompts, round_name, env
         if len(model_ids) > len(blind.LABELS):
             flag("scoring", f"{len(model_ids)} models but only {len(blind.LABELS)} blind slots")
     
-    speed, acc_n, qual_n, acc_sha, qual_sha = [], 0, 0, "not checked", "not checked"
     plan, revisions = [], []
     for mid in model_ids:
         cfg = registry.MODELS.get(mid)
