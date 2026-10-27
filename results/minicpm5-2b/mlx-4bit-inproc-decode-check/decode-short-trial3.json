@@ -1,0 +1,102 @@
+{
+  "model_id": "minicpm5-2b",
+  "model_name": "MiniCPM5-2B",
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 1.43,
+  "bits_per_weight": 4.55,
+  "publisher": "vendor",
+  "params_total": 2.517,
+  "params_active": 2.517,
+  "run_id": "mlx-4bit-inproc-decode-check",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "condition": "loaded",
+  "timestamp": "2026-10-27T16:56:43+00:00",
+  "model": "models/minicpm5-2b-4bit",
+  "load_s": 0.83,
+  "load_peak_gb": 1.416,
+  "prompt": "decode-short",
+  "prompt_file": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/prompts/speed/decode-short.txt",
+  "trial": 3,
+  "discarded": false,
+  "nonce": true,
+  "started_at": "2026-10-27T16:56:56+00:00",
+  "system": {
+    "swap_used_gb": 0.611,
+    "mem_free_pct": 71,
+    "power": "ac",
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.82,
+    "top_cpu": [
+      {
+        "proc": "WindowServer",
+        "cpu_pct": 8.5
+      },
+      {
+        "proc": "freebuff",
+        "cpu_pct": 5.9
+      },
+      {
+        "proc": "Amphetamine",
+        "cpu_pct": 1.2
+      },
+      {
+        "proc": "ghostty",
+        "cpu_pct": 1.2
+      }
+    ]
+  },
+  "prompt_tokens": 55,
+  "generation_tokens": 256,
+  "ttft_s": 0.1107,
+  "prefill_tps": 497.0,
+  "engine_prefill_tps": 503.3,
+  "decode_tps": 71.4,
+  "wall_s": 3.69,
+  "peak_gb": 1.652,
+  "peak_gb_source": "mx_peak",
+  "memory": {
+    "value_gb": 1.652,
+    "source": "mx_peak",
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "available": true,
+    "unavailable_reason": null
+  },
+  "finish_reason": "length",
+  "text": "To understand how a refrigerator maintains the cold we need, we have to step away from the idea of it simply being a small box. Instead, we must view it as a sophisticated piece of thermodynamic engineering, a closed system designed to create a temperature differential. The magic of a refrigerator isn't about freezing food, but about managing heat. When we talk about the compressor, condenser, expansion valve, and evaporator, we are essentially following the path of a refrigerant gas as it moves through a carefully engineered cycle. Let's explore this process in detail.\n\nThe journey begins with the compressor, often the most visible component. It's a mechanical pump that squeezes air, increasing its pressure and temperature. This compressed gas is then sent to the condenser, a component that acts like a heat sink. As the hot gas moves through the condenser coils, it releases its excess heat into the surrounding room. This is where the energy we've put into the system is converted into heat, and it's released into the air we breathe. The condenser doesn't just cool the gas; it cools the surrounding environment, which is why we feel the temperature drop in the room. The heat is then transferred to the air via the condenser fins, which are designed to maximize this heat transfer.\n\nNext",
+  "prep_s": 0.0002,
+  "engine_ttft_s": 0.1104,
+  "first_content_s": null,
+  "first_token_kind": null,
+  "request_ttft_s": 0.1107,
+  "cached_prompt_tokens": 0,
+  "decode_tokens": 255,
+  "decode_s": 3.5704,
+  "decode_window_tps": 71.4,
+  "decode_flags": [],
+  "ok": true
+}

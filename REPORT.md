@@ -224,11 +224,13 @@ that is recorded rather than dropped.
 
 ## 5. Cross-model comparison — pending
 
-Generated, not hand-typed: `python compare.py` reads every committed `summary.json` and
-`accuracy_summary.json` and writes `results/COMPARE.md` (all 12 in-process rows, with prompt
-tokens, generation length, GB/s and TTFT spread). Rows say `condition: not recorded` because they
-were measured before conditions were recorded; they ran on a realistic loaded desktop. The table
-below is the older, hand-made shape and covers only the baseline.
+Generated, not hand-typed: `python compare.py` reads committed `summary.json` and
+`accuracy_summary.json` files and writes `results/COMPARE.md` (the 12 full-matrix in-process rows,
+with prompt tokens, generation length, GB/s and TTFT spread). Rows say `condition: not recorded`
+because they predate condition recording; their actual overlap with other processes is unknown.
+The generated table also has a separate confirmation section for the five-trial MiniCPM5 and
+LFM2.5 `decode-short` reruns. Those narrow repeat measurements do not replace the original matrix
+rows. The table below is the older, hand-made shape and covers only the baseline.
 
 | Model | Tier | Decode tok/s | TTFT 68 / 1k / 8k | Peak GB | Accuracy /30 | Quality /5 |
 |---|---|---|---|---|---|---|

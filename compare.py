@@ -93,6 +93,49 @@ def _identity(s, model_id, tag):
     return out
 
 
+def build_repeat_rows(results_dir):
+    """Decode-short confirmation runs, compared to the original in-process row.
+
+    These tagged, single-prompt reruns are kept separate from the 12-row matrix: they
+    confirm a narrow measurement and must not silently replace full-run summaries.
+    """
+    rows = []
+    for model_dir in sorted(p for p in Path(results_dir).iterdir() if p.is_dir()):
+        for path in sorted(model_dir.glob("*-inproc-decode-check/summary.json")):
+            s = json.loads(path.read_text())
+            prompt = (s.get("prompts") or {}).get("decode-short") or {}
+            if s.get("outcome") != "completed" or s.get("publishable") is not True:
+                continue
+            tag = s.get("checkpoint") or path.parent.name.removesuffix("-inproc-decode-check")
+            ident = _identity(s, model_dir.name, tag)
+            original_path = model_dir / f"{tag}-inproc" / "summary.json"
+            if not original_path.is_file():
+                continue
+            original = json.loads(original_path.read_text())
+            original_prompt = (original.get("prompts") or {}).get("decode-short") or {}
+            before = _med({"decode-short": original_prompt}, "decode-short", "decode_tps")
+            after = _med({"decode-short": prompt}, "decode-short", "decode_tps")
+            rows.append({
+                "model": ident["model_name"] or model_dir.name,
+                "checkpoint": tag,
+                "bpw": ident["bits_per_weight"],
+                "publisher": ident["publisher"],
+                "prompt_tokens": prompt.get("prompt_tokens"),
+                "generation_tokens": _med({"decode-short": prompt}, "decode-short", "generation_tokens"),
+                "original_decode": before,
+                "original_range": _rng({"decode-short": original_prompt}, "decode-short", "decode_tps"),
+                "repeat_decode": after,
+                "repeat_range": _rng({"decode-short": prompt}, "decode-short", "decode_tps"),
+                "change_pct": round(100 * (after - before) / before, 1) if before and after else None,
+                "original_ttft": _med({"decode-short": original_prompt}, "decode-short", "ttft_s"),
+                "repeat_ttft": _med({"decode-short": prompt}, "decode-short", "ttft_s"),
+                "summary_path": path.relative_to(Path(results_dir)).as_posix(),
+                "condition_caveats": "; ".join(s.get("condition_caveats") or []),
+            })
+    rows.sort(key=lambda r: (r["model"], r["checkpoint"]))
+    return rows
+
+
 def build_rows(results_dir, transport="inproc"):
     rows = []
     for model_dir in sorted(p for p in Path(results_dir).iterdir() if p.is_dir()):
@@ -136,7 +179,7 @@ def _fmt(v, spec="{}"):
     return "n/a" if v is None else spec.format(v)
 
 
-def to_markdown(rows, transport="inproc"):
+def to_markdown(rows, transport="inproc", repeat_rows=()):
     head = ("| Model | Tier | bpw | Publisher | Params | Weights GB | Decode short tok/s [min-max] | "
             "Decode long tok/s | TTFT long s | Prompt tok (long) | Gen tok (decode-long) | "
             "Peak GB (long) | GB/s | TTFT spread | Condition | Acc /30 |")
@@ -153,7 +196,27 @@ def to_markdown(rows, transport="inproc"):
             _fmt(r["prompt_tokens_long"]), _fmt(r["gen_tokens_decode_long"]), _fmt(r["peak_long_gb"]),
             gbps, _fmt(r["spread_ttft"]), str(r["condition"]), _fmt(r["accuracy"]),
         ]) + " |")
-    return "\n".join(lines) + "\n"
+    text = "\n".join(lines) + "\n"
+    if repeat_rows and transport == "inproc":
+        lines = [text.rstrip(), "", "Repeat decode-short checks (five kept trials; separate from full-matrix rows).", "",
+                 "| Model | Checkpoint | bpw | Publisher | Prompt tok | Gen tok | Original decode tok/s [min-max] | "
+                 "Repeat decode tok/s [min-max] | Change | Original / repeat TTFT s | Rerun summary | Recorded caveats |",
+                 "|---|---|---:|---|---:|---:|---|---|---:|---|---|---|"]
+        for r in repeat_rows:
+            old_rng = r["original_range"]
+            new_rng = r["repeat_range"]
+            old_text = _fmt(r["original_decode"]) + (f" [{old_rng[0]}-{old_rng[1]}]" if old_rng else "")
+            new_text = _fmt(r["repeat_decode"]) + (f" [{new_rng[0]}-{new_rng[1]}]" if new_rng else "")
+            caveat = r["condition_caveats"].replace("|", "\\\\|") or "none recorded"
+            lines.append("| " + " | ".join([
+                r["model"], r["checkpoint"], _fmt(r["bpw"]), _fmt(r["publisher"]),
+                _fmt(r["prompt_tokens"]), _fmt(r["generation_tokens"]), old_text, new_text,
+                _fmt(r["change_pct"], "{:+.1f}%"),
+                f"{_fmt(r['original_ttft'])} / {_fmt(r['repeat_ttft'])}",
+                f"[summary.json]({r['summary_path']})", caveat,
+            ]) + " |")
+        text = "\n".join(lines) + "\n"
+    return text
 
 
 def main():
@@ -162,7 +225,8 @@ def main():
     ap.add_argument("--transport", choices=("inproc", "http"), default="inproc")
     ap.add_argument("--out", help="write markdown here instead of stdout")
     args = ap.parse_args()
-    text = to_markdown(build_rows(args.results, args.transport), args.transport)
+    repeat_rows = build_repeat_rows(args.results) if args.transport == "inproc" else []
+    text = to_markdown(build_rows(args.results, args.transport), args.transport, repeat_rows)
     if args.out:
         Path(args.out).write_text(text)
     else:

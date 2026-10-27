@@ -1,0 +1,108 @@
+{
+  "model_id": "spark-x2.5-4b",
+  "model_name": "Spark-X2.5-4B",
+  "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": false,
+  "weights_gb": 2.32,
+  "bits_per_weight": 4.51,
+  "publisher": "third-party:abenzerps",
+  "params_total": 4.112,
+  "params_active": 4.112,
+  "run_id": "mlx-4bit-inproc-quick-rerun",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 64,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 2,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "condition": "loaded",
+  "timestamp": "2026-10-27T16:52:11+00:00",
+  "model": "models/spark-x2.5-4b-4bit",
+  "load_s": 1.1,
+  "load_peak_gb": 2.314,
+  "prompt": "short",
+  "prompt_file": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/prompts/speed/short.txt",
+  "trial": 0,
+  "discarded": true,
+  "nonce": true,
+  "started_at": "2026-10-27T16:52:12+00:00",
+  "system": {
+    "swap_used_gb": 0.619,
+    "mem_free_pct": 72,
+    "power": "ac",
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.59,
+    "top_cpu": [
+      {
+        "proc": "duetexpertd",
+        "cpu_pct": 61.0
+      },
+      {
+        "proc": "WindowServer",
+        "cpu_pct": 36.6
+      },
+      {
+        "proc": "NotificationCenter",
+        "cpu_pct": 31.3
+      },
+      {
+        "proc": "launchd",
+        "cpu_pct": 8.0
+      },
+      {
+        "proc": "freebuff",
+        "cpu_pct": 3.9
+      }
+    ]
+  },
+  "prompt_tokens": 49,
+  "generation_tokens": 14,
+  "ttft_s": 0.2354,
+  "prefill_tps": 208.2,
+  "engine_prefill_tps": 232.0,
+  "decode_tps": 40.0,
+  "wall_s": 0.575,
+  "peak_gb": 2.422,
+  "peak_gb_source": "mx_peak",
+  "memory": {
+    "value_gb": 2.422,
+    "source": "mx_peak",
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "available": true,
+    "unavailable_reason": null
+  },
+  "finish_reason": "stop",
+  "text": "17 multiplied by 23 is 391.",
+  "prep_s": 0.0081,
+  "engine_ttft_s": 0.2273,
+  "first_content_s": null,
+  "first_token_kind": null,
+  "request_ttft_s": 0.2354,
+  "cached_prompt_tokens": 0,
+  "decode_tokens": 13,
+  "decode_s": 0.3252,
+  "decode_window_tps": null,
+  "decode_flags": [
+    "too_short"
+  ],
+  "ok": true
+}
