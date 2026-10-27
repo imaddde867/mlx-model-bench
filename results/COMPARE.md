@@ -1,6 +1,7 @@
 Transport: inproc. Medians of 5 kept trials; spread = max/min of kept TTFT, 'not recorded' = the row predates condition recording.
+Weight-read proxy = checkpoint weights GB × short-prompt decode tok/s; it is a size-based estimate, not measured memory bandwidth. `~` marks the MoE upper bound because only a subset of experts is active per token.
 
-| Model | Tier | bpw | Publisher | Params | Weights GB | Decode short tok/s [min-max] | Decode long tok/s | TTFT long s | Prompt tok (long) | Gen tok (decode-long) | Peak GB (long) | GB/s | TTFT spread | Condition | Acc /30 |
+| Model | Tier | bpw | Publisher | Params | Weights GB | Decode short tok/s [min-max] | Decode long tok/s | TTFT long s | Prompt tok (long) | Gen tok (decode-long) | Peak GB (long) | Weight-read proxy GB/s | TTFT spread | Condition | Acc /30 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | LFM2.5-8B-A1B | 4bit | 4.58 | vendor | 8.468B/1.3B active | 4.85 | 70.9 [69.8-73.1] | 68.8 | 9.285 | 8510 | 256 | 5.779 | ~343.9 | 1.06 | not recorded | 20/30 |
 | LFM2.5-8B-A1B | optiq-4bit | 5.17 | mlx-community | 8.468B/1.3B active | 5.47 | 58.7 [57.4-62.4] | 59.6 | 9.2765 | 8510 | 256 | 6.37 | ~321.1 | 1.26 | not recorded | 21/30 |

@@ -55,6 +55,8 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(row["gbps"], 98.7)  # 1.43 GB x 69.0 tok/s
         self.assertFalse(row["sparse"])
         self.assertEqual(row["condition"], "loaded")
+        self.assertIn("not measured memory bandwidth", compare.to_markdown([row]))
+        self.assertIn("Weight-read proxy GB/s", compare.to_markdown([row]))
 
     def test_spread_ignores_the_discarded_warmup(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -112,6 +114,7 @@ class CompareTests(unittest.TestCase):
             self.assertEqual(repeats[0]["repeat_decode"], 71.6)
             text = compare.to_markdown(rows, repeat_rows=repeats)
             self.assertIn("Repeat decode-short checks", text)
+            self.assertIn("not measured memory bandwidth", text)
             self.assertIn("71.6 [71.4-72.1]", text)
             self.assertIn("69.0 [54.7-71.7]", text)
 

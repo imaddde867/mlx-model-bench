@@ -1,0 +1,267 @@
+{
+  "rubric_categories": [
+    "accuracy",
+    "coherence",
+    "instruction_fit"
+  ],
+  "scale": "1-5 per category (total 15 per prompt)",
+  "round": "r1",
+  "scores": [
+    {
+      "id": "qual-01-explanation",
+      "task": "explanation",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-02-summarization",
+      "task": "summarization",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-03-rewrite",
+      "task": "rewrite",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-04-persona",
+      "task": "persona",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-05-refusal",
+      "task": "refusal",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-06-code-explanation",
+      "task": "code_explanation",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-07-correction",
+      "task": "correction",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "qual-08-story",
+      "task": "story",
+      "Model A": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model B": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model C": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      },
+      "Model D": {
+        "accuracy": null,
+        "coherence": null,
+        "instruction_fit": null,
+        "total": null,
+        "notes": ""
+      }
+    }
+  ]
+}
