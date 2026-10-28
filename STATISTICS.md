@@ -89,3 +89,24 @@ Use consistently interpreted, calibrated/normalized dimensions; do not add raw s
 A recommendation for real deployment requires: (a) passing provenance/P0, (b) logged and independently replicated timing, (c) task-representative held-out quality, (d) validated real tool execution for agent use, (e) memory/latency evidence at the intended context length and application load, and (f) a published workload-specific choice rule with sensitivity. Until then, publish **observations, uncertainties and next experiments**, not a universal model winner.
 
 `study.py` stays standard-library-only and generates `results/STUDY.md`. It is a first usable analytical layer, not the final statistical model. Historical P2/P3/P4 rows remain immutable; new sessions and protocols get distinct run IDs and output directories.
+
+## 7. Replicated-session infrastructure (issue #34)
+
+`replicated.py` implements the *unperformed* Phase A follow-up protocol described
+above. [SESSION_PROTOCOL.md](SESSION_PROTOCOL.md) defines the locked five-block
+four-model plain-4-bit design, immutable per-session schema, Mac-only preflight,
+measurement and report commands. It reuses `bench.py` for inference, rather than
+creating a competing model runner. `tests/test_replicated.py` exercises the
+session-design and evidence/analysis gates entirely offline.
+
+Statistical unit: **one newly initialized model session per block**. A session's
+five kept trials per fixed prompt are summarized *before* cross-session analysis.
+The new report uses exploratory session-level and paired whole-block percentile
+bootstraps only after all 20 planned sessions validate; it does not claim that
+five sessions confer nominal 95% frequentist coverage or enough statistical
+power. The full-system `vm_stat` estimate is distinct from MLX allocator peak,
+and response-end wall time is distinct from independently graded time to a usable
+answer. In-process first-content latency remains unmeasured. Compromised
+observed conditions are flagged separately from operator labels. The source
+matrix and `results/STUDY.md` remain historical until actual M4 measurements
+are collected and validated; **no CI/fixture data are experimental results**.
