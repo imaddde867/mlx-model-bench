@@ -138,6 +138,23 @@ class GateTests(unittest.TestCase):
         problems = lp.run_problems(run_record(FX, cache_fp32={"max_abs_diff": 0.2, "top1": 0.99}), FX)
         self.assertEqual(len([p for p in problems if p.startswith("cache_fp32")]), 2)
 
+    def test_nan_or_missing_measurement_fails(self):
+        for row in ({"max_abs_diff": float("nan"), "top1": 1.0},
+                    {"max_abs_diff": 0.0, "top1": float("nan")},
+                    {"max_abs_diff": 0.0}):
+            with self.subTest(row=row):
+                problems = lp.run_problems(run_record(FX, cache_fp32=row), FX)
+                self.assertTrue(any(p.startswith("cache_fp32") for p in problems))
+
+    def test_allow_unpinned_release_is_judged_on_the_gates(self):
+        run = run_record(FX)
+        run["versions"] = {"mlx": "0.33.0", "mlx_lm": "0.33.0", "mlx_lm_commit": None}
+        self.assertTrue(lp.run_problems(run, FX))
+        run["allow_unpinned"] = True
+        self.assertEqual(lp.run_problems(run, FX), [])
+        run["rows"]["fp32"] = dict(run["rows"]["fp32"], top1=0.99)
+        self.assertTrue(any(p.startswith("fp32: top-1") for p in lp.run_problems(run, FX)))
+
     def test_unpinned_mlx_lm_or_other_fixture_fails(self):
         run = run_record(FX)
         run["versions"]["mlx_lm_commit"] = None

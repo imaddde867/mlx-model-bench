@@ -142,6 +142,7 @@ def main():
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "machine": {"chip": chip(), "macos": platform.mac_ver()[0], "python": platform.python_version()},
         "versions": versions,
+        "allow_unpinned": args.allow_unpinned,
         "gates": lp.GATES,
         "rows": rows,
     }

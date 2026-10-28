@@ -16,6 +16,7 @@ import numpy, mlx or torch.
 
 import hashlib
 import json
+import math
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -60,6 +61,10 @@ GATES = {
     "fp32": {"max_abs_diff": 1e-3, "top1": 1.0},
     "cache_fp32": {"max_abs_diff": 1e-3, "top1": 1.0},
 }
+
+
+def finite(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
 
 def checkpoint_file(name):
@@ -179,25 +184,32 @@ def fixture_problems(fx):
 
 
 def run_problems(run, fx):
-    """Why a run record does not show parity, empty when it does."""
+    """Why a run record does not show parity, empty when it does.
+
+    A record made with `--allow-unpinned` says so, and is judged on the gates
+    alone: a released mlx-lm records no git commit and may move `mlx`.
+    """
     p = []
     if run.get("fixture_sha256") != fx.get("fixture_sha256"):
         p.append("run was made against a different fixture")
     observed = run.get("versions", {})
-    for key in ("mlx_lm_commit", "mlx"):
-        if observed.get(key) != PINS[key]:
-            p.append(f"{key} {observed.get(key)!r}, pinned {PINS[key]!r}")
+    if run.get("allow_unpinned") is not True:
+        for key in ("mlx_lm_commit", "mlx"):
+            if observed.get(key) != PINS[key]:
+                p.append(f"{key} {observed.get(key)!r}, pinned {PINS[key]!r}")
     rows = run.get("rows", {})
     for name, gate in GATES.items():
         row = rows.get(name)
         if row is None:
             p.append(f"no {name} row")
             continue
+        # Comparisons with NaN are all false, so a NaN must fail on its own.
         diff = row.get("max_abs_diff_topk", row.get("max_abs_diff"))
-        if diff is None or diff > gate["max_abs_diff"]:
+        if not finite(diff) or diff > gate["max_abs_diff"]:
             p.append(f"{name}: max abs diff {diff} > {gate['max_abs_diff']}")
-        if row.get("top1", 0) < gate["top1"]:
-            p.append(f"{name}: top-1 agreement {row.get('top1')} < {gate['top1']}")
+        top1 = row.get("top1")
+        if not finite(top1) or top1 < gate["top1"]:
+            p.append(f"{name}: top-1 agreement {top1} < {gate['top1']}")
     fp32 = rows.get("fp32", {})
     if fp32 and fp32.get("greedy_identical") != fp32.get("greedy_len"):
         p.append(f"fp32: greedy decode diverges at token {fp32.get('greedy_identical')}")
