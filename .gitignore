@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 *.log
 .vscode/
+# Local replicated sessions contain raw observations; curate before committing.
+/results/replicated/

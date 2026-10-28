@@ -436,6 +436,7 @@ def main():
     ap.add_argument("--no-nonce", action="store_true",
                     help="send identical prompts (measures prefix-cache hits; label with --tag cached)")
     ap.add_argument("--tag", default="", help="suffix for the output dir, e.g. cached")
+    ap.add_argument("--session-id", help="optional UUID for independently initialized sessions")
     ap.add_argument("--condition", choices=("clean", "loaded", "unspecified"), default="unspecified",
                     help="recorded in every row: 'clean' = nothing else running, 'loaded' = a "
                          "realistic desktop (browser, chat apps, CLIs) was open. Does not change the "
@@ -490,6 +491,7 @@ def main():
         "params_total": cfg.params_total,
         "params_active": cfg.params_active,
         "run_id": run_id,
+        "session_id": args.session_id,
         "evidence_dir": str(args.evidence or args.out),
         "transport": args.transport,
         "engine": args.engine,
@@ -587,7 +589,7 @@ def main():
         **{k: base[k] for k in ("model_id", "model_name", "hf_repo", "checkpoint", "tier",
                                 "official", "weights_gb", "bits_per_weight", "publisher",
                                 "params_total", "params_active",
-                                "run_id", "evidence_dir", "transport", "engine", "model", "host", "versions",
+                                "run_id", "session_id", "evidence_dir", "transport", "engine", "model", "host", "versions",
                                 "server_version", "max_tokens", "template_kwargs",
                                 "temperature", "top_p", "greedy", "trials",
                                 "ttft_scope", "decode_min_tokens")},

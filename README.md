@@ -214,3 +214,15 @@ estimated slowdown; no such estimate can be supported by the available records.
 `mlx-lm` 0.32.2 · `mlx` 0.32.4 · `mlx-optiq` 0.7.3 (requires `mlx-lm <0.33`) · Python 3.12.10.
 One venv per engine so neither can silently upgrade the other. Versions are recorded inside
 each result row, never only in prose.
+
+## Replicated 4-bit performance follow-up (issue #34)
+
+The historical P2 trial medians do not provide independent between-session uncertainty.
+[SESSION_PROTOCOL.md](SESSION_PROTOCOL.md) documents the new five-block, 20-session,
+Mac M4-only experiment. `replicated.py` reuses `bench.py` and its checkpoint
+integrity gate, assigns unique session IDs, records observed machine conditions
+separately from the operator label, verifies immutable evidence and only then
+computes paired session-level uncertainty. GitHub CI runs **offline tests only**.
+No new performance results are claimed until the Mac experiment is completed.
+
+Run the offline checks with `python3 -m unittest discover -s tests -v`.
