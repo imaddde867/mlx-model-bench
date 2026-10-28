@@ -17,6 +17,9 @@ on the **16 GiB Apple M4 Mac**, not GitHub Actions, another Mac, or a simulator.
   Williams square. Every candidate takes each position once in the first four
   blocks; the fifth adds one position. Keep the planned order. Run one block at a
   time to allow cool-down and operator checks; do **not** re-sort by convenience.
+  A nonblocking OS lock prohibits simultaneous blocks in the same experiment.
+  Validation independently rejects overlapping UTC session intervals, reordered
+  sessions, or reused session UUIDs, even if the individual records look valid.
 - **Within session:** fixed `prompts/speed/{short,medium,long}.txt` files (short,
   ~1k and ~8k as tokenized by each model), one discarded warmup plus **five kept
   trials per regime**. Greedy, template kwargs from `registry.py`, no explicit
@@ -29,7 +32,8 @@ on the **16 GiB Apple M4 Mac**, not GitHub Actions, another Mac, or a simulator.
   macOS/pinned MLX environment, screen/desktop workload held as consistent as
   practical. `--condition clean|loaded` records the **operator's stated intent**.
   Each `bench.py` trial includes its own `sysinfo.snapshot()` before the timed
-  window; this layer stores before/after snapshots and their observed warnings.
+  window; this layer stores before/after snapshots and derives observed warnings
+  from **all** trial snapshots (including warmups) and before/after state.
   A `clean` label with `mediaanalysisd` at 225% CPU stays `clean` **with an
   observed busy warning**. No historical pilot label is rewritten.
 - **Memory:** the existing `mx.get_peak_memory()` is the *per-trial MLX allocator*
@@ -37,7 +41,8 @@ on the **16 GiB Apple M4 Mac**, not GitHub Actions, another Mac, or a simulator.
   an external thread for a **host-wide physical-used estimate** based on
   `total − free − inactive − speculative` pages. This is an approximate host
   value affected by other processes, not process RSS, GPU VRAM, or an exact
-  workload-only peak. Swap, memory pressure, power and thermal CPU speed-limit
+  workload-only peak. The raw sampled memory series is retained to permit a
+  check of the stated peak. Swap, memory pressure, power and thermal CPU speed-limit
   are recorded in `sysinfo` snapshots. Direct temperature in degrees and a true
   application's total high-water mark are not available here: do not invent them.
 - **Latency:** primary observed end-to-end metric is `wall_s`, i.e. time to
@@ -55,6 +60,10 @@ passing P0 using `run_bench.py --phase fetch` and `--phase p0` with `--tiers
 4bit`. Check available disk capacity, power source and `python sysinfo.py`.
 `plan` refuses missing provenance, P0 failures, mismatched weight SHA-256, a
 dirty tracked working tree, the wrong machine or incorrect pinned MLX versions.
+It also freezes the hashes of all local checkpoint configuration/tokenizer/
+chat-template files, and excludes unexpected unverified safetensors shards.
+The frozen file set and hashes are verified before each block; only Hugging
+Face's `.cache` and incidental macOS Finder metadata are excluded.
 **Merge the infrastructure PR first**: the plan freezes the Git commit currently
 checked out, along with exact machine/runtime versions, Hub revisions, individual
 weight hashes, template controls, all three prompt SHA-256s and decode settings.
@@ -94,6 +103,7 @@ once reviewed, not the entire unattended experiment directory.
 ```
 results/replicated/<experiment-name>/
   plan.json                               # schema=1, content-addressed plan_id
+  .experiment.lock                        # persistent filename; OS-released flock
   sessions/
     b01-p01-<model-id>/
       started.json                       # UUID + intended condition + pre-state
@@ -103,9 +113,10 @@ results/replicated/<experiment-name>/
         short-warmup.json                # plus short-trial1..5
         medium-warmup.json               # plus medium-trial1..5
         long-warmup.json                 # plus long-trial1..5
+      session_payload.json               # SHA256-protected exact manifest payload
       session.json                       # schema=1, UUID, block/position,
                                          # observed pre/post, condition caveats,
-                                         # host-memory sampling and per-file SHA256
+                                         # raw host-memory samples and per-file SHA256
     b01-p02-<model-id>/...
     ...
 ```
@@ -113,10 +124,16 @@ results/replicated/<experiment-name>/
 `plan.json` carries a SHA-256 digest of its entire canonical payload (excluding
 its own `plan_id`). **Every session directory and JSON file is created
 exclusively** (`mkdir(exist_ok=False)`, `open('x')`); a second process cannot
-silently overwrite the same slot. Logs, failed measurements and incomplete
+silently overwrite the same slot. The experiment-wide lock also prevents
+different blocks from executing concurrently; the OS releases it after a crash.
+`session_payload.json` redundantly stores and hashes every non-checksum field
+from the final manifest, including timestamps, observed conditions, and host
+memory. Validation recomputes environmental warnings from snapshots and the
+host-memory peak from raw samples, rather than trusting editable summaries.
+Logs, failed measurements and incomplete
 sessions remain for diagnosis. `validate` compares evidence file sets and their
 SHA-256 digests and cross-checks identity, runtime, 18 raw trials, warmups,
-counts, summary medians, conditions and exact generation settings. This is
+counts, summary medians/ranges, conditions and exact generation settings. This is
 write-once/integrity checking, **not a cryptographic signature or an external
 archival guarantee**: back up complete directories to independent storage.
 
@@ -139,5 +156,11 @@ interpretation. Report all flags and missingness; do not silently discard a
 busy session, relabel it as `loaded`, or publish a universal winner. If effects
 are decision-relevant but intervals are wide, preregister a new replicated
 extension with more blocks, preserving the first study unchanged.
+
+The report prints tokenizer-specific prompt-token counts, actual completion
+lengths and their ranges next to the corresponding performance measurements.
+The main table separates bootstrap intervals across independent sessions from
+the descriptive span of all kept trials; a per-session appendix gives the
+median and min–max across **each session's five kept trials**.
 
 Run offline regressions with `python3 -m unittest discover -s tests -v`.

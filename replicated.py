@@ -7,9 +7,12 @@ Historical results are read-only inputs; all session evidence is write-once.
 """
 
 import argparse
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import importlib.metadata
 import json
+import math
 import os
 import platform
 import random
@@ -19,7 +22,7 @@ import sys
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import gates
@@ -36,7 +39,8 @@ PINNED = {"mlx": "0.32.4", "mlx-lm": "0.32.2"}
 
 
 def now():
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    # A whole-second clock can make adjacent sessions appear to overlap.
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
 
 def canonical(doc):
@@ -122,6 +126,39 @@ def checkpoint(cfg):
     return matches[0]
 
 
+def checkpoint_files(ckpt, verified_weights):
+    """Freeze all local load/tokenizer/template files, not just Hub weight shards.
+
+    The Hub's verified-weight manifest covers safetensors only. Local configuration,
+    tokenizer and template files are still consumed by mlx_lm.load(). Hash their
+    complete byte content and reject added/unexpected weight shards. Ignore only
+    Hugging Face's local download metadata and macOS Finder metadata.
+    """
+    local = ckpt.local_path
+    if not local.is_dir():
+        raise ValueError(f"checkpoint directory absent: {local}")
+    weights = set()
+    settings = {}
+    for path in sorted(local.rglob("*")):
+        rel = path.relative_to(local)
+        if ".cache" in rel.parts or "__pycache__" in rel.parts or path.name == ".DS_Store":
+            continue
+        if path.is_symlink():
+            raise ValueError(f"symlink in checkpoint: {path}")
+        if not path.is_file():
+            continue
+        key = rel.as_posix()
+        if path.suffix == ".safetensors":
+            weights.add(key)
+        else:
+            settings[key] = sha_file(path)
+    if weights != set(verified_weights):
+        raise ValueError(f"checkpoint weight file set drift: {local}")
+    if "config.json" not in settings:
+        raise ValueError(f"config.json missing from checkpoint: {local}")
+    return settings
+
+
 def verified_identity(cfg, evidence):
     ckpt = checkpoint(cfg)
     failures = gates.problems(cfg, ckpt, evidence)
@@ -131,11 +168,13 @@ def verified_identity(cfg, evidence):
     for entry in prov["files"]:
         if sha_file(ckpt.local_path / entry["file"]) != entry["expected_sha256"]:
             raise ValueError(f"{cfg.id}: on-disk SHA256 mismatch: {entry['file']}")
+    weight_hashes = {f["file"]: f["expected_sha256"] for f in prov["files"]}
     return {"model_id": cfg.id, "checkpoint": ckpt.tag, "hf_repo": ckpt.hf_repo,
             "tier": ckpt.tier, "publisher": ckpt.publisher, "bpw": ckpt.bits_per_weight,
             "weights_gb": ckpt.weights_gb, "official": ckpt.official,
             "revision": prov["revision"], "fingerprint": gates.fingerprint(prov),
-            "weight_sha256": {f["file"]: f["expected_sha256"] for f in prov["files"]},
+            "weight_sha256": weight_hashes,
+            "checkpoint_file_sha256": checkpoint_files(ckpt, weight_hashes),
             "template_kwargs": cfg.template_kwargs}
 
 
@@ -261,7 +300,8 @@ class MemorySampler:
             self.thread.join(timeout=16)
         return {"source": "vm_stat: total - free - inactive - speculative; host-wide estimate",
                 "unit": "GB decimal", "interval_s": self.interval, "samples": len(self.samples),
-                "peak_gb_est": max(self.samples) if self.samples else None}
+                "peak_gb_est": max(self.samples) if self.samples else None,
+                "sampled_gb": self.samples}
 
 
 def evidence_hashes(folder):
@@ -274,7 +314,44 @@ def evidence_hashes(folder):
     return result
 
 
+def trial_rows(raw):
+    """Read every available warmup/kept JSON (including failed partial sessions)."""
+    return [load_json(p) for p in sorted(Path(raw).rglob("*.json"))
+            if p.name != "summary.json"]
+
+
+def observed_caveats(before, after, trials):
+    """Derive warnings from preserved snapshots, never the operator's label."""
+    snapshots = [before, after] + [r.get("system") for r in trials]
+    return sorted({warning for snap in snapshots if isinstance(snap, dict)
+                   for warning in sysinfo.warnings(snap)})
+
+
+@contextmanager
+def experiment_lock(folder):
+    """Non-blocking OS lock for the entire experiment; automatically freed on crash.
+
+    The lock file persists, but locking is on an open file descriptor, not the
+    existence of a stale sentinel. Two different blocks cannot run together.
+    """
+    with (Path(folder) / ".experiment.lock").open("a+", encoding="utf-8") as stream:
+        try:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError("another benchmark block is running in this experiment") from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
+
 def run_block(folder, block, condition, resume=False, timeout_s=3600):
+    """Reserve the whole experiment for the full lifetime of this block."""
+    with experiment_lock(folder):
+        return _run_block_locked(folder, block, condition, resume, timeout_s)
+
+
+def _run_block_locked(folder, block, condition, resume, timeout_s):
     folder = Path(folder)
     plan = load_json(folder / "plan.json")
     check_plan(plan)
@@ -325,23 +402,23 @@ def run_block(folder, block, condition, resume=False, timeout_s=3600):
         finally:
             host_memory = sampler.stop()
             post = sysinfo.snapshot()
-            caveats = sorted(set(sysinfo.warnings(pre) + sysinfo.warnings(post)))
-            summary_path = raw / model_id / f"{next(m['checkpoint'] for m in plan['models'] if m['model_id'] == model_id)}-inproc" / "summary.json"
-            if summary_path.is_file():
-                try:
-                    summary = load_json(summary_path)
-                    caveats = sorted(set(caveats + summary.get("condition_caveats", [])))
-                except (OSError, ValueError) as exc:
-                    failure = failure or f"unreadable summary: {exc}"
-                    rc = 1
-            manifest = {"schema": VERSION, "session_id": session_id,
-                        "plan_id": plan["plan_id"], "block": block, "position": pos,
-                        "model_id": model_id, "started_utc": start, "ended_utc": now(),
-                        "operator_condition": condition,
-                        "observed": {"before": pre, "after": post, "caveats": caveats},
-                        "host_memory": host_memory, "return_code": rc, "error": failure,
-                        "status": "completed" if rc == 0 else "failed",
-                        "artifacts_sha256": evidence_hashes(path)}
+            try:
+                observed_trials = trial_rows(raw)
+            except (OSError, ValueError) as exc:
+                failure = failure or f"unreadable trial observations: {exc}"
+                rc, observed_trials = 1, []
+            caveats = observed_caveats(pre, post, observed_trials)
+            details = {"schema": VERSION, "session_id": session_id,
+                       "plan_id": plan["plan_id"], "block": block, "position": pos,
+                       "model_id": model_id, "started_utc": start, "ended_utc": now(),
+                       "operator_condition": condition,
+                       "observed": {"before": pre, "after": post, "caveats": caveats},
+                       "host_memory": host_memory, "return_code": rc, "error": failure,
+                       "status": "completed" if rc == 0 else "failed"}
+            # The final manifest contains checksums, so cannot hash itself. Store
+            # its COMPLETE non-checksum payload as a separate hashed artifact.
+            write_once(path / "session_payload.json", details)
+            manifest = {**details, "artifacts_sha256": evidence_hashes(path)}
             write_once(path / "session.json", manifest)
         print(f"{model_id} block {block} position {pos}: rc={rc}; {path}")
         if rc != 0:
@@ -349,7 +426,16 @@ def run_block(folder, block, condition, resume=False, timeout_s=3600):
 
 
 def close(a, b):
-    return isinstance(a, (int, float)) and not isinstance(a, bool) and abs(a - b) < 0.00051
+    return (isinstance(a, (int, float)) and not isinstance(a, bool)
+            and math.isfinite(a) and abs(a - b) < 0.00051)
+
+
+def utc_time(value):
+    """Require an offset-aware UTC interval for isolation/ordering checks."""
+    stamp = datetime.fromisoformat(value)
+    if stamp.tzinfo is None or stamp.utcoffset() != timedelta(0):
+        raise ValueError("non-UTC or naive session timestamp")
+    return stamp
 
 
 def validate_session(folder, plan, block, pos, model_id):
@@ -360,7 +446,10 @@ def validate_session(folder, plan, block, pos, model_id):
         return ["missing session.json"]
     try:
         s = load_json(folder / "session.json")
+        payload = load_json(folder / "session_payload.json")
         started = load_json(folder / "started.json")
+        if {k: v for k, v in s.items() if k != "artifacts_sha256"} != payload:
+            errors.append("manifest changed independently of hashed session payload")
         for k, value in {"schema": VERSION, "plan_id": plan["plan_id"], "block": block,
                          "position": pos, "model_id": model_id}.items():
             if s.get(k) != value or started.get(k) != value:
@@ -371,15 +460,26 @@ def validate_session(folder, plan, block, pos, model_id):
             errors.append("operator condition provenance mismatch")
         if s.get("status") != "completed" or s.get("return_code") != 0:
             errors.append("session process incomplete or failed")
+        if s.get("error") is not None:
+            errors.append("session records a process error")
+        if s.get("started_utc") != started.get("started_utc"):
+            errors.append("session start timestamp mismatch")
+        if utc_time(s["started_utc"]) >= utc_time(s["ended_utc"]):
+            errors.append("session end does not follow start")
         expected = s["artifacts_sha256"]
         if expected != evidence_hashes(folder):
             errors.append("evidence file list or SHA256 mismatch")
         if not s.get("observed") or s["observed"].get("before") != started.get("pre_system"):
             errors.append("system snapshots mismatch")
         mem = s.get("host_memory") or {}
+        samples = mem.get("sampled_gb")
         if (mem.get("source") != "vm_stat: total - free - inactive - speculative; host-wide estimate"
-                or not isinstance(mem.get("samples"), int) or mem["samples"] < 1
-                or not isinstance(mem.get("peak_gb_est"), (int, float))):
+                or not isinstance(samples, list) or not samples
+                or not all(isinstance(x, (int, float)) and not isinstance(x, bool)
+                           and math.isfinite(x) and 0 <= x <= 1e3 for x in samples)
+                or mem.get("samples") != len(samples)
+                or mem.get("unit") != "GB decimal"
+                or not close(mem.get("peak_gb_est"), max(samples))):
             errors.append("host-wide memory estimate missing")
         model = next(m for m in plan["models"] if m["model_id"] == model_id)
         raw = folder / "raw" / model_id / f"{model['checkpoint']}-inproc"
@@ -399,6 +499,8 @@ def validate_session(folder, plan, block, pos, model_id):
             errors.append("regime completeness mismatch")
         if summary.get("versions") != plan["machine"]["packages"]:
             errors.append("runtime version provenance mismatch")
+        all_rows = []
+        kept_rows = []
         for regime in REGIMES:
             prompt = next(p for p in plan["prompts"] if p["regime"] == regime)
             if not isinstance(prompt["sha256"], str):
@@ -408,6 +510,9 @@ def validate_session(folder, plan, block, pos, model_id):
                 trial_file = raw / f"{regime}-{'warmup' if i == 0 else f'trial{i}'}.json"
                 row = load_json(trial_file)
                 rows.append(row)
+                all_rows.append(row)
+                if i:
+                    kept_rows.append(row)
                 for k, value in {"model_id": model_id, "checkpoint": model["checkpoint"],
                                  "prompt": regime, "trial": i, "discarded": i == 0,
                                  "condition": s["operator_condition"], "ok": True,
@@ -439,11 +544,23 @@ def validate_session(folder, plan, block, pos, model_id):
                 errors.append(f"{regime}: summary prompt token mismatch")
             if declared.get("kept_ok") != N_TRIALS or declared.get("warmup_ok") is not True:
                 errors.append(f"{regime}: warmup/kept count mismatch")
-            for metric in ("wall_s", "request_ttft_s", "peak_gb"):
-                reported = (declared.get(metric) or {}).get("median")
-                actual = statistics.median(r[metric] for r in rows[1:] if isinstance(r.get(metric), (int, float)))
-                if not close(reported, actual):
-                    errors.append(f"{regime}: {metric} median mismatch")
+            for metric in ("wall_s", "request_ttft_s", "peak_gb", "generation_tokens"):
+                reported = declared.get(metric) or {}
+                values = [r[metric] for r in rows[1:] if isinstance(r.get(metric), (int, float))
+                          and not isinstance(r[metric], bool) and math.isfinite(r[metric])]
+                if len(values) != N_TRIALS:
+                    errors.append(f"{regime}: {metric} incomplete")
+                elif (not close(reported.get("median"), statistics.median(values))
+                      or not close(reported.get("min"), min(values))
+                      or not close(reported.get("max"), max(values))
+                      or reported.get("n") != N_TRIALS):
+                    errors.append(f"{regime}: {metric} median/range mismatch")
+        expected_warnings = observed_caveats(started["pre_system"], s["observed"]["after"], all_rows)
+        if s["observed"].get("caveats") != expected_warnings:
+            errors.append("observed warning derivation mismatch")
+        kept_warnings = observed_caveats({}, {}, kept_rows)
+        if summary.get("condition_caveats") != kept_warnings:
+            errors.append("summary warning derivation mismatch")
         actual_trial_files = {p.name for p in raw.glob("*.json") if p.name != "summary.json"}
         expected_trial_files = {f"{r}-{'warmup' if i == 0 else f'trial{i}'}.json"
                                 for r in REGIMES for i in range(N_TRIALS + 1)}
@@ -462,6 +579,8 @@ def validate(folder):
     errors = []
     sessions = folder / "sessions"
     expected_paths = set()
+    intervals = []
+    seen_ids = set()
     for block in plan["schedule"]:
         for pos, model_id in enumerate(block["order"], 1):
             path = slot_path(folder, block["block"], pos, model_id)
@@ -473,7 +592,23 @@ def validate(folder):
             if issues:
                 errors.extend(f"{path.name}: {i}" for i in issues)
             else:
-                good[(block["block"], model_id)] = load_json(path / "session.json")
+                session = load_json(path / "session.json")
+                sid = session["session_id"]
+                if sid in seen_ids:
+                    errors.append(f"{path.name}: reused session UUID")
+                seen_ids.add(sid)
+                intervals.append((utc_time(session["started_utc"]), utc_time(session["ended_utc"]),
+                                  block["block"], pos, path.name))
+                good[(block["block"], model_id)] = session
+    # Detect independently plausible but physically impossible concurrent sessions.
+    # Also reject an operator accidentally executing the frozen counterbalance out of order.
+    if intervals:
+        for prev, current in zip(sorted(intervals), sorted(intervals)[1:]):
+            if current[0] < prev[1]:
+                errors.append(f"overlapping independent sessions: {prev[4]} / {current[4]}")
+        executed = [(b, p) for _, _, b, p, _ in sorted(intervals)]
+        if executed != sorted(executed):
+            errors.append("sessions executed out of the frozen block/position order")
     if sessions.exists():
         extras = {p.name for p in sessions.iterdir()} - expected_paths
         if extras:
@@ -503,6 +638,7 @@ def report(folder):
         raise ValueError("cannot report incomplete/invalid experiment:\n" + "\n".join(errors))
     rows = []
     medians = {}
+    kept_trials = {}
     compromised = []
     for b in plan["schedule"]:
         for model_id in b["order"]:
@@ -515,6 +651,8 @@ def report(folder):
             for regime in REGIMES:
                 for metric in ("wall_s", "request_ttft_s", "peak_gb"):
                     medians[(b["block"], model_id, regime, metric)] = summary["prompts"][regime][metric]["median"]
+                kept_trials[(b["block"], model_id, regime)] = [
+                    load_json(raw / f"{regime}-trial{i}.json") for i in range(1, N_TRIALS + 1)]
             medians[(b["block"], model_id, "all", "system_gb_est")] = s["host_memory"]["peak_gb_est"]
     heading = ["# Replicated plain-4-bit session study", "",
                f"Frozen source: `{plan['source_commit']}` · Plan SHA256: `{plan['plan_id']}`",
@@ -526,23 +664,46 @@ def report(folder):
                "All intervals are exploratory percentile 95% **session/block bootstrap** intervals "
                "(3,000 resamples); n=5 gives unstable coverage and little power. The fixed "
                "prompts and non-random hardware conditions do not justify population/general-purpose claims.", "",
-               "| Model / checkpoint / publisher | Regime | Response-end wall s: median [95%] | "
-               "Request TTFT s: median [95%] | MLX allocator peak GB: median [95%] | n sessions |",
-               "|---|---|---:|---:|---:|---:|"]
+               "In the main table each timing/memory cell shows the **median of five session medians "
+               "[95% session-bootstrap interval]**, then the **observed kept-trial min–max across "
+               "all 25 requests**. The latter is descriptive jitter, not an uncertainty interval. "
+               "The session appendix separately reports each five-trial median and range.", "",
+               "| Model / checkpoint / publisher | Regime | Prompt tokens (model tokenizer) | "
+               "Completion tokens median [min–max] | Response-end wall s: sessions [95%]; trials min–max | "
+               "Request TTFT s: sessions [95%]; trials min–max | "
+               "MLX allocator GB: sessions [95%]; trials min–max | n sessions × kept trials |",
+               "|---|---|---:|---:|---:|---:|---:|---:|"]
     def estimate(values, salt):
         v = bootstrap_median(values, plan["seed"] + salt)
         return f"{v[0]:.3f} [{v[1]:.3f}, {v[2]:.3f}]"
+    def five_trial_range(values, digits=3):
+        return (f"{statistics.median(values):.{digits}f} "
+                f"[{min(values):.{digits}f}–{max(values):.{digits}f}]")
+
+    def context(model_id, regime):
+        trials = [trial for b in plan["schedule"]
+                  for trial in kept_trials[(b["block"], model_id, regime)]]
+        prompts = {t["prompt_tokens"] for t in trials}
+        if len(prompts) != 1:
+            raise ValueError(f"prompt-token counts drift across sessions: {model_id}/{regime}")
+        return next(iter(prompts)), trials
+
     models = [m["model_id"] for m in plan["models"]]
     for mi, model_id in enumerate(models):
         model = plan["models"][mi]
         for ri, regime in enumerate(REGIMES):
+            prompt_tokens, trials = context(model_id, regime)
+            gen_tokens = [t["generation_tokens"] for t in trials]
             columns = []
             for idx, metric in enumerate(("wall_s", "request_ttft_s", "peak_gb")):
                 values = [medians[(b["block"], model_id, regime, metric)] for b in plan["schedule"]]
-                columns.append(estimate(values, mi * 100 + ri * 10 + idx))
+                raw_values = [t[metric] for t in trials]
+                columns.append(f"{estimate(values, mi * 100 + ri * 10 + idx)}; "
+                               f"{min(raw_values):.3f}–{max(raw_values):.3f}")
             rows.append(f"| {model_id} / {model['checkpoint']} / {model['publisher']} "
                         f"({model['bpw']:.2f} bpw, {model['weights_gb']:.2f} GB weights) "
-                        f"| {regime} | {' | '.join(columns)} | {len(plan['schedule'])} |")
+                        f"| {regime} | {prompt_tokens} | {five_trial_range(gen_tokens, 0)} "
+                        f"| {' | '.join(columns)} | {len(plan['schedule'])} × {N_TRIALS} |")
     heading += rows + ["", "## Host-wide memory (per session, all regimes combined)", "",
                         "`vm_stat` estimate: total physical RAM − free − inactive − speculative pages, "
                         "polled every 0.5 s. Not process RSS, not a precise app peak; "
@@ -555,15 +716,42 @@ def report(folder):
     heading += ["", "## Block-matched comparisons (paired response-end wall time)", "",
                 f"Reference: `{models[0]}`; Δ = other − reference, seconds. Positive is slower. "
                 "Resample *blocks* rather than trials. These are conditional exploratory contrasts.", "",
-                "| Candidate − reference | Regime | Median paired Δ s [95% block bootstrap] | n blocks |",
-                "|---|---|---:|---:|"]
+                "| Candidate − reference | Regime | Ref prompt / completion tokens | "
+                "Candidate prompt / completion tokens | Median paired Δ s [95% block bootstrap] | n blocks |",
+                "|---|---|---:|---:|---:|---:|"]
+    def token_context(mid, regime):
+        pt, trials = context(mid, regime)
+        return f"{pt} / {five_trial_range([t['generation_tokens'] for t in trials], 0)}"
     for mi, model_id in enumerate(models[1:], 1):
         for ri, regime in enumerate(REGIMES):
             deltas = [medians[(b["block"], model_id, regime, "wall_s")] -
                       medians[(b["block"], models[0], regime, "wall_s")]
                       for b in plan["schedule"]]
             heading.append(f"| {model_id} − {models[0]} | {regime} | "
+                           f"{token_context(models[0], regime)} | {token_context(model_id, regime)} | "
                            f"{estimate(deltas, mi * 100 + ri + 900)} | {len(deltas)} |")
+    heading += ["", "## Each independent session: five kept trials and their ranges", "",
+                "One row is **one** initialized model process and prompt regime. All values "
+                "are measured, not bootstrapped; the displayed [min–max] is over exactly "
+                "five kept trials. Prompt tokens are tokenizer-specific.", "",
+                "| Block / slot | Model / checkpoint / publisher | Regime | Prompt tokens | "
+                "Completion tokens median [range] | Response-end wall s median [range] | "
+                "Request TTFT s median [range] | MLX allocator GB median [range] | n kept |",
+                "|---|---|---|---:|---:|---:|---:|---:|---:|"]
+    for b in plan["schedule"]:
+        for pos, model_id in enumerate(b["order"], 1):
+            model = next(m for m in plan["models"] if m["model_id"] == model_id)
+            for regime in REGIMES:
+                trials = kept_trials[(b["block"], model_id, regime)]
+                pt = {t["prompt_tokens"] for t in trials}
+                if len(pt) != 1:
+                    raise ValueError(f"prompt-token counts vary within session: {model_id}/{regime}")
+                heading.append(f"| {b['block']} / {pos} | {model_id} / {model['checkpoint']} / "
+                               f"{model['publisher']} | {regime} | {next(iter(pt))} | "
+                               f"{five_trial_range([t['generation_tokens'] for t in trials], 0)} | "
+                               f"{five_trial_range([t['wall_s'] for t in trials])} | "
+                               f"{five_trial_range([t['request_ttft_s'] for t in trials])} | "
+                               f"{five_trial_range([t['peak_gb'] for t in trials])} | {len(trials)} |")
     heading += ["", "## Condition provenance and limitations", "",
                 f"Observed caveats in {len(compromised)}/{len(good)} sessions; operator-selected "
                 "condition labels are **not** observations and have not been silently relabelled.", ""]

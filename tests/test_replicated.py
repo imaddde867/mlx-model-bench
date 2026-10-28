@@ -3,7 +3,9 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,14 +38,21 @@ class ReplicatedTests(unittest.TestCase):
         self.snap = {"power": "ac", "cpu_speed_limit_pct": 100, "swap_used_gb": 0,
                      "mem_free_pct": 70, "top_cpu": [], "load_1m": 1.0}
 
-    def fixture(self, block=1, pos=1, corrupt=None):
+    def fixture(self, block=1, pos=1, corrupt=None, overlap=False, duplicate_id=False):
         model_id = self.plan["schedule"][block - 1]["order"][pos - 1]
         path = r.slot_path(self.root, block, pos, model_id)
         path.mkdir(parents=True)
-        started = {"schema": 1, "session_id": "uuid123", "plan_id": self.plan["plan_id"],
+        number = (block - 1) * 4 + pos - 1
+        start = datetime(2026, 10, 28, 8, tzinfo=timezone.utc) + timedelta(minutes=number)
+        if overlap:
+            start -= timedelta(minutes=1)
+        start_at = start.isoformat()
+        end_at = (start + timedelta(seconds=30)).isoformat()
+        sid = "session-1-1" if duplicate_id else f"session-{block}-{pos}"
+        started = {"schema": 1, "session_id": sid, "plan_id": self.plan["plan_id"],
                    "block": block, "position": pos, "model_id": model_id,
                    "operator_condition": "clean", "pre_system": self.snap,
-                   "started_utc": "2026-10-28T08:00:00+00:00"}
+                   "started_utc": start_at}
         r.write_once(path / "started.json", started)
         raw = path / "raw" / model_id / "mlx-4bit-inproc"
         raw.mkdir(parents=True)
@@ -53,19 +62,19 @@ class ReplicatedTests(unittest.TestCase):
                    "versions": self.plan["machine"]["packages"],
                    "greedy": True, "template_kwargs": {"enable_thinking": False},
                    "condition": "clean", "outcome": "completed", "publishable": True,
-                   "session_id": "uuid123", "prompts": {}}
+                   "session_id": sid, "prompts": {}, "condition_caveats": []}
         for ri, regime in enumerate(r.REGIMES):
             values = []
             for trial in range(6):
                 row = {"model_id": model_id, "checkpoint": "mlx-4bit", "prompt": regime,
                        "trial": trial, "discarded": trial == 0, "condition": "clean",
                        "ok": True, "nonce": False, "max_tokens": 256,
-                       "session_id": "uuid123",
+                       "session_id": sid,
                        "template_kwargs": {"enable_thinking": False},
                        "hf_repo": f"vendor/{model_id}", "publisher": "vendor",
                        "versions": self.plan["machine"]["packages"],
                        "prompt_file": f"/source/prompts/speed/{regime}.txt",
-                       "system": self.snap, "started_at": "2026-10-28T08:00:00+00:00",
+                       "system": self.snap, "started_at": start_at,
                        "finish_reason": "stop", "wall_s": 1.0 + ri + trial / 10,
                        "request_ttft_s": 0.1 + trial / 100, "peak_gb": 2 + trial / 10,
                        "prompt_tokens": 80 + ri * 100, "generation_tokens": 50}
@@ -74,17 +83,22 @@ class ReplicatedTests(unittest.TestCase):
                     values.append(row)
             summary["prompts"][regime] = {"kept_ok": 5, "warmup_ok": True,
                                           "prompt_tokens": values[0]["prompt_tokens"],
-                                          **{k: {"median": r.statistics.median(v[k] for v in values)}
-                                             for k in ("wall_s", "request_ttft_s", "peak_gb")}}
+                                          **{k: {"median": r.statistics.median(v[k] for v in values),
+                                                 "min": min(v[k] for v in values),
+                                                 "max": max(v[k] for v in values), "n": 5}
+                                             for k in ("wall_s", "request_ttft_s", "peak_gb", "generation_tokens")}}
         r.write_once(raw / "summary.json", summary)
         (path / "bench.log").write_text("simulated - not real inference\n")
-        s = {"schema": 1, "session_id": "uuid123", "plan_id": self.plan["plan_id"],
+        s = {"schema": 1, "session_id": sid, "plan_id": self.plan["plan_id"],
              "block": block, "position": pos, "model_id": model_id,
              "operator_condition": "clean", "return_code": 0, "status": "completed",
+             "error": None, "started_utc": start_at, "ended_utc": end_at,
              "observed": {"before": self.snap, "after": self.snap, "caveats": []},
              "host_memory": {"source": "vm_stat: total - free - inactive - speculative; host-wide estimate",
-                             "samples": 30, "peak_gb_est": 8.5},
-             "artifacts_sha256": r.evidence_hashes(path)}
+                             "samples": 3, "peak_gb_est": 8.5, "unit": "GB decimal",
+                             "sampled_gb": [7.7, 8.5, 8.1]}}
+        r.write_once(path / "session_payload.json", s)
+        s["artifacts_sha256"] = r.evidence_hashes(path)
         r.write_once(path / "session.json", s)
         return path, model_id
 
@@ -159,7 +173,7 @@ class ReplicatedTests(unittest.TestCase):
         summ = r.load_json(raw / "summary.json")
         summ["prompts"]["short"]["wall_s"]["median"] = 999
         (raw / "summary.json").write_text(json.dumps(summ))
-        self.assertIn("median mismatch", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+        self.assertIn("median/range mismatch", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
         # Preserve, flag and disqualify truncated outputs instead of treating as successful responses.
         t = raw / "short-trial2.json"
         row = r.load_json(t)
@@ -191,7 +205,11 @@ class ReplicatedTests(unittest.TestCase):
         self.assertIn("Operator-selected condition", first)
         self.assertIn("vm_stat", first)
         self.assertIn("time to a correct/usable answer", first)
-        self.assertEqual(first.count("| short |"), 7)  # four model rows plus three contrasts
+        self.assertIn("Prompt tokens (model tokenizer)", first)
+        self.assertIn("Completion tokens median [min–max]", first)
+        self.assertIn("five kept trials and their ranges", first)
+        self.assertIn("50 [50–50]", first)
+        self.assertEqual(first.count("| short |"), 27)  # four models, three contrasts, 20 sessions
 
     def test_block_bootstrap_not_trial_bootstrap(self):
         result = r.bootstrap_median([1, 2, 3, 4, 5], 7)
@@ -211,6 +229,102 @@ class ReplicatedTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 r.run_block(self.root, 1, "clean", resume=True)
         self.assertEqual(r.load_json(p / "session.json")["status"], "failed")
+
+    def test_experiment_wide_lock_blocks_other_blocks_and_releases_after_error(self):
+        with r.experiment_lock(self.root):
+            with self.assertRaisesRegex(RuntimeError, "another benchmark block"):
+                r.run_block(self.root, 2, "clean")
+        # Also release after an exception; the file itself is intentionally persistent.
+        with self.assertRaisesRegex(ValueError, "test failure"):
+            with r.experiment_lock(self.root):
+                raise ValueError("test failure")
+        with r.experiment_lock(self.root):
+            self.assertTrue((self.root / ".experiment.lock").is_file())
+
+    def test_overlapping_synthetic_sessions_are_rejected_before_reporting(self):
+        for block in self.plan["schedule"]:
+            for pos in range(1, 5):
+                self.fixture(block["block"], pos, overlap=(block["block"] == 1 and pos == 2))
+        _, good, errors = r.validate(self.root)
+        self.assertEqual(len(good), 20)  # each individual session passes independently
+        self.assertIn("overlapping independent sessions", " ".join(errors))
+        with self.assertRaisesRegex(ValueError, "overlapping"):
+            r.report(self.root)
+
+    def test_reused_session_uuid_across_blocks_is_not_independent(self):
+        self.fixture(1, 1)
+        self.fixture(1, 2, duplicate_id=True)
+        _, good, errors = r.validate(self.root)
+        self.assertEqual(len(good), 2)
+        self.assertIn("reused session UUID", " ".join(errors))
+
+    def test_manifest_observations_cannot_be_edited_independently(self):
+        path, mid = self.fixture()
+        manifest = r.load_json(path / "session.json")
+        manifest["host_memory"]["peak_gb_est"] = 5.1
+        manifest["observed"]["caveats"].clear()
+        (path / "session.json").write_text(json.dumps(manifest))
+        self.assertIn("hashed session payload", " ".join(
+            r.validate_session(path, self.plan, 1, 1, mid)))
+
+    def test_sample_peak_is_verified_even_with_all_manifest_hashes_updated(self):
+        path, mid = self.fixture()
+        payload = r.load_json(path / "session_payload.json")
+        payload["host_memory"]["peak_gb_est"] = 7.2  # original max(sampled_gb) is 8.5
+        (path / "session_payload.json").write_text(json.dumps(payload))
+        manifest = dict(payload, artifacts_sha256=r.evidence_hashes(path))
+        (path / "session.json").write_text(json.dumps(manifest))
+        self.assertIn("host-wide memory estimate", " ".join(
+            r.validate_session(path, self.plan, 1, 1, mid)))
+
+    def test_busy_trial_derived_warning_cannot_be_suppressed_by_clean_label(self):
+        path, mid = self.fixture()
+        with mock.patch.object(r.sysinfo, "warnings", side_effect=lambda snap: (
+            ["busy: mediaanalysisd 225%"] if snap.get("top_cpu") else [])):
+            trial = path / "raw" / mid / "mlx-4bit-inproc" / "medium-trial1.json"
+            row = r.load_json(trial)
+            row["system"] = {**self.snap, "top_cpu": [{"proc": "mediaanalysisd", "cpu_pct": 225}]}
+            trial.write_text(json.dumps(row))
+            manifest = r.load_json(path / "session.json")
+            manifest["artifacts_sha256"] = r.evidence_hashes(path)
+            (path / "session.json").write_text(json.dumps(manifest))
+            errors = " ".join(r.validate_session(path, self.plan, 1, 1, mid))
+            self.assertIn("observed warning derivation mismatch", errors)
+            self.assertIn("summary warning derivation mismatch", errors)
+            self.assertEqual(manifest["operator_condition"], "clean")
+
+    def test_checkpoint_freeze_includes_config_tokenizer_and_template(self):
+        ckdir = self.root / "model"
+        ckdir.mkdir()
+        (ckdir / "config.json").write_text('{"model_type":"test"}')
+        (ckdir / "tokenizer.json").write_text('{"vocab":{}}')
+        (ckdir / "chat_template.jinja").write_text('hello')
+        (ckdir / "model.safetensors").write_bytes(b"mock-weights")
+        weights = {"model.safetensors": r.sha_file(ckdir / "model.safetensors")}
+        provdir = self.root / "evidence" / "model-x" / "p0"
+        provdir.mkdir(parents=True)
+        (provdir / "mlx-4bit-provenance.json").write_text(json.dumps({
+            "revision": "abc123", "files": [{"file": "model.safetensors",
+                                                "expected_sha256": weights["model.safetensors"]}]}))
+        ckpt = SimpleNamespace(local_path=ckdir, tag="mlx-4bit", hf_repo="vendor/model-x",
+                               tier="4bit", publisher="vendor", bits_per_weight=4.5,
+                               weights_gb=2.0, official=True)
+        cfg = SimpleNamespace(id="model-x", checkpoints={"mlx-4bit": ckpt},
+                              template_kwargs={"enable_thinking": False})
+        with mock.patch.object(r.gates, "problems", return_value=[]), \
+                mock.patch.object(r.gates, "fingerprint", return_value="fp"):
+            frozen = r.verified_identity(cfg, self.root / "evidence")
+            self.assertEqual(set(frozen["checkpoint_file_sha256"]), {
+                "config.json", "tokenizer.json", "chat_template.jinja"})
+            for changed in ("config.json", "tokenizer.json", "chat_template.jinja"):
+                target = ckdir / changed
+                original = target.read_text()
+                target.write_text(original + "changed")
+                self.assertNotEqual(r.verified_identity(cfg, self.root / "evidence"), frozen)
+                target.write_text(original)
+            (ckdir / "extra.safetensors").write_bytes(b"surprise")
+            with self.assertRaisesRegex(ValueError, "weight file set drift"):
+                r.verified_identity(cfg, self.root / "evidence")
 
 
 if __name__ == "__main__":
