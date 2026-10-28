@@ -7,8 +7,12 @@ and `MODELS.md` before touching an arm. This file is the operating contract.
 
 ## Commits
 
-Sole author and committer, every commit, forever:
-`imaddde867 <63160938+imaddde867@users.noreply.github.com>`.
+Own commits are authored and committed by
+`imaddde867 <63160938+imaddde867@users.noreply.github.com>`, every time.
+
+Accepted external contributors keep their original authorship on their commits:
+merge, never rewrite, re-author, or rebase their authorship onto ours. The merge
+commit itself is ours, so we remain the sole committer of record.
 
 No co-author trailers, no "generated with" footers, no emoji attribution, no tool
 names in commit messages or PR bodies. If a tooling default would add them, strip
