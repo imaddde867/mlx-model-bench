@@ -24,18 +24,20 @@ class ReplicatedTests(unittest.TestCase):
                                  "hf_repo": f"vendor/{m}", "publisher": "vendor", "bpw": 4.5,
                                  "weights_gb": 2.0, "template_kwargs": {"enable_thinking": False}}
                                 for m in self.ids],
-                     "prompts": [{"regime": p, "sha256": "abc"} for p in r.REGIMES],
+                     "prompts": [{"regime": p, "path": f"prompts/replicated/{p}.txt", "sha256": "abc"}
+                                 for p in r.REGIMES],
                      "settings": {"transport": "inproc", "engine": "mlx_lm",
                                   "temperature": 0.0, "nonce": False,
                                   "prompt_cache": "none (fresh process, no prompt_cache)",
                                   "max_tokens": 256, "warmups_per_regime": 1,
                                   "kept_trials_per_regime": 5},
                      "schedule": r.schedule(self.ids, 23), "source_commit": "f" * 40,
-                     "machine": {"arch": "arm64", "macos": "27.0.1",
+                     "evidence_dir": str(self.root),
+                     "machine": {"arch": "arm64", "macos": "27.0.1", "ram_bytes": 16 * 2**30,
                                  "packages": {"mlx": "0.32.4", "mlx-lm": "0.32.2"}}}
         self.plan["plan_id"] = r.digest(self.plan)
         r.write_once(self.root / "plan.json", self.plan)
-        self.snap = {"power": "ac", "cpu_speed_limit_pct": 100, "swap_used_gb": 0,
+        self.snap = {"power": "ac", "low_power_mode": 0, "cpu_speed_limit_pct": 100, "swap_used_gb": 0,
                      "mem_free_pct": 70, "top_cpu": [], "load_1m": 1.0}
 
     def fixture(self, block=1, pos=1, corrupt=None, overlap=False, duplicate_id=False):
@@ -49,7 +51,7 @@ class ReplicatedTests(unittest.TestCase):
         start_at = start.isoformat()
         end_at = (start + timedelta(seconds=30)).isoformat()
         sid = "session-1-1" if duplicate_id else f"session-{block}-{pos}"
-        started = {"schema": 1, "session_id": sid, "plan_id": self.plan["plan_id"],
+        started = {"schema": r.VERSION, "session_id": sid, "plan_id": self.plan["plan_id"],
                    "block": block, "position": pos, "model_id": model_id,
                    "operator_condition": "clean", "pre_system": self.snap,
                    "started_utc": start_at}
@@ -73,9 +75,9 @@ class ReplicatedTests(unittest.TestCase):
                        "template_kwargs": {"enable_thinking": False},
                        "hf_repo": f"vendor/{model_id}", "publisher": "vendor",
                        "versions": self.plan["machine"]["packages"],
-                       "prompt_file": f"/source/prompts/speed/{regime}.txt",
+                       "prompt_file": str(ROOT / "prompts" / "replicated" / f"{regime}.txt"),
                        "system": self.snap, "started_at": start_at,
-                       "finish_reason": "stop", "wall_s": 1.0 + ri + trial / 10,
+                       "finish_reason": "stop", "text": "Synthetic answer", "wall_s": 1.0 + ri + trial / 10,
                        "request_ttft_s": 0.1 + trial / 100, "peak_gb": 2 + trial / 10,
                        "prompt_tokens": 80 + ri * 100, "generation_tokens": 50}
                 r.write_once(raw / f"{regime}-{'warmup' if trial == 0 else f'trial{trial}'}.json", row)
@@ -89,13 +91,13 @@ class ReplicatedTests(unittest.TestCase):
                                              for k in ("wall_s", "request_ttft_s", "peak_gb", "generation_tokens")}}
         r.write_once(raw / "summary.json", summary)
         (path / "bench.log").write_text("simulated - not real inference\n")
-        s = {"schema": 1, "session_id": sid, "plan_id": self.plan["plan_id"],
+        s = {"schema": r.VERSION, "session_id": sid, "plan_id": self.plan["plan_id"],
              "block": block, "position": pos, "model_id": model_id,
              "operator_condition": "clean", "return_code": 0, "status": "completed",
              "error": None, "started_utc": start_at, "ended_utc": end_at,
              "observed": {"before": self.snap, "after": self.snap, "caveats": []},
              "host_memory": {"source": "vm_stat: total - free - inactive - speculative; host-wide estimate",
-                             "samples": 3, "peak_gb_est": 8.5, "unit": "GB decimal",
+                             "samples": 3, "peak_gb_est": 8.5, "unit": "GB decimal", "interval_s": 0.5,
                              "sampled_gb": [7.7, 8.5, 8.1]}}
         r.write_once(path / "session_payload.json", s)
         s["artifacts_sha256"] = r.evidence_hashes(path)
@@ -113,6 +115,16 @@ class ReplicatedTests(unittest.TestCase):
         for block in seq:
             self.assertEqual(set(block["order"]), set(self.ids))
 
+    def test_replicated_prompts_match_task_and_preserve_context(self):
+        question = "Question: For how many years has the lighthouse not been lit? Reply in exactly two words; give only the duration."
+        speed = ROOT / "prompts" / "speed"
+        for regime in r.REGIMES:
+            text = (r.PROMPT_DIR / f"{regime}.txt").read_text()
+            original = (speed / f"{regime if regime != 'short' else 'medium'}.txt").read_text().strip()
+            if regime == "short":
+                original = original.split("\n\n")[0]
+            self.assertEqual(text, original + "\n\n" + question + "\n")
+
     def test_plan_is_content_addressed_and_tamper_detected(self):
         r.check_plan(self.plan)
         broken = dict(self.plan, seed=99)
@@ -120,6 +132,11 @@ class ReplicatedTests(unittest.TestCase):
             r.check_plan(broken)
         broken["plan_id"] = r.digest({k: v for k, v in broken.items() if k != "plan_id"})
         with self.assertRaisesRegex(ValueError, "run order"):
+            r.check_plan(broken)
+        broken = {**self.plan, "prompts": [dict(p) for p in self.plan["prompts"]]}
+        broken["prompts"][0]["path"] = "prompts/speed/short.txt"
+        broken["plan_id"] = r.digest({k: v for k, v in broken.items() if k != "plan_id"})
+        with self.assertRaisesRegex(ValueError, "wrong replicated prompt path"):
             r.check_plan(broken)
 
     def test_mac_gate_excludes_other_16gb_macs_and_linux(self):
@@ -132,6 +149,25 @@ class ReplicatedTests(unittest.TestCase):
                         {"packages": {"mlx": "0.32.5", "mlx-lm": "0.32.2"}}):
             with self.subTest(changed=changed), self.assertRaises(ValueError):
                 r.require_mac(dict(m, **changed))
+
+    def test_block_host_preflight_requires_ac_and_low_power_mode_off(self):
+        model = {"model_id": "model-a"}
+        plan = {"machine": {}, "source_commit": "commit", "prompts": [],
+                "models": [model], "evidence_dir": str(self.root)}
+        with mock.patch.object(r, "machine", return_value={}), \
+             mock.patch.object(r, "require_mac"), mock.patch.object(r, "git_head", return_value="commit"), \
+             mock.patch.dict(r.registry.MODELS, {"model-a": object()}), \
+             mock.patch.object(r, "verified_identity", return_value=model), \
+             mock.patch.object(r.sysinfo, "snapshot") as snap:
+            snap.return_value = {"power": "ac", "low_power_mode": 0}
+            r.verify_host(plan)
+            for condition in ({"power": "battery", "low_power_mode": 0},
+                              {"power": None, "low_power_mode": 0},
+                              {"power": "ac", "low_power_mode": 1},
+                              {"power": "ac", "low_power_mode": None}):
+                with self.subTest(condition=condition), self.assertRaises(ValueError):
+                    snap.return_value = condition
+                    r.verify_host(plan)
 
     def test_vm_stat_estimate_is_explicit_and_fails_closed(self):
         s = "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free: 100.\nPages inactive: 200.\nPages speculative: 50.\n"
@@ -154,6 +190,12 @@ class ReplicatedTests(unittest.TestCase):
         data["wall_s"] = 400
         trial.write_text(json.dumps(data))
         self.assertIn("SHA256", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+
+    def test_missing_condition_measurements_are_not_silent(self):
+        snap = dict(self.snap, power=None, low_power_mode=None, cpu_speed_limit_pct=None, top_cpu=None)
+        warnings = r.observed_caveats(snap, self.snap, [])
+        for label in ("power source", "low power mode", "CPU thermal speed limit", "CPU interference"):
+            self.assertIn(label + " unavailable", " ".join(warnings))
 
     def test_condition_label_not_rewritten_by_observed_cpu(self):
         p, mid = self.fixture()
@@ -182,6 +224,47 @@ class ReplicatedTests(unittest.TestCase):
         self.assertIn("truncated", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
         (raw / "long-trial5.json").unlink()
         self.assertIn("absent evidence", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+
+    def test_recorded_prompt_path_must_name_frozen_prompt_not_historical_prompt(self):
+        p, mid = self.fixture()
+        trial = p / "raw" / mid / "mlx-4bit-inproc" / "short-trial1.json"
+        row = r.load_json(trial)
+        row["prompt_file"] = "/different-checkout/prompts/replicated/short.txt"
+        trial.write_text(json.dumps(row))
+        self.assertNotIn("prompt file identity", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+        row["prompt_file"] = "/different-checkout/prompts/speed/short.txt"
+        trial.write_text(json.dumps(row))
+        self.assertIn("prompt file identity", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+
+    def test_stop_reason_and_inprocess_answer_are_validated(self):
+        p, mid = self.fixture()
+        trial = p / "raw" / mid / "mlx-4bit-inproc" / "short-trial1.json"
+        original = r.load_json(trial)
+        for changes, expected in [
+            ({"finish_reason": "cancelled"}, "unknown stop reason"),
+            ({"text": ""}, "empty or reasoning-only"),
+            ({"text": "<think>unfinished"}, "empty or reasoning-only"),
+            ({"text": "<think>reasoning</think>  "}, "empty or reasoning-only"),
+        ]:
+            with self.subTest(changes=changes):
+                trial.write_text(json.dumps({**original, **changes}))
+                self.assertIn(expected, " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+        trial.write_text(json.dumps({**original, "text": "<think>reasoning</think> answer"}))
+        self.assertNotIn("empty or reasoning-only", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
+
+    def test_invalid_metric_domains_rejected(self):
+        p, mid = self.fixture()
+        trial = p / "raw" / mid / "mlx-4bit-inproc" / "short-trial1.json"
+        original = r.load_json(trial)
+        for changes, expected in [
+            ({"prompt_tokens": float("inf")}, "missing/invalid prompt_tokens"),
+            ({"generation_tokens": 2.5}, "generation_tokens must be an integer"),
+            ({"generation_tokens": 257}, "generation exceeds token cap"),
+            ({"request_ttft_s": 5.0}, "TTFT exceeds response-end"),
+        ]:
+            with self.subTest(changes=changes):
+                trial.write_text(json.dumps({**original, **changes}))
+                self.assertIn(expected, " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
 
     def test_incomplete_design_cannot_be_reported(self):
         p, mid = self.fixture()
@@ -226,9 +309,31 @@ class ReplicatedTests(unittest.TestCase):
         s["status"] = "failed"
         (p / "session.json").write_text(json.dumps(s))
         with mock.patch.object(r, "verify_host"):
-            with self.assertRaises(FileExistsError):
+            with self.assertRaisesRegex(ValueError, "existing session evidence is invalid"):
                 r.run_block(self.root, 1, "clean", resume=True)
         self.assertEqual(r.load_json(p / "session.json")["status"], "failed")
+
+    def test_later_block_refuses_missing_previous_sessions_before_inference(self):
+        with mock.patch.object(r, "verify_host") as host, mock.patch.object(r.subprocess, "run") as run:
+            with self.assertRaisesRegex(ValueError, "prior session"):
+                r.run_block(self.root, 2, "clean")
+        host.assert_not_called()
+        run.assert_not_called()
+        self.assertFalse((self.root / "sessions").exists())
+
+    def test_completed_process_with_invalid_evidence_stops_the_block(self):
+        sampler = mock.MagicMock()
+        sampler.stop.return_value = {"sampled_gb": []}
+        with mock.patch.object(r, "verify_host"), \
+             mock.patch.object(r, "MemorySampler", return_value=sampler), \
+             mock.patch.object(r.sysinfo, "snapshot", return_value=self.snap), \
+             mock.patch.object(r.subprocess, "run", return_value=SimpleNamespace(returncode=0)) as run:
+            with self.assertRaisesRegex(RuntimeError, "invalid and preserved"):
+                r.run_block(self.root, 1, "clean")
+        self.assertEqual(run.call_count, 1)
+        command = run.call_args.args[0]
+        self.assertEqual(command[command.index("--prompt-dir") + 1], str(r.PROMPT_DIR))
+        self.assertEqual(len(list((self.root / "sessions").iterdir())), 1)
 
     def test_experiment_wide_lock_blocks_other_blocks_and_releases_after_error(self):
         with r.experiment_lock(self.root):

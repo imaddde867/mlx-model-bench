@@ -61,6 +61,12 @@ def parse_power(text):
     return "ac" if "AC" in m.group(1) else "battery"
 
 
+def parse_low_power_mode(text):
+    """`pmset -g` current low-power mode: 0 (off), 1 (on), or None."""
+    m = re.search(r"^\s*lowpowermode\s+([01])\s*$", text or "", re.M)
+    return int(m.group(1)) if m else None
+
+
 def parse_cpu_speed_limit(text):
     """`pmset -g therm` -> CPU_Speed_Limit percent (100 = not throttled), None if unreported."""
     m = re.search(r"CPU_Speed_Limit\s*=\s*(\d+)", text or "")
@@ -96,13 +102,15 @@ def snapshot():
         load1 = round(os.getloadavg()[0], 2)
     except (OSError, AttributeError):
         load1 = None
+    processes = _run(["ps", "-Ao", "pid=,pcpu=,comm=", "-r"])
     return {
         "swap_used_gb": parse_swap(_run(["sysctl", "-n", "vm.swapusage"])),
         "mem_free_pct": parse_free_pct(_run(["memory_pressure"])),
         "power": parse_power(_run(["pmset", "-g", "batt"])),
+        "low_power_mode": parse_low_power_mode(_run(["pmset", "-g"])),
         "cpu_speed_limit_pct": parse_cpu_speed_limit(_run(["pmset", "-g", "therm"])),
         "load_1m": load1,
-        "top_cpu": parse_top_cpu(_run(["ps", "-Ao", "pid=,pcpu=,comm=", "-r"]), os.getpid()),
+        "top_cpu": parse_top_cpu(processes, os.getpid()) if processes is not None else None,
     }
 
 
@@ -111,6 +119,8 @@ def warnings(snap):
     out = []
     if snap.get("power") == "battery":
         out.append("on battery: macOS may cap performance")
+    if snap.get("low_power_mode") == 1:
+        out.append("low power mode enabled: performance may be capped")
     if (snap.get("cpu_speed_limit_pct") or 100) < 100:
         out.append(f"thermal throttle: CPU speed limit {snap['cpu_speed_limit_pct']}%")
     if (snap.get("swap_used_gb") or 0) > WARN_SWAP_GB:
@@ -118,7 +128,7 @@ def warnings(snap):
     free = snap.get("mem_free_pct")
     if free is not None and free < WARN_FREE_PCT:
         out.append(f"memory free {free}%: under pressure")
-    busy = [p for p in snap.get("top_cpu", []) if p["cpu_pct"] >= WARN_OTHER_CPU_PCT]
+    busy = [p for p in (snap.get("top_cpu") or []) if p["cpu_pct"] >= WARN_OTHER_CPU_PCT]
     if busy:
         out.append("busy: " + ", ".join(f"{p['proc']} {p['cpu_pct']:.0f}%" for p in busy))
     return out

@@ -40,6 +40,12 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(sysinfo.parse_power("Now drawing from 'Battery Power'"), "battery")
         self.assertIsNone(sysinfo.parse_power(""))
 
+    def test_low_power_mode_current_setting(self):
+        self.assertEqual(sysinfo.parse_low_power_mode("Currently in use:\n lowpowermode 1\n"), 1)
+        self.assertEqual(sysinfo.parse_low_power_mode(" lowpowermode 0\n"), 0)
+        self.assertIsNone(sysinfo.parse_low_power_mode("not reported"))
+        self.assertIn("low power mode", " ".join(sysinfo.warnings({**QUIET, "low_power_mode": 1})))
+
     def test_thermal_limit_absent_is_unknown_not_100(self):
         self.assertEqual(sysinfo.parse_cpu_speed_limit("CPU_Speed_Limit = 80"), 80)
         self.assertIsNone(sysinfo.parse_cpu_speed_limit("Note: No thermal warning level has been recorded"))
@@ -69,7 +75,7 @@ class ParserTests(unittest.TestCase):
         with patch.object(sysinfo.subprocess, "run", side_effect=FileNotFoundError):
             snap = sysinfo.snapshot()
         self.assertIsNone(snap["swap_used_gb"])
-        self.assertEqual(snap["top_cpu"], [])
+        self.assertIsNone(snap["top_cpu"])
 
 
 class SpreadTests(unittest.TestCase):
@@ -90,7 +96,7 @@ class RecordingTests(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def run_cli(self, ttfts, extra=(), snap=QUIET):
+    def run_cli(self, ttfts, extra=(), snap=QUIET, prompt_dir=None):
         cfg = registry.get_model("nemotron-3.5-bolt")
         rows = iter({**self.GOOD, "ttft_s": t} for t in [ttfts[0]] + list(ttfts))
 
@@ -98,6 +104,11 @@ class RecordingTests(unittest.TestCase):
             temp = Path(temp_dir)
             (temp / "prompts" / "speed").mkdir(parents=True)
             (temp / "prompts" / "speed" / "fixture.txt").write_text("synthetic prompt")
+            if prompt_dir:
+                custom = temp / prompt_dir
+                custom.mkdir()
+                (custom / "fixture.txt").write_text("alternate synthetic prompt")
+                extra = (*extra, "--prompt-dir", str(custom))
             argv = ["bench.py", "--model", cfg.id, "--checkpoint", "mlx-4bit", "--prompts", "fixture",
                     "--trials", str(len(ttfts)), "--max-tokens", "8", "--out", str(temp), *extra]
             with (
@@ -115,6 +126,13 @@ class RecordingTests(unittest.TestCase):
             summary = json.loads((out / "summary.json").read_text())
             trial = json.loads((out / "fixture-trial1.json").read_text())
             return status, summary, trial
+
+    def test_named_prompt_uses_selected_directory(self):
+        _, summary, trial = self.run_cli([0.1] * 5, prompt_dir="alternate")
+        self.assertEqual(Path(trial["prompt_file"]).parent.name, "alternate")
+        self.assertEqual(trial["prompt"], "fixture")
+        self.assertEqual(summary["prompts"]["fixture"]["kept_ok"], 5)
+        self.assertTrue(summary["publishable"])
 
     def test_every_trial_records_its_own_start_and_the_system_snapshot(self):
         _, _, trial = self.run_cli([0.1] * 5)

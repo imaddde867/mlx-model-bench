@@ -421,6 +421,8 @@ def main():
     ap.add_argument("--transport", choices=("inproc", "http"), default="inproc")
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--prompts", nargs="+", default=["short", "medium", "long", "decode-short", "decode-long"])
+    ap.add_argument("--prompt-dir", type=Path, default=PROMPTS / "speed",
+                    help="directory for named prompts (default: prompts/speed)")
     ap.add_argument("--max-tokens", type=int, default=256)
     ap.add_argument("--temperature", type=float, default=0.0,
                     help="default 0.0 = greedy. Any other value makes this a deviation row")
@@ -547,7 +549,7 @@ def main():
     for name in args.prompts:
         path = Path(name)
         if not path.suffix:
-            path = PROMPTS / "speed" / f"{name}.txt"
+            path = args.prompt_dir / f"{name}.txt"
         text = path.read_text()
 
         for i in range(args.trials + 1):
