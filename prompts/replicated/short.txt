@@ -1,0 +1,3 @@
+At the northern edge of the bay stands a lighthouse that has not been lit for forty years. Its stone has weathered to the colour of old paper, and the iron gallery has rusted into a lace of holes. Sailors still use it as a landmark, though they no longer depend on it for warning. On clear evenings the tower throws a long shadow across the water, and the shadow moves with the tide in a way that seems almost deliberate.
+
+Question: For how many years has the lighthouse not been lit? Reply in exactly two words; give only the duration.

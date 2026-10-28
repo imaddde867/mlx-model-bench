@@ -31,9 +31,10 @@ import sysinfo
 
 ROOT = Path(__file__).resolve().parent
 REGIMES = ("short", "medium", "long")
+PROMPT_DIR = ROOT / "prompts" / "replicated"
 N_BLOCKS = 5
 N_TRIALS = 5
-VERSION = 1
+VERSION = 2
 PACKAGES = ("mlx", "mlx-lm", "mlx-optiq", "transformers")
 PINNED = {"mlx": "0.32.4", "mlx-lm": "0.32.2"}
 
@@ -200,7 +201,7 @@ def make_plan(evidence, seed, m=None, source_commit=None):
               for model_id in registry.ORDER]
     prompts = []
     for regime in REGIMES:
-        path = ROOT / "prompts" / "speed" / f"{regime}.txt"
+        path = PROMPT_DIR / f"{regime}.txt"
         prompts.append({"regime": regime, "path": str(path.relative_to(ROOT)),
                         "sha256": sha_file(path), "bytes": path.stat().st_size})
     doc = {"schema": VERSION, "created_utc": now(), "source_commit": source_commit,
@@ -229,6 +230,10 @@ def check_plan(plan):
         raise ValueError("fewer than five independent session blocks")
     if [p["regime"] for p in plan["prompts"]] != list(REGIMES):
         raise ValueError("changed prompt regimes")
+    for p in plan["prompts"]:
+        expected = (PROMPT_DIR / f"{p['regime']}.txt").relative_to(ROOT).as_posix()
+        if p.get("path") != expected:
+            raise ValueError(f"wrong replicated prompt path for {p['regime']}")
     if plan["settings"] != {"transport": "inproc", "engine": "mlx_lm",
           "temperature": 0.0, "nonce": False,
           "prompt_cache": "none (fresh process, no prompt_cache)",
@@ -249,6 +254,11 @@ def verify_host(plan):
         actual = verified_identity(registry.MODELS[frozen["model_id"]], plan["evidence_dir"])
         if actual != frozen:
             raise ValueError(f"checkpoint/provenance drift: {frozen['model_id']}")
+    current = sysinfo.snapshot()
+    if current.get("power") != "ac":
+        raise ValueError("AC power must be observed before each block")
+    if current.get("low_power_mode") != 0:
+        raise ValueError("low power mode must be observed off before each block")
 
 
 def slot_path(folder, block, pos, model_id):
@@ -323,8 +333,15 @@ def trial_rows(raw):
 def observed_caveats(before, after, trials):
     """Derive warnings from preserved snapshots, never the operator's label."""
     snapshots = [before, after] + [r.get("system") for r in trials]
-    return sorted({warning for snap in snapshots if isinstance(snap, dict)
-                   for warning in sysinfo.warnings(snap)})
+    warnings = {warning for snap in snapshots if isinstance(snap, dict)
+                for warning in sysinfo.warnings(snap)}
+    for field, label in (("power", "power source"), ("low_power_mode", "low power mode"),
+                         ("cpu_speed_limit_pct", "CPU thermal speed limit"),
+                         ("swap_used_gb", "swap usage"), ("mem_free_pct", "memory pressure"),
+                         ("top_cpu", "CPU interference")):
+        if any(not isinstance(snap, dict) or snap.get(field) is None for snap in snapshots):
+            warnings.add(f"{label} unavailable in one or more snapshots")
+    return sorted(warnings)
 
 
 @contextmanager
@@ -357,6 +374,24 @@ def _run_block_locked(folder, block, condition, resume, timeout_s):
     check_plan(plan)
     if not 1 <= block <= len(plan["schedule"]):
         raise ValueError("invalid block")
+    # Never launch after incomplete, reordered, overlapping or duplicate evidence.
+    # validate() also detects unexpected slots and checks global chronology.
+    _, _, existing_errors = validate(folder)
+    missing = []
+    for item in plan["schedule"]:
+        for pos, model_id in enumerate(item["order"], 1):
+            path = slot_path(folder, item["block"], pos, model_id)
+            if not path.is_dir():
+                missing.append((item["block"], pos, path.name))
+    expected_missing = {f"{name}: missing independent session" for _, _, name in missing}
+    other_errors = [e for e in existing_errors if e not in expected_missing]
+    if other_errors:
+        raise ValueError("existing session evidence is invalid: " + "; ".join(other_errors))
+    if any(b < block for b, _, _ in missing):
+        raise ValueError("prior session is missing; blocks must run in order")
+    existing = len(plan["schedule"]) * 4 - len(missing)
+    if missing and existing != (missing[0][0] - 1) * 4 + missing[0][1] - 1:
+        raise ValueError("existing sessions are not a contiguous schedule prefix")
     verify_host(plan)  # before any new directory or inference
     order = plan["schedule"][block - 1]["order"]
     root = folder / "sessions"
@@ -383,7 +418,7 @@ def _run_block_locked(folder, block, condition, resume, timeout_s):
                    "--transport", "inproc", "--session-id", session_id,
                    "--trials", str(N_TRIALS),
                    "--max-tokens", "256", "--no-nonce", "--condition", condition,
-                   "--prompts", *REGIMES, "--out", str(raw),
+                   "--prompts", *REGIMES, "--prompt-dir", str(PROMPT_DIR), "--out", str(raw),
                    "--evidence", plan["evidence_dir"]]
         sampler = MemorySampler(plan["machine"]["ram_bytes"])
         rc = None
@@ -423,6 +458,9 @@ def _run_block_locked(folder, block, condition, resume, timeout_s):
         print(f"{model_id} block {block} position {pos}: rc={rc}; {path}")
         if rc != 0:
             raise RuntimeError(f"session failed and is preserved: {path}")
+        issues = validate_session(path, plan, block, pos, model_id)
+        if issues:
+            raise RuntimeError(f"session evidence is invalid and preserved: {path}: {'; '.join(issues)}")
 
 
 def close(a, b):
@@ -474,6 +512,7 @@ def validate_session(folder, plan, block, pos, model_id):
         mem = s.get("host_memory") or {}
         samples = mem.get("sampled_gb")
         if (mem.get("source") != "vm_stat: total - free - inactive - speculative; host-wide estimate"
+                or mem.get("interval_s") != 0.5
                 or not isinstance(samples, list) or not samples
                 or not all(isinstance(x, (int, float)) and not isinstance(x, bool)
                            and math.isfinite(x) and 0 <= x <= 1e3 for x in samples)
@@ -525,18 +564,36 @@ def validate_session(folder, plan, block, pos, model_id):
                         errors.append(f"{regime} trial{i}: {k} mismatch")
                 if not isinstance(row.get("system"), dict) or not row.get("started_at"):
                     errors.append(f"{regime} trial{i}: system/time provenance missing")
-                if Path(row.get("prompt_file", "")).name != f"{regime}.txt":
+                recorded_path = Path(row.get("prompt_file", ""))
+                expected_parts = Path(prompt["path"]).parts
+                if (not recorded_path.is_absolute()
+                        or recorded_path.parts[-len(expected_parts):] != expected_parts):
                     errors.append(f"{regime} trial{i}: prompt file identity mismatch")
                 if row.get("versions") != plan["machine"]["packages"]:
                     errors.append(f"{regime} trial{i}: runtime version mismatch")
-                if row.get("finish_reason") is None:
-                    errors.append(f"{regime} trial{i}: missing stop reason")
-                if row.get("finish_reason") in ("length", "max_tokens") or row.get("reasoning_only"):
-                    errors.append(f"{regime} trial{i}: truncated or reasoning-only response")
+                if row.get("finish_reason") != "stop":
+                    errors.append(f"{regime} trial{i}: truncated or unknown stop reason")
+                text = row.get("text")
+                if (not isinstance(text, str) or not text.strip()
+                        or ("</think>" in text and not text.rsplit("</think>", 1)[1].strip())
+                        or (text.lstrip().startswith("<think>") and "</think>" not in text)
+                        or row.get("reasoning_only")):
+                    errors.append(f"{regime} trial{i}: empty or reasoning-only response")
                 for metric in ("wall_s", "request_ttft_s", "peak_gb", "prompt_tokens", "generation_tokens"):
                     value = row.get(metric)
-                    if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+                    if (not isinstance(value, (int, float)) or isinstance(value, bool)
+                            or not math.isfinite(value) or value <= 0):
                         errors.append(f"{regime} trial{i}: missing/invalid {metric}")
+                for metric in ("prompt_tokens", "generation_tokens"):
+                    if type(row.get(metric)) is not int:
+                        errors.append(f"{regime} trial{i}: {metric} must be an integer")
+                if type(row.get("generation_tokens")) is int and row["generation_tokens"] > 256:
+                    errors.append(f"{regime} trial{i}: generation exceeds token cap")
+                wall, ttft = row.get("wall_s"), row.get("request_ttft_s")
+                # wall_s is rounded to milliseconds; request_ttft_s to 0.1 ms.
+                if (type(wall) in (int, float) and type(ttft) in (int, float)
+                        and math.isfinite(wall) and math.isfinite(ttft) and ttft > wall + 0.00055):
+                    errors.append(f"{regime} trial{i}: TTFT exceeds response-end wall time")
             if len({row.get("prompt_tokens") for row in rows}) != 1:
                 errors.append(f"{regime}: inconsistent tokenizer prompt counts")
             declared = summary["prompts"].get(regime, {})
@@ -558,7 +615,8 @@ def validate_session(folder, plan, block, pos, model_id):
         expected_warnings = observed_caveats(started["pre_system"], s["observed"]["after"], all_rows)
         if s["observed"].get("caveats") != expected_warnings:
             errors.append("observed warning derivation mismatch")
-        kept_warnings = observed_caveats({}, {}, kept_rows)
+        kept_warnings = sorted({warning for row in kept_rows
+                                for warning in sysinfo.warnings(row.get("system") or {})})
         if summary.get("condition_caveats") != kept_warnings:
             errors.append("summary warning derivation mismatch")
         actual_trial_files = {p.name for p in raw.glob("*.json") if p.name != "summary.json"}
