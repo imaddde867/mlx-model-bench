@@ -1,0 +1,10 @@
+# Experimental LFM3 venv (.venv-lfm3), separate from .venv-mlxlm on purpose:
+# mlx-lm here is the unmerged PR ml-explore/mlx-lm#2016, not the 0.32.2 benchmark pin.
+mlx==0.32.4
+mlx-lm @ git+https://github.com/ml-explore/mlx-lm@9027ac5b062175fba890c612c3905d5d8d5b5294
+huggingface-hub==1.33.0
+# Reference side only (make_fixture.py). LiquidAI's remote modeling_lfm3.py imports
+# use_kernel_func_from_hub_with_fallback, which needs transformers >= 5.21, not the
+# 5.12.1 its config.json names.
+transformers==5.21.0
+torch==2.14.1
