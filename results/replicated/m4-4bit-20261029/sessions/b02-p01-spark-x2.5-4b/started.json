@@ -1,0 +1,40 @@
+{
+  "block": 2,
+  "model_id": "spark-x2.5-4b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 1,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 3.16,
+    "low_power_mode": 0,
+    "mem_free_pct": 71,
+    "power": "ac",
+    "swap_used_gb": 2.36,
+    "top_cpu": [
+      {
+        "cpu_pct": 18.4,
+        "proc": "WindowServer"
+      },
+      {
+        "cpu_pct": 7.1,
+        "proc": "Codex (Renderer)"
+      },
+      {
+        "cpu_pct": 4.5,
+        "proc": "Codex (Service)"
+      },
+      {
+        "cpu_pct": 1.3,
+        "proc": "codex"
+      },
+      {
+        "cpu_pct": 1.0,
+        "proc": "locationd"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "4824a260c6e94594be0e4809444027d7",
+  "started_utc": "2026-10-29T04:27:09.054454+00:00"
+}

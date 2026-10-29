@@ -1,0 +1,19 @@
+{
+  "block": 5,
+  "model_id": "lfm2.5-8b-a1b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 1,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.29,
+    "low_power_mode": 0,
+    "mem_free_pct": 61,
+    "power": "ac",
+    "swap_used_gb": 3.671,
+    "top_cpu": []
+  },
+  "schema": 2,
+  "session_id": "0aad1e2fa52d4adebacf0d146190a85d",
+  "started_utc": "2026-10-29T05:03:24.849762+00:00"
+}

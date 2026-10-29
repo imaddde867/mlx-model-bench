@@ -1,0 +1,297 @@
+{
+  "model_id": "nemotron-3.5-bolt",
+  "model_name": "NVIDIA Nemotron 3.5 Bolt E4B",
+  "hf_repo": "rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": false,
+  "weights_gb": 4.2,
+  "bits_per_weight": 4.5,
+  "publisher": "third-party:rapid-mlx",
+  "params_total": 7.463,
+  "params_active": 4.0,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": "fede0873ad35432a8a8259ffbeaa96d7",
+  "evidence_dir": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "model": "models/rapid-mlx-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 512,
+  "template_kwargs": {
+    "enable_thinking": false,
+    "conversational_mode": true
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "load_s": 2.5,
+  "load_peak_gb": 4.201,
+  "load_peak_gb_source": "mx_peak",
+  "base_url": null,
+  "runs_ok": 15,
+  "runs_failed": 0,
+  "reasoning_only_runs": 0,
+  "prompts": {
+    "short": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 160,
+      "ttft_s": {
+        "median": 0.2905,
+        "min": 0.2859,
+        "max": 0.295,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 550.9,
+        "min": 542.4,
+        "max": 559.7,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 33.7,
+        "min": 32.8,
+        "max": 34.4,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.48,
+        "min": 4.48,
+        "max": 4.48,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 0.393,
+        "min": 0.386,
+        "max": 0.399,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 0.2905,
+        "min": 0.2859,
+        "max": 0.295,
+        "n": 5
+      },
+      "prep_s": {
+        "median": 0.0003,
+        "min": 0.0002,
+        "max": 0.0003,
+        "n": 5
+      },
+      "engine_ttft_s": {
+        "median": 0.2902,
+        "min": 0.2856,
+        "max": 0.2947,
+        "n": 5
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 5,
+      "spread_ratio": {
+        "ttft_s": 1.03,
+        "decode_tps": 1.05
+      }
+    },
+    "medium": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 1054,
+      "ttft_s": {
+        "median": 1.6606,
+        "min": 1.6473,
+        "max": 1.6814,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 634.7,
+        "min": 626.9,
+        "max": 639.8,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 32.4,
+        "min": 31.7,
+        "max": 33.5,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.888,
+        "min": 4.888,
+        "max": 4.888,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 1.768,
+        "min": 1.75,
+        "max": 1.787,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 1.6606,
+        "min": 1.6473,
+        "max": 1.6814,
+        "n": 5
+      },
+      "prep_s": {
+        "median": 0.0003,
+        "min": 0.0002,
+        "max": 0.0003,
+        "n": 5
+      },
+      "engine_ttft_s": {
+        "median": 1.6604,
+        "min": 1.6471,
+        "max": 1.6811,
+        "n": 5
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 5,
+      "spread_ratio": {
+        "ttft_s": 1.02,
+        "decode_tps": 1.06
+      }
+    },
+    "long": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 8369,
+      "ttft_s": {
+        "median": 14.5964,
+        "min": 14.4687,
+        "max": 15.107,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 573.4,
+        "min": 554.0,
+        "max": 578.4,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 31.4,
+        "min": 25.9,
+        "max": 31.7,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 5.089,
+        "min": 5.089,
+        "max": 5.089,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 14.709,
+        "min": 14.578,
+        "max": 15.216,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 14.5964,
+        "min": 14.4687,
+        "max": 15.107,
+        "n": 5
+      },
+      "prep_s": {
+        "median": 0.0003,
+        "min": 0.0002,
+        "max": 0.0005,
+        "n": 5
+      },
+      "engine_ttft_s": {
+        "median": 14.5959,
+        "min": 14.4683,
+        "max": 15.1067,
+        "n": 5
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 5,
+      "spread_ratio": {
+        "ttft_s": 1.04,
+        "decode_tps": 1.22
+      }
+    }
+  },
+  "memory": {
+    "source": "mx_peak",
+    "sources_seen": [
+      "mx_peak"
+    ],
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "unavailable_rows": 0,
+    "weights_gb_is": "checkpoint file size, not runtime memory"
+  },
+  "condition": "clean",
+  "condition_caveats": [
+    "busy: PerfPowerServices 28%, WindowServer 22%",
+    "busy: WindowServer 16%",
+    "busy: WindowServer 20%",
+    "busy: WindowServer 22%",
+    "busy: WindowServer 23%, Codex (Renderer) 17%",
+    "busy: WindowServer 24%, com.apple.Safari.SafeBrowsing.Service 17%",
+    "busy: WindowServer 29%",
+    "busy: WindowServer 32%, node 20%, Codex (Renderer) 18%",
+    "busy: WindowServer 33%",
+    "busy: WindowServer 35%",
+    "busy: WindowServer 45%",
+    "swap in use: 2.424 GB (the model may be paging)",
+    "swap in use: 2.44 GB (the model may be paging)"
+  ],
+  "outcome": "completed",
+  "publishable": true,
+  "non_publishable_reasons": []
+}

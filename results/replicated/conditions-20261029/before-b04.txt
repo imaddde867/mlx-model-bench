@@ -1,0 +1,29 @@
+{
+  "swap_used_gb": 3.741,
+  "mem_free_pct": 64,
+  "power": "ac",
+  "low_power_mode": 0,
+  "cpu_speed_limit_pct": null,
+  "load_1m": 1.95,
+  "top_cpu": [
+    {
+      "proc": "WindowServer",
+      "cpu_pct": 8.2
+    },
+    {
+      "proc": "WallpaperAerialsExtension",
+      "cpu_pct": 4.9
+    },
+    {
+      "proc": "VTDecoderXPCService",
+      "cpu_pct": 3.1
+    }
+  ],
+  "gpu_wired_limit_mb": 0
+}
+
+CAVEATS:
+  - swap in use: 3.741 GB (the model may be paging)
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+Note: No CPU power status has been recorded

@@ -1,0 +1,32 @@
+{
+  "block": 5,
+  "model_id": "minicpm5-2b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 3,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.42,
+    "low_power_mode": 0,
+    "mem_free_pct": 63,
+    "power": "ac",
+    "swap_used_gb": 3.811,
+    "top_cpu": [
+      {
+        "cpu_pct": 100.0,
+        "proc": "spotlightknowledged"
+      },
+      {
+        "cpu_pct": 99.2,
+        "proc": "duetexpertd"
+      },
+      {
+        "cpu_pct": 1.1,
+        "proc": "BiomeAgent"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "ed463f146b3d4c0bb0a779524590f2e7",
+  "started_utc": "2026-10-29T05:08:19.533047+00:00"
+}

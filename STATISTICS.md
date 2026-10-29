@@ -92,7 +92,7 @@ A recommendation for real deployment requires: (a) passing provenance/P0, (b) lo
 
 ## 7. Replicated-session infrastructure (issue #34)
 
-`replicated.py` implements the *unperformed* Phase A follow-up protocol described
+`replicated.py` implements the Phase A follow-up protocol described
 above. [SESSION_PROTOCOL.md](SESSION_PROTOCOL.md) defines the locked five-block
 four-model plain-4-bit design, immutable per-session schema, Mac-only preflight,
 measurement and report commands. It reuses `bench.py` for inference, rather than
@@ -110,3 +110,31 @@ answer. In-process first-content latency remains unmeasured. Compromised
 observed conditions are flagged separately from operator labels. The source
 matrix and `results/STUDY.md` remain historical until actual M4 measurements
 are collected and validated; **no CI/fixture data are experimental results**.
+
+## 8. First completed replication — 2026-10-29
+
+[Full report](results/replicated/m4-4bit-20261029/REPLICATED_STUDY.md)
+and immutable session evidence record five complete blocks / 20 independent
+sessions at source `38c5c9c04d84d50041483401c9e3489f6c49576d`.
+Independent revalidation passed all 20 sessions; all 300 kept answers matched
+the duration target. The completion pilot revised the common prompts and raised
+the cap to 512 before the plan was frozen; see SESSION_PROTOCOL.md and the
+preserved failed pilots. These prompts are pilot-informed retrieval tasks,
+not a held-out quality suite or a sustained decode workload.
+
+The report estimates session-level variability and paired whole-block contrasts.
+MiniCPM has the smallest allocator footprint and shortest short/medium response
+latency in this workload; LFM has the shortest long-context response latency,
+including its internal reasoning. Tokenizer counts and completion lengths differ:
+consult the report's complete checkpoint-labelled rows rather than extrapolating
+to model intelligence or a universal ranking.
+
+All 20 sessions have observed CPU-interference flags, preexisting swap and
+unavailable CPU thermal-speed telemetry. Kept-trial swap snapshots range from
+2.313 to 4.077 GB. Operator intent remains `clean`; the recorded warnings are
+not removed or relabelled. Cooldowns and quiet pre-block checks do not prove
+quiet conditions throughout a session. Therefore this satisfies replication
+and evidence completeness, but not an independently verified interference-free
+measurement. More controlled replication and representative quality tasks are
+needed before deployment recommendations. Historical P2/P3 measurements remain
+unchanged and are not pooled with this new workload.

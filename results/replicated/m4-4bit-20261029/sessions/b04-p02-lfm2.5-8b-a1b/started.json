@@ -1,0 +1,40 @@
+{
+  "block": 4,
+  "model_id": "lfm2.5-8b-a1b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 2,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.18,
+    "low_power_mode": 0,
+    "mem_free_pct": 61,
+    "power": "ac",
+    "swap_used_gb": 3.726,
+    "top_cpu": [
+      {
+        "cpu_pct": 180.4,
+        "proc": "spotlightknowledged.updater"
+      },
+      {
+        "cpu_pct": 109.4,
+        "proc": "Siri AI"
+      },
+      {
+        "cpu_pct": 81.9,
+        "proc": "corespotlightd"
+      },
+      {
+        "cpu_pct": 14.6,
+        "proc": "cfprefsd"
+      },
+      {
+        "cpu_pct": 12.3,
+        "proc": "BiomeAgent"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "a46cc180bf8640b493af54fea406f05f",
+  "started_utc": "2026-10-29T04:52:34.581268+00:00"
+}

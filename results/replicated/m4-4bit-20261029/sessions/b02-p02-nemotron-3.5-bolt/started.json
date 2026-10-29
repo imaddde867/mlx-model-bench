@@ -1,0 +1,40 @@
+{
+  "block": 2,
+  "model_id": "nemotron-3.5-bolt",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 2,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.92,
+    "low_power_mode": 0,
+    "mem_free_pct": 61,
+    "power": "ac",
+    "swap_used_gb": 2.313,
+    "top_cpu": [
+      {
+        "cpu_pct": 21.8,
+        "proc": "WindowServer"
+      },
+      {
+        "cpu_pct": 3.7,
+        "proc": "com.apple.DriverKit-AppleBCMWLAN"
+      },
+      {
+        "cpu_pct": 2.4,
+        "proc": "Codex (Service)"
+      },
+      {
+        "cpu_pct": 1.6,
+        "proc": "trustevaluationagent"
+      },
+      {
+        "cpu_pct": 1.3,
+        "proc": "Siri AI"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "fede0873ad35432a8a8259ffbeaa96d7",
+  "started_utc": "2026-10-29T04:30:23.906861+00:00"
+}

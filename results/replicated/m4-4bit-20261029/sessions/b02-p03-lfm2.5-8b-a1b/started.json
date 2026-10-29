@@ -1,0 +1,36 @@
+{
+  "block": 2,
+  "model_id": "lfm2.5-8b-a1b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 3,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.69,
+    "low_power_mode": 0,
+    "mem_free_pct": 60,
+    "power": "ac",
+    "swap_used_gb": 2.416,
+    "top_cpu": [
+      {
+        "cpu_pct": 17.4,
+        "proc": "WindowServer"
+      },
+      {
+        "cpu_pct": 3.8,
+        "proc": "corebrightnessd"
+      },
+      {
+        "cpu_pct": 2.6,
+        "proc": "Codex (Service)"
+      },
+      {
+        "cpu_pct": 2.2,
+        "proc": "Codex (Renderer)"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "dd1023ffd3404485a85bc50dea033747",
+  "started_utc": "2026-10-29T04:32:10.653125+00:00"
+}

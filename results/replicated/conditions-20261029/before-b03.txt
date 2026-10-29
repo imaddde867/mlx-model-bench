@@ -1,0 +1,25 @@
+{
+  "swap_used_gb": 2.422,
+  "mem_free_pct": 61,
+  "power": "ac",
+  "low_power_mode": 0,
+  "cpu_speed_limit_pct": null,
+  "load_1m": 3.15,
+  "top_cpu": [
+    {
+      "proc": "io.tailscale.ipn.macsys.network-extension",
+      "cpu_pct": 9.0
+    },
+    {
+      "proc": "locationd",
+      "cpu_pct": 3.0
+    }
+  ],
+  "gpu_wired_limit_mb": 0
+}
+
+CAVEATS:
+  - swap in use: 2.422 GB (the model may be paging)
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+Note: No CPU power status has been recorded

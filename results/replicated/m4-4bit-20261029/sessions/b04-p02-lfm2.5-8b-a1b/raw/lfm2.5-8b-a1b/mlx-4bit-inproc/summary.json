@@ -1,0 +1,318 @@
+{
+  "model_id": "lfm2.5-8b-a1b",
+  "model_name": "LFM2.5-8B-A1B",
+  "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 4.85,
+  "bits_per_weight": 4.58,
+  "publisher": "vendor",
+  "params_total": 8.468,
+  "params_active": 1.3,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": "a46cc180bf8640b493af54fea406f05f",
+  "evidence_dir": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "model": "models/lfm2.5-8b-a1b-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 512,
+  "template_kwargs": {
+    "preserve_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "load_s": 2.22,
+  "load_peak_gb": 4.834,
+  "load_peak_gb_source": "mx_peak",
+  "base_url": null,
+  "runs_ok": 15,
+  "runs_failed": 0,
+  "reasoning_only_runs": 0,
+  "prompts": {
+    "short": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 138,
+      "ttft_s": {
+        "median": 0.205,
+        "min": 0.2049,
+        "max": 0.2071,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 673.2,
+        "min": 666.4,
+        "max": 673.6,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 83.5,
+        "min": 76.0,
+        "max": 83.8,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 153,
+        "min": 153,
+        "max": 153,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 4.984,
+        "min": 4.984,
+        "max": 4.984,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 2.032,
+        "min": 2.026,
+        "max": 2.213,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 0.205,
+        "min": 0.2049,
+        "max": 0.2071,
+        "n": 5
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0003,
+        "n": 5
+      },
+      "engine_ttft_s": {
+        "median": 0.2048,
+        "min": 0.2047,
+        "max": 0.2068,
+        "n": 5
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "decode_window_tps": {
+        "median": 83.5,
+        "min": 76.0,
+        "max": 83.8,
+        "n": 5
+      },
+      "decode_flagged": 0,
+      "spread_ratio": {
+        "ttft_s": 1.01,
+        "decode_tps": 1.1
+      }
+    },
+    "medium": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 1052,
+      "ttft_s": {
+        "median": 1.1096,
+        "min": 1.107,
+        "max": 1.1098,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 948.1,
+        "min": 947.9,
+        "max": 950.3,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 73.8,
+        "min": 69.6,
+        "max": 73.9,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 189,
+        "min": 189,
+        "max": 189,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 5.445,
+        "min": 5.445,
+        "max": 5.445,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 3.663,
+        "min": 3.659,
+        "max": 3.817,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 1.1096,
+        "min": 1.107,
+        "max": 1.1098,
+        "n": 5
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 5
+      },
+      "engine_ttft_s": {
+        "median": 1.1093,
+        "min": 1.1068,
+        "max": 1.1096,
+        "n": 5
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "decode_window_tps": {
+        "median": 73.8,
+        "min": 69.6,
+        "max": 73.9,
+        "n": 5
+      },
+      "decode_flagged": 0,
+      "spread_ratio": {
+        "ttft_s": 1.0,
+        "decode_tps": 1.06
+      }
+    },
+    "long": {
+      "warmup_ok": true,
+      "kept_ok": 5,
+      "kept_expected": 5,
+      "prompt_tokens": 8542,
+      "ttft_s": {
+        "median": 8.9808,
+        "min": 8.9624,
+        "max": 9.3,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 951.1,
+        "min": 918.5,
+        "max": 953.1,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 75.5,
+        "min": 66.4,
+        "max": 77.8,
+        "n": 5
+      },
+      "generation_tokens": {
+        "median": 290,
+        "min": 290,
+        "max": 290,
+        "n": 5
+      },
+      "peak_gb": {
+        "median": 5.779,
+        "min": 5.779,
+        "max": 5.779,
+        "n": 5
+      },
+      "wall_s": {
+        "median": 12.794,
+        "min": 12.7,
+        "max": 13.587,
+        "n": 5
+      },
+      "request_ttft_s": {
+        "median": 8.9808,
+        "min": 8.9624,
+        "max": 9.3,
+        "n": 5
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 5
+      },
+      "engine_ttft_s": {
+        "median": 8.9806,
+        "min": 8.9622,
+        "max": 9.2998,
+        "n": 5
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "decode_window_tps": {
+        "median": 75.5,
+        "min": 66.4,
+        "max": 77.8,
+        "n": 5
+      },
+      "decode_flagged": 0,
+      "spread_ratio": {
+        "ttft_s": 1.04,
+        "decode_tps": 1.17
+      }
+    }
+  },
+  "memory": {
+    "source": "mx_peak",
+    "sources_seen": [
+      "mx_peak"
+    ],
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "unavailable_rows": 0,
+    "weights_gb_is": "checkpoint file size, not runtime memory"
+  },
+  "condition": "clean",
+  "condition_caveats": [
+    "busy: corespotlightd 110%, duetexpertd 91%, coreduetd 84%, mediaanalysisd 72%, opendirectoryd 57%",
+    "busy: corespotlightd 110%, spotlightknowledged.updater 46%",
+    "busy: duetexpertd 99%, mediaanalysisd 90%, airportd 61%",
+    "busy: mediaanalysisd 100%, duetexpertd 98%, spotlightknowledged.updater 85%, WindowServer 32%, cfprefsd 21%",
+    "busy: mediaanalysisd 104%, duetexpertd 100%, spotlightknowledged.updater 77%",
+    "busy: mediaanalysisd 105%, duetexpertd 86%, spotlightknowledged.updater 80%, cfprefsd 20%, corespotlightd 16%",
+    "busy: mediaanalysisd 113%, duetexpertd 100%",
+    "busy: mediaanalysisd 98%, duetexpertd 98%, spotlightknowledged.updater 84%, cfprefsd 20%, corespotlightd 16%",
+    "busy: photoanalysisd 100%, mediaanalysisd 81%",
+    "busy: spotlightknowledged.updater 103%, mediaanalysisd 103%, duetexpertd 99%, corespotlightd 30%, cfprefsd 26%",
+    "busy: spotlightknowledged.updater 106%, cfprefsd 17%",
+    "busy: spotlightknowledged.updater 162%, Siri AI 94%, corespotlightd 80%, cfprefsd 17%",
+    "busy: spotlightknowledged.updater 76%, mediaanalysisd 69%, corespotlightd 46%, cfprefsd 19%",
+    "busy: spotlightknowledged.updater 98%, corespotlightd 34%, cfprefsd 16%",
+    "busy: spotlightknowledged.updater 98%, corespotlightd 37%, IMDPersistenceAgent 17%, cfprefsd 16%",
+    "swap in use: 3.671 GB (the model may be paging)",
+    "swap in use: 3.687 GB (the model may be paging)",
+    "swap in use: 3.71 GB (the model may be paging)",
+    "swap in use: 3.718 GB (the model may be paging)",
+    "swap in use: 3.726 GB (the model may be paging)"
+  ],
+  "outcome": "completed",
+  "publishable": true,
+  "non_publishable_reasons": []
+}

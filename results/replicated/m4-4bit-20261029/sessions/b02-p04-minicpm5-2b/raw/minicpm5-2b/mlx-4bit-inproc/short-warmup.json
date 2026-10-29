@@ -1,0 +1,111 @@
+{
+  "model_id": "minicpm5-2b",
+  "model_name": "MiniCPM5-2B",
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 1.43,
+  "bits_per_weight": 4.55,
+  "publisher": "vendor",
+  "params_total": 2.517,
+  "params_active": 2.517,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": "27dd6f1304bd41ed90bc087adcd68f52",
+  "evidence_dir": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 512,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "condition": "clean",
+  "timestamp": "2026-10-29T04:34:06+00:00",
+  "model": "models/minicpm5-2b-4bit",
+  "load_s": 0.87,
+  "load_peak_gb": 1.416,
+  "prompt": "short",
+  "prompt_file": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/prompts/replicated-duration/short.txt",
+  "trial": 0,
+  "discarded": true,
+  "nonce": false,
+  "started_at": "2026-10-29T04:34:08+00:00",
+  "system": {
+    "swap_used_gb": 2.586,
+    "mem_free_pct": 62,
+    "power": "ac",
+    "low_power_mode": 0,
+    "cpu_speed_limit_pct": null,
+    "load_1m": 1.77,
+    "top_cpu": [
+      {
+        "proc": "WindowServer",
+        "cpu_pct": 12.6
+      },
+      {
+        "proc": "AMPDeviceDiscoveryAgent",
+        "cpu_pct": 3.7
+      },
+      {
+        "proc": "corebrightnessd",
+        "cpu_pct": 3.6
+      },
+      {
+        "proc": "Codex (Service)",
+        "cpu_pct": 2.1
+      },
+      {
+        "proc": "Codex (Renderer)",
+        "cpu_pct": 1.6
+      }
+    ]
+  },
+  "prompt_tokens": 139,
+  "generation_tokens": 4,
+  "ttft_s": 0.2645,
+  "prefill_tps": 525.6,
+  "engine_prefill_tps": 572.6,
+  "decode_tps": 71.6,
+  "wall_s": 0.314,
+  "peak_gb": 1.646,
+  "peak_gb_source": "mx_peak",
+  "memory": {
+    "value_gb": 1.646,
+    "source": "mx_peak",
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "available": true,
+    "unavailable_reason": null
+  },
+  "finish_reason": "stop",
+  "text": "forty years",
+  "prep_s": 0.0135,
+  "engine_ttft_s": 0.251,
+  "first_content_s": null,
+  "first_token_kind": null,
+  "request_ttft_s": 0.2645,
+  "cached_prompt_tokens": 0,
+  "decode_tokens": 3,
+  "decode_s": 0.0419,
+  "decode_window_tps": null,
+  "decode_flags": [
+    "too_short"
+  ],
+  "ok": true
+}

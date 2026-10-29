@@ -1,0 +1,32 @@
+{
+  "block": 4,
+  "model_id": "minicpm5-2b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 1,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 1.96,
+    "low_power_mode": 0,
+    "mem_free_pct": 62,
+    "power": "ac",
+    "swap_used_gb": 3.741,
+    "top_cpu": [
+      {
+        "cpu_pct": 7.4,
+        "proc": "WindowServer"
+      },
+      {
+        "cpu_pct": 4.3,
+        "proc": "WallpaperAerialsExtension"
+      },
+      {
+        "cpu_pct": 2.2,
+        "proc": "VTDecoderXPCService"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "e60a66e6179f4496a6450ae6af9ea1bd",
+  "started_utc": "2026-10-29T04:50:53.704656+00:00"
+}

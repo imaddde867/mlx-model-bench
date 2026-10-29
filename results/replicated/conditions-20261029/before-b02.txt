@@ -1,0 +1,37 @@
+{
+  "swap_used_gb": 2.36,
+  "mem_free_pct": 76,
+  "power": "ac",
+  "low_power_mode": 0,
+  "cpu_speed_limit_pct": null,
+  "load_1m": 2.65,
+  "top_cpu": [
+    {
+      "proc": "WindowServer",
+      "cpu_pct": 11.5
+    },
+    {
+      "proc": "Codex (Renderer)",
+      "cpu_pct": 11.3
+    },
+    {
+      "proc": "Codex (Service)",
+      "cpu_pct": 8.8
+    },
+    {
+      "proc": "codex",
+      "cpu_pct": 6.8
+    },
+    {
+      "proc": "com.apple.DriverKit-AppleBCMWLAN",
+      "cpu_pct": 2.0
+    }
+  ],
+  "gpu_wired_limit_mb": 0
+}
+
+CAVEATS:
+  - swap in use: 2.36 GB (the model may be paging)
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+Note: No CPU power status has been recorded

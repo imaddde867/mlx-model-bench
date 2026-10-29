@@ -1,0 +1,24 @@
+{
+  "block": 1,
+  "model_id": "spark-x2.5-4b",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 2,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 1.68,
+    "low_power_mode": 0,
+    "mem_free_pct": 74,
+    "power": "ac",
+    "swap_used_gb": 2.617,
+    "top_cpu": [
+      {
+        "cpu_pct": 1.5,
+        "proc": "locationd"
+      }
+    ]
+  },
+  "schema": 2,
+  "session_id": "1c550c1ea47a4336bf08565d13a3916a",
+  "started_utc": "2026-10-29T04:12:04.423781+00:00"
+}

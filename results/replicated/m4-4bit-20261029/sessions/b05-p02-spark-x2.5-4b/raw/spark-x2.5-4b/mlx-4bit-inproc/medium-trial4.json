@@ -1,0 +1,103 @@
+{
+  "model_id": "spark-x2.5-4b",
+  "model_name": "Spark-X2.5-4B",
+  "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": false,
+  "weights_gb": 2.32,
+  "bits_per_weight": 4.51,
+  "publisher": "third-party:abenzerps",
+  "params_total": 4.112,
+  "params_active": 4.112,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": "f913a1203c584e68a2c2e81c8629edb0",
+  "evidence_dir": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 512,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 5,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "condition": "clean",
+  "timestamp": "2026-10-29T05:05:14+00:00",
+  "model": "models/spark-x2.5-4b-4bit",
+  "load_s": 1.09,
+  "load_peak_gb": 2.314,
+  "prompt": "medium",
+  "prompt_file": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/prompts/replicated-duration/medium.txt",
+  "trial": 4,
+  "discarded": false,
+  "nonce": false,
+  "started_at": "2026-10-29T05:05:32+00:00",
+  "system": {
+    "swap_used_gb": 3.811,
+    "mem_free_pct": 48,
+    "power": "ac",
+    "low_power_mode": 0,
+    "cpu_speed_limit_pct": null,
+    "load_1m": 2.92,
+    "top_cpu": [
+      {
+        "proc": "duetexpertd",
+        "cpu_pct": 99.0
+      },
+      {
+        "proc": "spotlightknowledged",
+        "cpu_pct": 98.6
+      },
+      {
+        "proc": "BiomeAgent",
+        "cpu_pct": 1.0
+      }
+    ]
+  },
+  "prompt_tokens": 1073,
+  "generation_tokens": 4,
+  "ttft_s": 2.9446,
+  "prefill_tps": 364.4,
+  "engine_prefill_tps": 364.6,
+  "decode_tps": 38.7,
+  "wall_s": 3.036,
+  "peak_gb": 3.053,
+  "peak_gb_source": "mx_peak",
+  "memory": {
+    "value_gb": 3.053,
+    "source": "mx_peak",
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "available": true,
+    "unavailable_reason": null
+  },
+  "finish_reason": "stop",
+  "text": "forty years",
+  "prep_s": 0.0002,
+  "engine_ttft_s": 2.9444,
+  "first_content_s": null,
+  "first_token_kind": null,
+  "request_ttft_s": 2.9446,
+  "cached_prompt_tokens": 0,
+  "decode_tokens": 3,
+  "decode_s": 0.0775,
+  "decode_window_tps": null,
+  "decode_flags": [
+    "too_short"
+  ],
+  "ok": true
+}

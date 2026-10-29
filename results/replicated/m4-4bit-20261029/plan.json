@@ -1,0 +1,224 @@
+{
+  "created_utc": "2026-10-29T04:09:52.301212+00:00",
+  "evidence_dir": "/Users/imadeddine/Documents/GitHub/mlx-model-bench/results/replicated/preflight-20261029",
+  "machine": {
+    "arch": "arm64",
+    "chip": "Apple M4",
+    "cpu_count": 10,
+    "macos": "27.0.1",
+    "os": "Darwin",
+    "packages": {
+      "mlx": "0.32.4",
+      "mlx-lm": "0.32.2",
+      "mlx-optiq": null,
+      "transformers": "5.20.2"
+    },
+    "python": "3.12.10",
+    "ram_bytes": 17179869184
+  },
+  "models": [
+    {
+      "bpw": 4.5,
+      "checkpoint": "mlx-4bit",
+      "checkpoint_file_sha256": {
+        ".gitattributes": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+        "LICENSE-BASE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "LICENSE.txt": "2ab44b68365473c112f5092211a38f231cb23e50de68b75a13369adbd76a74df",
+        "README.md": "bd5493377dfcb3b895e544b768f0ea47d117b30bd29caf730bf9b42e3b352fed",
+        "chat_template.jinja": "35b7d0641b6fb4ee41c3bc623e85bdb7d583c40f6ae9f24514ae58a9d57119f3",
+        "config.json": "97a8012794242589bff0f3f50982ea92cf5733037a5d0ba467672c7502ad7e42",
+        "generation_config.json": "d4226bbe3117d2d253ba4609720ba82c6c4ce4627a9a6ae05387c78983ac03de",
+        "model.safetensors.index.json": "4fc339ac8c0e2b0846fe9b20ee8879767dd6fecd6ca4b48372173ef4e67163f3",
+        "tokenizer.json": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+        "tokenizer_config.json": "b3da1b7227c5d35fd905ad13200a08be63cb346b2d1bd4f6d58878c9783d5de1"
+      },
+      "fingerprint": "42ea1716320726a638a6801828c8c5c4803037257e855124ea226935eb39c435",
+      "hf_repo": "rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit",
+      "model_id": "nemotron-3.5-bolt",
+      "official": false,
+      "publisher": "third-party:rapid-mlx",
+      "revision": "601cd937da1e168dfe0dcf184b95204344c683a9",
+      "template_kwargs": {
+        "conversational_mode": true,
+        "enable_thinking": false
+      },
+      "tier": "4bit",
+      "weight_sha256": {
+        "model.safetensors": "4f2e02b7ac3caa4fe3c34da096030dea4c5ac130230267e42d18bd5f16ab1af4"
+      },
+      "weights_gb": 4.2
+    },
+    {
+      "bpw": 4.55,
+      "checkpoint": "mlx-4bit",
+      "checkpoint_file_sha256": {
+        ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+        "README-cn.md": "44f72037cef73b89f0f52afb096e49a52301ed2c026632522ddafcd2e133ad4d",
+        "README.md": "e1be3a44f16adfbfe36ac4c361d0d58013d7ea05ffd48e427536f00464095235",
+        "chat_template.jinja": "cc945752db555d60949b16989df4ccfeb52a313d6b4b5c5229dd786e2e9fcf1c",
+        "config.json": "deb9ca33e863cbc84a9ab7209cd924fc05505dc33270c807d47f1b78fbd53a50",
+        "generation_config.json": "9ac4f32e5f32358697a9f438a3ea89ef80e6ba786c72c49e932f9f21c122fdb1",
+        "model.safetensors.index.json": "ccf202e0a06fe3c7eb8f354cfb29412a5e64956ad895413d4d9267ae4b3a6045",
+        "tokenizer.json": "3e065a558a034185fe299917b398685c1facd0169a9eea1e629eb30c171fed81",
+        "tokenizer_config.json": "b89503c3e5070c6b6d33daf2e20cb4a5c88537c1670d9b7e0cfb4506a61448a9"
+      },
+      "fingerprint": "2b635408ca87ffeead26d80660db360e894da9f99292b000d260b7b3c28ea452",
+      "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+      "model_id": "minicpm5-2b",
+      "official": true,
+      "publisher": "vendor",
+      "revision": "8a9ad7539ac86281d0ac2b017ba04a5de53fe9a3",
+      "template_kwargs": {
+        "enable_thinking": false
+      },
+      "tier": "4bit",
+      "weight_sha256": {
+        "model.safetensors": "c207798696a4a454e7ac211b25227625466c693335941cee8904fb922f295cc1"
+      },
+      "weights_gb": 1.43
+    },
+    {
+      "bpw": 4.51,
+      "checkpoint": "mlx-4bit",
+      "checkpoint_file_sha256": {
+        ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+        "README.md": "df9919b20baad9788ab8df498f93543cbdaee2d0cc621cc299d2d2f9d06ec379",
+        "SHA256SUMS.txt": "549013b4bbb6b9411014b6f80c649869a9427ae3ef90b2ac87e005668f6ce2a1",
+        "SPARK_MLX_LLM_LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+        "assets/benchmark.png": "32ae1763988f3ad8a3b7534db2b31fc65338e0fbe778a6b6d3d51c64017d5924",
+        "chat_template.jinja": "705345721970da40e6aa56db548a46ecd1d8d94a5418808fa180ac19ee77a9ba",
+        "config.json": "80bb5d12005645b44f1dfc5d8ec4fcc7813ba9503e2ce4346ae0863b6ec1b7f1",
+        "configuration_spark.py": "02218597240490f490659b184052db940b08163ff9c3af7b7e59323f6f963722",
+        "generation_config.json": "804a5276a9d237600688267dd2bf6f9d4129ec21faf417f870d5d52b32ad9e6c",
+        "model.safetensors.index.json": "9cb637b4c5043576d8aaa92722a959e6f56cb7e31f750f70283091d39f8fbd2e",
+        "modeling_spark.py": "9cf0d1ad2b54b9f7088792779ddd8b5cb4d4fe63bfea054da7f2dd16362bcaf4",
+        "tokenizer.json": "f71f91ee1b2ac0b27e47bf49ee4859d322ab3d191217ec9964d0189b02454c49",
+        "tokenizer_config.json": "77cccc9891b2b93af38bd2010edc8271568f80b53c74ea6fc1b6729945032b85"
+      },
+      "fingerprint": "ebfbdbd7240066e7391736e73349cba53c908554bca38a91b944ea08b1f59782",
+      "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-4bit",
+      "model_id": "spark-x2.5-4b",
+      "official": false,
+      "publisher": "third-party:abenzerps",
+      "revision": "92b3135109f696dd18dee97be1e2d395866733e6",
+      "template_kwargs": {
+        "enable_thinking": false
+      },
+      "tier": "4bit",
+      "weight_sha256": {
+        "model.safetensors": "1fd6370f641e7fbffb2f57562793bf0493f48d55e3e85c8fe9091bd870a87e8b"
+      },
+      "weights_gb": 2.32
+    },
+    {
+      "bpw": 4.58,
+      "checkpoint": "mlx-4bit",
+      "checkpoint_file_sha256": {
+        ".gitattributes": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+        "LICENSE": "4d28ca14dedc0b3d0fcc2b3339f0e79931faa33874f3d24f522183a8fc70068c",
+        "README.md": "a8646b57f2c408dfc68f57e1ee9d5a25e4de57c805b63449ae840461f40a2a63",
+        "chat_template.jinja": "f434e8c96e6c0a63a022a3ad0a299bb94e58aa90e3c9ebe65034f8e8c6188aa9",
+        "config.json": "d84a36881f9cb75105ad4810945668d5a2f6911dce85011d181af928cb955e59",
+        "generation_config.json": "9583face86b498637e45a76535052166a59586f1bdde9b98c8074b728f9f6b42",
+        "model.safetensors.index.json": "c6453667bbe2ef15b95e93d69b091e1eaa853796ce9efde88f9c92133ae92d2b",
+        "tokenizer.json": "695be7802a0e4b8a81048f0ff5ebb7fc811a0ba5a6be63dbb24deb5a81096f41",
+        "tokenizer_config.json": "b53c3caceb7fa0de424e1aa67b3cc5008cd2f8b8d2426a8fa221ef3cf1a949d5"
+      },
+      "fingerprint": "36f4bf6801cf00fcf6b73aafdf96375574afdd5f46c206ff220f3779a5617f1b",
+      "hf_repo": "LiquidAI/LFM2.5-8B-A1B-MLX-4bit",
+      "model_id": "lfm2.5-8b-a1b",
+      "official": true,
+      "publisher": "vendor",
+      "revision": "2e92b640a63d47ad4dcf81a19a366b902356b3bc",
+      "template_kwargs": {
+        "preserve_thinking": false
+      },
+      "tier": "4bit",
+      "weight_sha256": {
+        "model.safetensors": "3cc15631acc1894b3584ac11fb4122beee50b604e1a0be575da686cee87aa3a4"
+      },
+      "weights_gb": 4.85
+    }
+  ],
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "prompts": [
+    {
+      "bytes": 583,
+      "path": "prompts/replicated-duration/short.txt",
+      "regime": "short",
+      "sha256": "34a12e72863684b13dd14be42ea2aed57f0f4eba1afa4b5f71fffda8fcedb635"
+    },
+    {
+      "bytes": 4883,
+      "path": "prompts/replicated-duration/medium.txt",
+      "regime": "medium",
+      "sha256": "674fbd62f5edf310fe709e5e8b317a1d716eb44e805a230c5c5df3d25c3c39b3"
+    },
+    {
+      "bytes": 39869,
+      "path": "prompts/replicated-duration/long.txt",
+      "regime": "long",
+      "sha256": "4667b850c9cc6398ec51b0c3873b8d541e98782aaf0c8c998bbb804b43cb6317"
+    }
+  ],
+  "schedule": [
+    {
+      "block": 1,
+      "order": [
+        "lfm2.5-8b-a1b",
+        "spark-x2.5-4b",
+        "minicpm5-2b",
+        "nemotron-3.5-bolt"
+      ]
+    },
+    {
+      "block": 2,
+      "order": [
+        "spark-x2.5-4b",
+        "nemotron-3.5-bolt",
+        "lfm2.5-8b-a1b",
+        "minicpm5-2b"
+      ]
+    },
+    {
+      "block": 3,
+      "order": [
+        "nemotron-3.5-bolt",
+        "minicpm5-2b",
+        "spark-x2.5-4b",
+        "lfm2.5-8b-a1b"
+      ]
+    },
+    {
+      "block": 4,
+      "order": [
+        "minicpm5-2b",
+        "lfm2.5-8b-a1b",
+        "nemotron-3.5-bolt",
+        "spark-x2.5-4b"
+      ]
+    },
+    {
+      "block": 5,
+      "order": [
+        "lfm2.5-8b-a1b",
+        "spark-x2.5-4b",
+        "minicpm5-2b",
+        "nemotron-3.5-bolt"
+      ]
+    }
+  ],
+  "schema": 2,
+  "seed": 34027,
+  "settings": {
+    "engine": "mlx_lm",
+    "kept_trials_per_regime": 5,
+    "max_tokens": 512,
+    "nonce": false,
+    "prompt_cache": "none (fresh process, no prompt_cache)",
+    "temperature": 0.0,
+    "transport": "inproc",
+    "warmups_per_regime": 1
+  },
+  "source_commit": "38c5c9c04d84d50041483401c9e3489f6c49576d"
+}

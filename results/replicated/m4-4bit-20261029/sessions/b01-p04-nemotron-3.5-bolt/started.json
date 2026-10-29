@@ -1,0 +1,19 @@
+{
+  "block": 1,
+  "model_id": "nemotron-3.5-bolt",
+  "operator_condition": "clean",
+  "plan_id": "a23a8a4ca4fec5813096b43cac03b1bb8cb6b9e8aaf4ee46315aeae2402aa5c2",
+  "position": 4,
+  "pre_system": {
+    "cpu_speed_limit_pct": null,
+    "load_1m": 1.54,
+    "low_power_mode": 0,
+    "mem_free_pct": 76,
+    "power": "ac",
+    "swap_used_gb": 2.61,
+    "top_cpu": []
+  },
+  "schema": 2,
+  "session_id": "0d8e05d24a3e4ff0b557684c3c94e732",
+  "started_utc": "2026-10-29T04:16:55.024501+00:00"
+}
