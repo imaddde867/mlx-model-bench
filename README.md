@@ -9,6 +9,49 @@ prompt-token count and generation length, because none of those numbers mean any
 without them. What the study can and cannot conclude is written down in
 [`MODELS.md`](MODELS.md#what-this-roster-cannot-tell-you).
 
+## Which model should I try?
+
+For this **10-core Apple M4 / 16 GB Mac**, start with the plain **4-bit**
+checkpoints below. These are use-case candidates from measured tradeoffs,
+not proven winners across coding, chat, reasoning and tool use.
+
+| Your priority | Start with | Evidence and boundary |
+|---|---|---|
+| Compact, responsive local assistant; an IoT command-parser candidate | **MiniCPM5-2B**, `openbmb/MiniCPM5-2B-MLX` (vendor, 4.55 bpw) | Smallest allocator footprint and shortest short/medium retrieval response times in the replication. Device-command reliability has not been tested; the model should propose validated commands, not directly authorize actions. |
+| Long-context retrieval and a reasoning-oriented candidate | **LFM2.5-8B-A1B**, `LiquidAI/LFM2.5-8B-A1B-MLX-4bit` (vendor, 4.58 bpw) | Shortest long-context response time in the replication. Its generated volume includes reasoning; this does not establish best coding or general reasoning quality. |
+| Strictly formatted replies and structured-output experiments | **Nemotron 3.5 Bolt**, `rapid-mlx/NVIDIA-Nemotron-3.5-Bolt-E4B-MLX-4bit` (third-party, 4.50 bpw) | Passed every output-format check in the historical P3 set. JSON-format tool requests also passed, but that success is shared with the other plain-4-bit models and is not actual tool execution. |
+| Most useful coding/tool agent | **No validated winner yet** | P3 tests JSON text, and P4 has no validated inference scores. Do not turn either into an agent-reliability claim. |
+
+Spark-X2.5 remains a measured alternative (`abenzerps/Spark-X2.5-4B-MLX-4bit`,
+third-party, 4.51 bpw). The current evidence does not establish a distinct
+advantage for the options above; its coding/tool-use positioning is not a local
+capability result. All four models remain in the reports.
+
+**Numbers behind the first two choices.** Each time is the median of five
+session medians, followed by the observed range of all 25 kept trials.
+Token counts belong to each model's tokenizer; output includes stopping tokens.
+
+| Model / checkpoint / publisher / bpw | Retrieval regime | Prompt → generated tokens | Response-end seconds: median; trial range | MLX allocator GB: median; trial range |
+|---|---|---:|---:|---:|
+| MiniCPM5-2B / `mlx-4bit` / vendor / 4.55 | short | 139 → 4 | 0.275; 0.273–0.293 | 1.646; 1.646–1.646 |
+| LFM2.5-8B-A1B / `mlx-4bit` / vendor / 4.58 | long | 8,542 → 290 | 12.632; 12.497–13.587 | 5.779; 5.779–5.779 |
+
+LFM is an MoE: 8.47B total parameters, about 1.3B active by the vendor label.
+Its first generated token may be reasoning, not the visible answer. Allocator
+memory is not whole-process or system memory.
+
+**Evidence strength:** the replication has five fresh sessions per model,
+but all sessions carry background-CPU, swap and unavailable thermal-speed
+warnings. Its three prompts ask the same retrieval question at different lengths.
+Historical quality scores use a small convenience set; blind r1 has one rater,
+position-bias warnings and unequal reasoning budgets. This supports a practical
+shortlist, not a statistically proven general winner or safety certification.
+
+[Replicated measurements and exploratory intervals](results/replicated/m4-4bit-20261029/REPLICATED_STUDY.md)
+· [Independent evidence review](results/replicated/m4-4bit-20261029/REVIEW.md)
+· [Historical quality, format and numerical results](REPORT.md#matrix-readout-and-scoring-distinctions)
+· [Statistical scope](STATISTICS.md).
+
 ## Roster
 
 Four models, each at the **same three quantization tiers**, so a difference between rows is
@@ -223,6 +266,8 @@ Mac M4-only experiment. `replicated.py` reuses `bench.py` and its checkpoint
 integrity gate, assigns unique session IDs, records observed machine conditions
 separately from the operator label, verifies immutable evidence and only then
 computes paired session-level uncertainty. GitHub CI runs **offline tests only**.
-No new performance results are claimed until the Mac experiment is completed.
+The first run completed on 2026-10-29: all 20 sessions validate. Its results and
+condition caveats are linked in the use-case guide above. This is an exploratory
+retrieval study; it does not validate general chat, coding or agent superiority.
 
 Run the offline checks with `python3 -m unittest discover -s tests -v`.

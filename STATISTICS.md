@@ -2,7 +2,7 @@
 
 **Question:** Which checkpoint/runtime is worth deploying for a *specified* workload on this machine, with defensible uncertainty about quality, latency and memory?
 
-This project is a small, hardware-specific observational study until the replicated experiments below are performed. `REPORT.md` preserves the original experiment. `study.py` generates `results/STUDY.md` from the raw committed records; it does **not** rewrite historical observations or estimate unsupported confidence intervals.
+This project combines historical observations with an exploratory hardware-specific replication; broader capability validation remains pending. `REPORT.md` preserves the original experiment. `study.py` generates `results/STUDY.md` from the raw committed records; it does **not** rewrite historical observations or estimate unsupported confidence intervals.
 
 ## 1. Unit of analysis, outcomes, and constraints
 
@@ -107,9 +107,8 @@ five sessions confer nominal 95% frequentist coverage or enough statistical
 power. The full-system `vm_stat` estimate is distinct from MLX allocator peak,
 and response-end wall time is distinct from independently graded time to a usable
 answer. In-process first-content latency remains unmeasured. Compromised
-observed conditions are flagged separately from operator labels. The source
-matrix and `results/STUDY.md` remain historical until actual M4 measurements
-are collected and validated; **no CI/fixture data are experimental results**.
+observed conditions are flagged separately from operator labels. The source matrix remains historical; `results/STUDY.md` links the separately
+archived replication described in section 8; **no CI/fixture data are experimental results**.
 
 ## 8. First completed replication — 2026-10-29
 

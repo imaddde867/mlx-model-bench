@@ -13,6 +13,13 @@ import study
 
 
 class StudyMathTests(unittest.TestCase):
+    def test_historical_report_does_not_certify_absent_followup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = study.render([], Path(tmp))
+        self.assertIn("Archived follow-up", report)
+        self.assertNotIn("All 300 kept responses passed", report)
+        self.assertNotIn("Validated 20-session", report)
+
     def test_pareto_keeps_tradeoffs_and_excludes_dominated(self):
         rows = [
             {"name": "mini", "weights_gb": 1.0, "decode_short": 65.0},
