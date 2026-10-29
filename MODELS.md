@@ -228,3 +228,17 @@ surprising rather than explained away afterwards.
 | Spark-X2.5-4B | "best 4B-class challenger, coding/tool use" | 10/10 on function-call JSON (ceiling for all current rows) and best quality on rewrite/code prompts | a 4B losing to a 2.5B on its advertised strength is the headline |
 | LFM2.5-8B-A1B | "fastest on this tier" | highest decode tps of the four, despite the most weights | MoE on M4 failing to beat dense 4.5 bpw at 7.5B would be worth saying plainly |
 | Nemotron (baseline) | — | reproduces its own P2/P3 numbers within its min–max range | a miss means the harness changed, and the other rows are suspect too |
+
+## Separate LFM3 experimental challenger
+
+`lfm3-1.7b` is explicitly selectable in registry.py but excluded from ORDER and
+the frozen 12-checkpoint matrix. Vendor checkpoint
+`LiquidAI/LFM3-1.7B-MLX-4bit` at revision
+`d0ca73dcfa70ce18733754a492cdc1fb0123262d` contains 973,083,386 weight bytes;
+reference stored tensor count is 1,728,801,536 parameters (4.50 bpw).
+Both `enable_thinking` and `preserve_thinking` are explicitly false.
+The isolated runtime uses the exact upstream PR revision recorded in
+[the protocol](experimental/lfm3/STUDY_PROTOCOL.md); benchmark pin 0.32.2 does
+not support this architecture. Vendor 8-bit files exist, but only 4-bit is
+selected for this scoped comparison; no OptiQ engine result is claimed.
+No LFM3 performance or agent-quality conclusion is available yet.

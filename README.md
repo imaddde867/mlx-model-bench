@@ -52,6 +52,14 @@ shortlist, not a statistically proven general winner or safety certification.
 · [Historical quality, format and numerical results](REPORT.md#matrix-readout-and-scoring-distinctions)
 · [Statistical scope](STATISTICS.md).
 
+### LFM3 challenger — experimental
+
+Vendor **LFM3-1.7B 4-bit** is being evaluated separately against MiniCPM5 using
+an isolated runtime. Compatibility parity has passed on this M4; performance
+and capability results are **pending**. It is not ranked in the guide above or
+added to the frozen four-model roster. See the
+[separate protocol](experimental/lfm3/STUDY_PROTOCOL.md).
+
 ## Roster
 
 Four models, each at the **same three quantization tiers**, so a difference between rows is

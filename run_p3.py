@@ -23,8 +23,10 @@ import sys
 import time
 from pathlib import Path
 
+import bench
 import gates
 import registry
+import sysinfo
 from p3_suite import CHECKERS, GRADER_VERSION, INSTR_PROMPTS, MATH_PROMPTS, QUALITY_PROMPTS, TOOL_PROMPTS
 
 ROOT = Path(__file__).resolve().parent
@@ -55,6 +57,7 @@ def run_single(model, tokenizer, prompt_text, template, max_tokens):
         **template,
     )
     mx.reset_peak_memory()
+    system = sysinfo.snapshot()
     t0 = time.perf_counter()
     first = last = None
     parts = []
@@ -73,6 +76,8 @@ def run_single(model, tokenizer, prompt_text, template, max_tokens):
         "raw_text": "".join(parts).strip(),
         "prompt_tokens": prompt_tokens,
         "generation_tokens": gen,
+        "finish_reason": resp.finish_reason if resp else None,
+        "system": system,
         "wall_s": round(wall, 4),
         "ttft_s": round(first - t0, 4) if first else None,
         "decode_tps": round((gen - 1) / (last - first), 1) if gen > 1 and last > first else None,
@@ -107,6 +112,7 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
         "params_active": cfg.params_active,
         "template_kwargs": template,
         "grader_version": GRADER_VERSION,
+        "versions": bench.versions(),
         "max_tokens": {"accuracy": ACCURACY_MAX_TOKENS * cfg.p3_budget_x,
                        "quality": QUALITY_MAX_TOKENS * cfg.p3_budget_x},
         "model_path": ckpt.local_dir,
@@ -136,6 +142,8 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
             "target": target,
             "checker": item["checker"],
             "response": gen["text"],
+            "finish_reason": gen["finish_reason"],
+            "system": gen["system"],
             **({"raw_response": gen["raw_text"]} if gen["raw_text"] != gen["text"] else {}),
             "passed": passed,
             "tokens": {"prompt": gen["prompt_tokens"], "generation": gen["generation_tokens"]},
@@ -152,6 +160,8 @@ def evaluate_checkpoint(cfg, ckpt, out_dir):
             "prompt": item["prompt"],
             "rubric": item["rubric"],
             "response": gen["text"],
+            "finish_reason": gen["finish_reason"],
+            "system": gen["system"],
             **({"raw_response": gen["raw_text"]} if gen["raw_text"] != gen["text"] else {}),
             "tokens": {"prompt": gen["prompt_tokens"], "generation": gen["generation_tokens"]},
             "metrics": {"wall_s": gen["wall_s"], "ttft_s": gen["ttft_s"], "decode_tps": gen["decode_tps"]},

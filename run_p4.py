@@ -66,6 +66,7 @@ def tool_call(action, files):
 
 def run_task(task, generate, max_steps=7):
     """Generate(messages) returns run_p3.run_single's result; replaceable in offline tests."""
+    start = time.perf_counter()
     files = dict(task["files"])
     messages = [{"role": "user", "content": RULES + "\nTask: " + task["prompt"]}]
     steps, reads, searches, writes = [], set(), set(), set()
@@ -77,7 +78,8 @@ def run_task(task, generate, max_steps=7):
                 "wall_s": gen.get("wall_s"), "ttft_s": gen.get("ttft_s"),
                 "prompt_tokens": gen.get("prompt_tokens"),
                 "generation_tokens": gen.get("generation_tokens"),
-                "peak_gb": gen.get("peak_gb")}
+                "peak_gb": gen.get("peak_gb"),
+                "finish_reason": gen.get("finish_reason"), "system": gen.get("system")}
         steps.append(step)
         messages.append({"role": "assistant", "content": gen.get("raw_text", response)})
         try:
@@ -118,6 +120,7 @@ def run_task(task, generate, max_steps=7):
         "final": answer, "steps": steps, "tool_calls": sum("tool" in s for s in steps),
         "tool_errors": sum("error" in s for s in steps),
         "model_wall_s": round(sum(s.get("wall_s") or 0 for s in steps), 4),
+        "task_wall_s": round(time.perf_counter() - start, 4),
         "time_to_first_token_s": steps[0].get("ttft_s") if steps else None,
         "peak_mlx_gb": max((s.get("peak_gb") or 0 for s in steps), default=0),
         "files_correct": files == expected,

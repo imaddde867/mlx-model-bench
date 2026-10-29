@@ -7,3 +7,4 @@ __pycache__/
 .vscode/
 # Local replicated sessions contain raw observations; curate before committing.
 /results/replicated/
+/results/lfm3-study-20261029/

@@ -419,6 +419,45 @@ MODELS: Dict[str, Model] = {
             "prompt's prefill will not scale like a pure-attention model."
         ),
     ),
+    "lfm3-1.7b": Model(
+        id="lfm3-1.7b",
+        name="LFM3-1.7B",
+        vendor="Liquid AI",
+        arch="Dense hybrid: 13 gated-convolution, 5 sliding-attention, 6 global-attention layers",
+        params_total=1.728801536,
+        params_active=1.728801536,
+        context_train=262144,
+        template_kwargs={"enable_thinking": False, "preserve_thinking": False},
+        template_notes=(
+            "Pinned template defaults enable_thinking=true and preserve_thinking=false; "
+            "the primary experiment explicitly disables both."
+        ),
+        checkpoints={
+            "mlx-4bit": Checkpoint(
+                tag="mlx-4bit",
+                hf_repo="LiquidAI/LFM3-1.7B-MLX-4bit",
+                local_dir="models/lfm3-1.7b-4bit",
+                weights_gb=973083386 / 1e9,
+                params=1.728801536,
+                quant="affine 4-bit, group 64",
+                publisher="vendor",
+                tier="4bit",
+                official=True,
+                notes=(
+                    "Verified metadata at d0ca73dcfa70ce18733754a492cdc1fb0123262d; "
+                    "only the plain 4-bit checkpoint is selected for this separate experiment."
+                ),
+            ),
+        },
+        role="Experimental compact challenger, explicitly selected outside the frozen four-model roster.",
+        source="https://huggingface.co/LiquidAI/LFM3-1.7B",
+        notes=(
+            "Requires isolated .venv-lfm3 with mlx-lm PR #2016 commit "
+            "9027ac5b062175fba890c612c3905d5d8d5b5294; unsupported by benchmark pin 0.32.2. "
+            "Advertised context length is not a tested memory/performance result; no 64K runs."
+        ),
+        p0_max_tokens=128,
+    ),
 }
 
 # Roster order: baseline first, then the three candidates. The report keeps this order.

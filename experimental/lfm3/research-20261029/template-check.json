@@ -1,0 +1,14 @@
+{
+  "rows": {
+    "False": {
+      "prompt_tokens": 27,
+      "suffix": "s 17 multiplied by 23?<|im_end|>\n<|im_start|>assistant\n<think></think>"
+    },
+    "True": {
+      "prompt_tokens": 26,
+      "suffix": ": what is 17 multiplied by 23?<|im_end|>\n<|im_start|>assistant\n<think>"
+    }
+  },
+  "template_sha256": "f45005c50cd2a97329722bf3a2dee9f16c04cdf825a589b280fb7e99e6827818",
+  "eos_token_id": 124900
+}
