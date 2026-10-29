@@ -1,0 +1,5 @@
+# Every test module puts the repo root on sys.path before importing the harness
+# (the repo is not a package), so its imports necessarily follow that bootstrap.
+# Nothing else is exempt: source files must keep imports at the top.
+[lint.per-file-ignores]
+"tests/*" = ["E402"]
