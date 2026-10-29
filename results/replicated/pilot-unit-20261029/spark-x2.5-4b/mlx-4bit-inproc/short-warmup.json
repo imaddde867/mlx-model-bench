@@ -1,0 +1,103 @@
+{
+  "model_id": "spark-x2.5-4b",
+  "model_name": "Spark-X2.5-4B",
+  "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": false,
+  "weights_gb": 2.32,
+  "bits_per_weight": 4.51,
+  "publisher": "third-party:abenzerps",
+  "params_total": 4.112,
+  "params_active": 4.112,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": null,
+  "evidence_dir": "results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 1,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "condition": "loaded",
+  "timestamp": "2026-10-29T03:59:35+00:00",
+  "model": "models/spark-x2.5-4b-4bit",
+  "load_s": 1.09,
+  "load_peak_gb": 2.314,
+  "prompt": "short",
+  "prompt_file": "prompts/replicated/short.txt",
+  "trial": 0,
+  "discarded": true,
+  "nonce": false,
+  "started_at": "2026-10-29T03:59:37+00:00",
+  "system": {
+    "swap_used_gb": 2.86,
+    "mem_free_pct": 76,
+    "power": "ac",
+    "low_power_mode": 0,
+    "cpu_speed_limit_pct": null,
+    "load_1m": 1.57,
+    "top_cpu": [
+      {
+        "proc": "locationd",
+        "cpu_pct": 1.3
+      },
+      {
+        "proc": "bluetoothd",
+        "cpu_pct": 1.1
+      },
+      {
+        "proc": "searchpartyd",
+        "cpu_pct": 1.0
+      }
+    ]
+  },
+  "prompt_tokens": 142,
+  "generation_tokens": 4,
+  "ttft_s": 0.4455,
+  "prefill_tps": 318.8,
+  "engine_prefill_tps": 335.5,
+  "decode_tps": 40.6,
+  "wall_s": 0.533,
+  "peak_gb": 2.557,
+  "peak_gb_source": "mx_peak",
+  "memory": {
+    "value_gb": 2.557,
+    "source": "mx_peak",
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "available": true,
+    "unavailable_reason": null
+  },
+  "finish_reason": "stop",
+  "text": "forty years",
+  "prep_s": 0.0073,
+  "engine_ttft_s": 0.4382,
+  "first_content_s": null,
+  "first_token_kind": null,
+  "request_ttft_s": 0.4455,
+  "cached_prompt_tokens": 0,
+  "decode_tokens": 3,
+  "decode_s": 0.0739,
+  "decode_window_tps": null,
+  "decode_flags": [
+    "too_short"
+  ],
+  "ok": true
+}

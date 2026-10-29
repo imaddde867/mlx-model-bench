@@ -24,7 +24,7 @@ class ReplicatedTests(unittest.TestCase):
                                  "hf_repo": f"vendor/{m}", "publisher": "vendor", "bpw": 4.5,
                                  "weights_gb": 2.0, "template_kwargs": {"enable_thinking": False}}
                                 for m in self.ids],
-                     "prompts": [{"regime": p, "path": f"prompts/replicated/{p}.txt", "sha256": "abc"}
+                     "prompts": [{"regime": p, "path": f"prompts/replicated-duration/{p}.txt", "sha256": "abc"}
                                  for p in r.REGIMES],
                      "settings": {"transport": "inproc", "engine": "mlx_lm",
                                   "temperature": 0.0, "nonce": False,
@@ -40,7 +40,7 @@ class ReplicatedTests(unittest.TestCase):
         self.snap = {"power": "ac", "low_power_mode": 0, "cpu_speed_limit_pct": 100, "swap_used_gb": 0,
                      "mem_free_pct": 70, "top_cpu": [], "load_1m": 1.0}
 
-    def fixture(self, block=1, pos=1, corrupt=None, overlap=False, duplicate_id=False):
+    def fixture(self, block=1, pos=1, corrupt=None, overlap=False, duplicate_id=False, generation_tokens=50):
         model_id = self.plan["schedule"][block - 1]["order"][pos - 1]
         path = r.slot_path(self.root, block, pos, model_id)
         path.mkdir(parents=True)
@@ -60,7 +60,7 @@ class ReplicatedTests(unittest.TestCase):
         raw.mkdir(parents=True)
         summary = {"model_id": model_id, "checkpoint": "mlx-4bit", "tier": "4bit",
                    "hf_repo": f"vendor/{model_id}", "publisher": "vendor", "transport": "inproc",
-                   "engine": "mlx_lm", "trials": 5, "max_tokens": 256,
+                   "engine": "mlx_lm", "trials": 5, "max_tokens": self.plan["settings"]["max_tokens"],
                    "versions": self.plan["machine"]["packages"],
                    "greedy": True, "template_kwargs": {"enable_thinking": False},
                    "condition": "clean", "outcome": "completed", "publishable": True,
@@ -70,16 +70,16 @@ class ReplicatedTests(unittest.TestCase):
             for trial in range(6):
                 row = {"model_id": model_id, "checkpoint": "mlx-4bit", "prompt": regime,
                        "trial": trial, "discarded": trial == 0, "condition": "clean",
-                       "ok": True, "nonce": False, "max_tokens": 256,
+                       "ok": True, "nonce": False, "max_tokens": self.plan["settings"]["max_tokens"],
                        "session_id": sid,
                        "template_kwargs": {"enable_thinking": False},
                        "hf_repo": f"vendor/{model_id}", "publisher": "vendor",
                        "versions": self.plan["machine"]["packages"],
-                       "prompt_file": str(ROOT / "prompts" / "replicated" / f"{regime}.txt"),
+                       "prompt_file": str(ROOT / "prompts" / "replicated-duration" / f"{regime}.txt"),
                        "system": self.snap, "started_at": start_at,
                        "finish_reason": "stop", "text": "Synthetic answer", "wall_s": 1.0 + ri + trial / 10,
                        "request_ttft_s": 0.1 + trial / 100, "peak_gb": 2 + trial / 10,
-                       "prompt_tokens": 80 + ri * 100, "generation_tokens": 50}
+                       "prompt_tokens": 80 + ri * 100, "generation_tokens": generation_tokens}
                 r.write_once(raw / f"{regime}-{'warmup' if trial == 0 else f'trial{trial}'}.json", row)
                 if trial:
                     values.append(row)
@@ -104,6 +104,54 @@ class ReplicatedTests(unittest.TestCase):
         r.write_once(path / "session.json", s)
         return path, model_id
 
+    def test_new_plan_freezes_512_cap(self):
+        with mock.patch.object(r, "require_mac"), \
+             mock.patch.object(r, "verified_identity", side_effect=lambda cfg, evidence: {"model_id": cfg.id}):
+            plan = r.make_plan(self.root, 23, m={}, source_commit="test-commit")
+        self.assertEqual(plan["settings"]["max_tokens"], 512)
+        r.check_plan(plan)
+
+    def test_512_cap_validates_longer_completed_generation(self):
+        self.plan["settings"]["max_tokens"] = 512
+        self.plan["plan_id"] = r.digest({k: v for k, v in self.plan.items() if k != "plan_id"})
+        r.check_plan(self.plan)
+        path, mid = self.fixture(generation_tokens=300)
+        self.assertEqual(r.validate_session(path, self.plan, 1, 1, mid), [])
+        trial = path / "raw" / mid / "mlx-4bit-inproc" / "short-warmup.json"
+        row = r.load_json(trial)
+        row["max_tokens"] = 256
+        trial.write_text(json.dumps(row))
+        self.assertIn("max_tokens mismatch", " ".join(
+            r.validate_session(path, self.plan, 1, 1, mid)))
+        row["max_tokens"] = 512
+        row["generation_tokens"] = 513
+        trial.write_text(json.dumps(row))
+        self.assertIn("generation exceeds token cap", " ".join(
+            r.validate_session(path, self.plan, 1, 1, mid)))
+
+    def test_plan_rejects_unapproved_or_noninteger_caps(self):
+        for cap in (255, 257, 1024, True, 256.0, 512.0, "512", None):
+            with self.subTest(cap=cap):
+                self.plan["settings"]["max_tokens"] = cap
+                self.plan["plan_id"] = r.digest({k: v for k, v in self.plan.items() if k != "plan_id"})
+                with self.assertRaisesRegex(ValueError, "token cap"):
+                    r.check_plan(self.plan)
+
+    def test_run_uses_512_cap_frozen_in_plan(self):
+        self.plan["settings"]["max_tokens"] = 512
+        self.plan["plan_id"] = r.digest({k: v for k, v in self.plan.items() if k != "plan_id"})
+        (self.root / "plan.json").write_text(json.dumps(self.plan))
+        sampler = mock.MagicMock()
+        sampler.stop.return_value = {"sampled_gb": []}
+        with mock.patch.object(r, "verify_host"), \
+             mock.patch.object(r, "MemorySampler", return_value=sampler), \
+             mock.patch.object(r.sysinfo, "snapshot", return_value=self.snap), \
+             mock.patch.object(r.subprocess, "run", return_value=SimpleNamespace(returncode=0)) as run:
+            with self.assertRaisesRegex(RuntimeError, "invalid and preserved"):
+                r.run_block(self.root, 1, "clean")
+        command = run.call_args.args[0]
+        self.assertEqual(command[command.index("--max-tokens") + 1], "512")
+
     def test_schedule_balances_positions_and_is_seeded(self):
         seq = r.schedule(self.ids, 23)
         self.assertEqual(seq, r.schedule(self.ids, 23))
@@ -116,7 +164,7 @@ class ReplicatedTests(unittest.TestCase):
             self.assertEqual(set(block["order"]), set(self.ids))
 
     def test_replicated_prompts_match_task_and_preserve_context(self):
-        question = "Question: For how many years has the lighthouse not been lit? Reply in exactly two words; give only the duration."
+        question = "Question: How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \"ten days\"). Reply with only the duration."
         speed = ROOT / "prompts" / "speed"
         for regime in r.REGIMES:
             text = (r.PROMPT_DIR / f"{regime}.txt").read_text()
@@ -124,6 +172,29 @@ class ReplicatedTests(unittest.TestCase):
             if regime == "short":
                 original = original.split("\n\n")[0]
             self.assertEqual(text, original + "\n\n" + question + "\n")
+
+    def test_original_prompt_plan_keeps_its_frozen_directory(self):
+        for prompt in self.plan["prompts"]:
+            prompt["path"] = f"prompts/replicated/{prompt['regime']}.txt"
+        self.plan["plan_id"] = r.digest({k: v for k, v in self.plan.items() if k != "plan_id"})
+        (self.root / "plan.json").write_text(json.dumps(self.plan))
+        r.check_plan(self.plan)
+        sampler = mock.MagicMock()
+        sampler.stop.return_value = {"sampled_gb": []}
+        with mock.patch.object(r, "verify_host"), \
+             mock.patch.object(r, "MemorySampler", return_value=sampler), \
+             mock.patch.object(r.sysinfo, "snapshot", return_value=self.snap), \
+             mock.patch.object(r.subprocess, "run", return_value=SimpleNamespace(returncode=0)) as run:
+            with self.assertRaisesRegex(RuntimeError, "invalid and preserved"):
+                r.run_block(self.root, 1, "clean")
+        command = run.call_args.args[0]
+        self.assertEqual(command[command.index("--prompt-dir") + 1], str(ROOT / "prompts" / "replicated"))
+
+    def test_mixed_prompt_revisions_are_rejected(self):
+        self.plan["prompts"][0]["path"] = "prompts/replicated/short.txt"
+        self.plan["plan_id"] = r.digest({k: v for k, v in self.plan.items() if k != "plan_id"})
+        with self.assertRaisesRegex(ValueError, "prompt path"):
+            r.check_plan(self.plan)
 
     def test_plan_is_content_addressed_and_tamper_detected(self):
         r.check_plan(self.plan)
@@ -229,7 +300,7 @@ class ReplicatedTests(unittest.TestCase):
         p, mid = self.fixture()
         trial = p / "raw" / mid / "mlx-4bit-inproc" / "short-trial1.json"
         row = r.load_json(trial)
-        row["prompt_file"] = "/different-checkout/prompts/replicated/short.txt"
+        row["prompt_file"] = "/different-checkout/prompts/replicated-duration/short.txt"
         trial.write_text(json.dumps(row))
         self.assertNotIn("prompt file identity", " ".join(r.validate_session(p, self.plan, 1, 1, mid)))
         row["prompt_file"] = "/different-checkout/prompts/speed/short.txt"

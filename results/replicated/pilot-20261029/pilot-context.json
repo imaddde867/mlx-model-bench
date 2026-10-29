@@ -1,0 +1,12 @@
+{
+  "kind": "non-publishable completion pilot",
+  "source_commit": "b1c5100",
+  "local_prompt_revision": 0,
+  "condition": "loaded",
+  "max_tokens": 256,
+  "prompt_sha256": {
+    "long.txt": "e143d9688dd515f7a1e662cfdf348b11aaaf8b4b8154ad814d51af30311f3ab2",
+    "medium.txt": "42d3794ef90afe616432e2139499f748cd47a9622c668b1b81bd5efe190cd231",
+    "short.txt": "a172d3238879c0388fb7a1483ada2388327a5be65a6111256ccc9d1e435a14be"
+  }
+}

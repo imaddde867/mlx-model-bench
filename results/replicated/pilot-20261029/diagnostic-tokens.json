@@ -1,0 +1,46 @@
+[
+  {
+    "model": "minicpm5-2b",
+    "events": [
+      {
+        "token": 121904,
+        "text": "Forty",
+        "finish_reason": null
+      },
+      {
+        "token": 130073,
+        "text": "",
+        "finish_reason": "stop"
+      }
+    ],
+    "decoded_tokens": "Forty",
+    "eos_token_ids": [
+      1,
+      130073
+    ]
+  },
+  {
+    "model": "spark-x2.5-4b",
+    "events": [
+      {
+        "token": 56669,
+        "text": "Fort",
+        "finish_reason": null
+      },
+      {
+        "token": 102,
+        "text": "y",
+        "finish_reason": null
+      },
+      {
+        "token": 1,
+        "text": "",
+        "finish_reason": "stop"
+      }
+    ],
+    "decoded_tokens": "Forty",
+    "eos_token_ids": [
+      1
+    ]
+  }
+]

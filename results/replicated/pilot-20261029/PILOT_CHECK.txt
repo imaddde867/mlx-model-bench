@@ -1,0 +1,22 @@
+
+nemotron-3.5-bolt
+  short: PASS | stop=stop | answer='Forty years'
+  medium: PASS | stop=stop | answer='Forty years'
+  long: PASS | stop=stop | answer='Forty years'
+
+minicpm5-2b
+  short: REVIEW | stop=stop | answer='Forty'
+  medium: REVIEW | stop=stop | answer='Forty'
+  long: PASS | stop=stop | answer='Forty years.'
+
+spark-x2.5-4b
+  short: REVIEW | stop=stop | answer='Forty'
+  medium: REVIEW | stop=stop | answer='Forty'
+  long: REVIEW | stop=stop | answer='Forty'
+
+lfm2.5-8b-a1b
+  short: PASS | stop=stop | answer='Forty years'
+  medium: PASS | stop=stop | answer='forty years'
+  long: PASS | stop=stop | answer='Forty years'
+
+STOP: review pilot failures

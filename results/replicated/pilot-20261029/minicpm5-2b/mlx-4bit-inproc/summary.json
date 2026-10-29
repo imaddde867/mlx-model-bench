@@ -1,0 +1,287 @@
+{
+  "model_id": "minicpm5-2b",
+  "model_name": "MiniCPM5-2B",
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 1.43,
+  "bits_per_weight": 4.55,
+  "publisher": "vendor",
+  "params_total": 2.517,
+  "params_active": 2.517,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": null,
+  "evidence_dir": "results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "model": "models/minicpm5-2b-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 1,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "load_s": 0.93,
+  "load_peak_gb": 1.416,
+  "load_peak_gb_source": "mx_peak",
+  "base_url": null,
+  "runs_ok": 3,
+  "runs_failed": 0,
+  "reasoning_only_runs": 0,
+  "prompts": {
+    "short": {
+      "warmup_ok": true,
+      "kept_ok": 1,
+      "kept_expected": 1,
+      "prompt_tokens": 128,
+      "ttft_s": {
+        "median": 0.1956,
+        "min": 0.1956,
+        "max": 0.1956,
+        "n": 1
+      },
+      "prefill_tps": {
+        "median": 654.3,
+        "min": 654.3,
+        "max": 654.3,
+        "n": 1
+      },
+      "decode_tps": {
+        "median": 67.1,
+        "min": 67.1,
+        "max": 67.1,
+        "n": 1
+      },
+      "generation_tokens": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "n": 1
+      },
+      "peak_gb": {
+        "median": 1.757,
+        "min": 1.757,
+        "max": 1.757,
+        "n": 1
+      },
+      "wall_s": {
+        "median": 0.219,
+        "min": 0.219,
+        "max": 0.219,
+        "n": 1
+      },
+      "request_ttft_s": {
+        "median": 0.1956,
+        "min": 0.1956,
+        "max": 0.1956,
+        "n": 1
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 1
+      },
+      "engine_ttft_s": {
+        "median": 0.1954,
+        "min": 0.1954,
+        "max": 0.1954,
+        "n": 1
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 1
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 1,
+      "spread_ratio": {
+        "ttft_s": null,
+        "decode_tps": null
+      }
+    },
+    "medium": {
+      "warmup_ok": true,
+      "kept_ok": 1,
+      "kept_expected": 1,
+      "prompt_tokens": 1025,
+      "ttft_s": {
+        "median": 1.3214,
+        "min": 1.3214,
+        "max": 1.3214,
+        "n": 1
+      },
+      "prefill_tps": {
+        "median": 775.7,
+        "min": 775.7,
+        "max": 775.7,
+        "n": 1
+      },
+      "decode_tps": {
+        "median": 62.8,
+        "min": 62.8,
+        "max": 62.8,
+        "n": 1
+      },
+      "generation_tokens": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "n": 1
+      },
+      "peak_gb": {
+        "median": 2.123,
+        "min": 2.123,
+        "max": 2.123,
+        "n": 1
+      },
+      "wall_s": {
+        "median": 1.346,
+        "min": 1.346,
+        "max": 1.346,
+        "n": 1
+      },
+      "request_ttft_s": {
+        "median": 1.3214,
+        "min": 1.3214,
+        "max": 1.3214,
+        "n": 1
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 1
+      },
+      "engine_ttft_s": {
+        "median": 1.3212,
+        "min": 1.3212,
+        "max": 1.3212,
+        "n": 1
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 1
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 1,
+      "spread_ratio": {
+        "ttft_s": null,
+        "decode_tps": null
+      }
+    },
+    "long": {
+      "warmup_ok": true,
+      "kept_ok": 1,
+      "kept_expected": 1,
+      "prompt_tokens": 8375,
+      "ttft_s": {
+        "median": 14.8156,
+        "min": 14.8156,
+        "max": 14.8156,
+        "n": 1
+      },
+      "prefill_tps": {
+        "median": 565.3,
+        "min": 565.3,
+        "max": 565.3,
+        "n": 1
+      },
+      "decode_tps": {
+        "median": 52.4,
+        "min": 52.4,
+        "max": 52.4,
+        "n": 1
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 1
+      },
+      "peak_gb": {
+        "median": 2.465,
+        "min": 2.465,
+        "max": 2.465,
+        "n": 1
+      },
+      "wall_s": {
+        "median": 14.884,
+        "min": 14.884,
+        "max": 14.884,
+        "n": 1
+      },
+      "request_ttft_s": {
+        "median": 14.8156,
+        "min": 14.8156,
+        "max": 14.8156,
+        "n": 1
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 1
+      },
+      "engine_ttft_s": {
+        "median": 14.8154,
+        "min": 14.8154,
+        "max": 14.8154,
+        "n": 1
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 1
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 1,
+      "spread_ratio": {
+        "ttft_s": null,
+        "decode_tps": null
+      }
+    }
+  },
+  "memory": {
+    "source": "mx_peak",
+    "sources_seen": [
+      "mx_peak"
+    ],
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "unavailable_rows": 0,
+    "weights_gb_is": "checkpoint file size, not runtime memory"
+  },
+  "condition": "loaded",
+  "condition_caveats": [
+    "busy: Codex (Renderer) 41%",
+    "swap in use: 1.138 GB (the model may be paging)"
+  ],
+  "outcome": "completed",
+  "publishable": false,
+  "non_publishable_reasons": [
+    "1 trials < 5 (smoke run)"
+  ]
+}

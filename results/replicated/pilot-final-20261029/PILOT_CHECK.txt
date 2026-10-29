@@ -1,0 +1,13 @@
+nemotron-3.5-bolt/short: PASS | stop=stop | answer='forty years'
+nemotron-3.5-bolt/medium: PASS | stop=stop | answer='forty years'
+nemotron-3.5-bolt/long: PASS | stop=stop | answer='forty years'
+minicpm5-2b/short: PASS | stop=stop | answer='forty years'
+minicpm5-2b/medium: PASS | stop=stop | answer='forty years'
+minicpm5-2b/long: PASS | stop=stop | answer='forty years'
+spark-x2.5-4b/short: PASS | stop=stop | answer='forty years'
+spark-x2.5-4b/medium: PASS | stop=stop | answer='forty years'
+spark-x2.5-4b/long: PASS | stop=stop | answer='forty years'
+lfm2.5-8b-a1b/short: PASS | stop=stop | answer='forty years'
+lfm2.5-8b-a1b/medium: PASS | stop=stop | answer='forty years'
+lfm2.5-8b-a1b/long: REVIEW | stop=length | answer='<think>\nThe user asks: "How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \'ten days\'). Reply with only the duration."\n\nWe need to find the answer in the provided text. The text describes a lighthouse that has not been lit for forty years. So the duration is 40 years. The answer should be "forty years" or "40 years"? The instruction: "Give the duration as a number followed by its unit (for example, \'ten days\')." So they want a number and unit, like "forty years". The example uses "ten days" which is a number (ten) and unit (days). So we should output "forty years". That is a number? "forty" is a word, not a numeral. But they said "number followed by its unit". Could be "40 years". That would be a number (40) and unit (years). However they said "for example, \'ten days\'". That\'s a word number and a unit. So we can use "forty years". That is a word number and unit. Or "40 years". Both are acceptable. The instruction: "Reply with only the duration'
+STOP: review pilot failures

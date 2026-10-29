@@ -1,0 +1,20 @@
+{
+  "hf_repo": "abenzerps/Spark-X2.5-4B-MLX-4bit",
+  "checkpoint": "mlx-4bit",
+  "files": [
+    {
+      "file": "model.safetensors",
+      "expected_bytes": 2313395808,
+      "expected_sha256": "1fd6370f641e7fbffb2f57562793bf0493f48d55e3e85c8fe9091bd870a87e8b",
+      "ok": true,
+      "local_bytes": 2313395808,
+      "local_sha256": "1fd6370f641e7fbffb2f57562793bf0493f48d55e3e85c8fe9091bd870a87e8b"
+    }
+  ],
+  "revision": "92b3135109f696dd18dee97be1e2d395866733e6",
+  "verified": true,
+  "error": null,
+  "model_id": "spark-x2.5-4b",
+  "local_dir": "models/spark-x2.5-4b-4bit",
+  "weights_gb": 2.32
+}

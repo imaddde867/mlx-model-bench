@@ -1,0 +1,286 @@
+{
+  "model_id": "minicpm5-2b",
+  "model_name": "MiniCPM5-2B",
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "checkpoint": "mlx-4bit",
+  "tier": "4bit",
+  "official": true,
+  "weights_gb": 1.43,
+  "bits_per_weight": 4.55,
+  "publisher": "vendor",
+  "params_total": 2.517,
+  "params_active": 2.517,
+  "run_id": "mlx-4bit-inproc",
+  "session_id": null,
+  "evidence_dir": "results/replicated/preflight-20261029",
+  "transport": "inproc",
+  "engine": "mlx_lm",
+  "model": "models/minicpm5-2b-4bit",
+  "host": "arm64 macOS 27.0.1 python 3.12.10",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "mlx-optiq": null,
+    "transformers": "5.20.2"
+  },
+  "server_version": null,
+  "max_tokens": 256,
+  "template_kwargs": {
+    "enable_thinking": false
+  },
+  "temperature": 0.0,
+  "top_p": null,
+  "greedy": true,
+  "trials": 1,
+  "ttft_scope": "inproc: chat template + tokenize + prefill + first token; no transport",
+  "decode_min_tokens": 32,
+  "load_s": 0.86,
+  "load_peak_gb": 1.416,
+  "load_peak_gb_source": "mx_peak",
+  "base_url": null,
+  "runs_ok": 3,
+  "runs_failed": 0,
+  "reasoning_only_runs": 0,
+  "prompts": {
+    "short": {
+      "warmup_ok": true,
+      "kept_ok": 1,
+      "kept_expected": 1,
+      "prompt_tokens": 133,
+      "ttft_s": {
+        "median": 0.2223,
+        "min": 0.2223,
+        "max": 0.2223,
+        "n": 1
+      },
+      "prefill_tps": {
+        "median": 598.3,
+        "min": 598.3,
+        "max": 598.3,
+        "n": 1
+      },
+      "decode_tps": {
+        "median": 73.5,
+        "min": 73.5,
+        "max": 73.5,
+        "n": 1
+      },
+      "generation_tokens": {
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "n": 1
+      },
+      "peak_gb": {
+        "median": 1.635,
+        "min": 1.635,
+        "max": 1.635,
+        "n": 1
+      },
+      "wall_s": {
+        "median": 0.271,
+        "min": 0.271,
+        "max": 0.271,
+        "n": 1
+      },
+      "request_ttft_s": {
+        "median": 0.2223,
+        "min": 0.2223,
+        "max": 0.2223,
+        "n": 1
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 1
+      },
+      "engine_ttft_s": {
+        "median": 0.2221,
+        "min": 0.2221,
+        "max": 0.2221,
+        "n": 1
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 1
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 1,
+      "spread_ratio": {
+        "ttft_s": null,
+        "decode_tps": null
+      }
+    },
+    "medium": {
+      "warmup_ok": true,
+      "kept_ok": 1,
+      "kept_expected": 1,
+      "prompt_tokens": 1030,
+      "ttft_s": {
+        "median": 1.3726,
+        "min": 1.3726,
+        "max": 1.3726,
+        "n": 1
+      },
+      "prefill_tps": {
+        "median": 750.4,
+        "min": 750.4,
+        "max": 750.4,
+        "n": 1
+      },
+      "decode_tps": {
+        "median": 64.8,
+        "min": 64.8,
+        "max": 64.8,
+        "n": 1
+      },
+      "generation_tokens": {
+        "median": 11,
+        "min": 11,
+        "max": 11,
+        "n": 1
+      },
+      "peak_gb": {
+        "median": 2.112,
+        "min": 2.112,
+        "max": 2.112,
+        "n": 1
+      },
+      "wall_s": {
+        "median": 1.535,
+        "min": 1.535,
+        "max": 1.535,
+        "n": 1
+      },
+      "request_ttft_s": {
+        "median": 1.3726,
+        "min": 1.3726,
+        "max": 1.3726,
+        "n": 1
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 1
+      },
+      "engine_ttft_s": {
+        "median": 1.3724,
+        "min": 1.3724,
+        "max": 1.3724,
+        "n": 1
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 1
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 1,
+      "spread_ratio": {
+        "ttft_s": null,
+        "decode_tps": null
+      }
+    },
+    "long": {
+      "warmup_ok": true,
+      "kept_ok": 1,
+      "kept_expected": 1,
+      "prompt_tokens": 8380,
+      "ttft_s": {
+        "median": 14.2215,
+        "min": 14.2215,
+        "max": 14.2215,
+        "n": 1
+      },
+      "prefill_tps": {
+        "median": 589.2,
+        "min": 589.2,
+        "max": 589.2,
+        "n": 1
+      },
+      "decode_tps": {
+        "median": 56.1,
+        "min": 56.1,
+        "max": 56.1,
+        "n": 1
+      },
+      "generation_tokens": {
+        "median": 11,
+        "min": 11,
+        "max": 11,
+        "n": 1
+      },
+      "peak_gb": {
+        "median": 2.465,
+        "min": 2.465,
+        "max": 2.465,
+        "n": 1
+      },
+      "wall_s": {
+        "median": 14.41,
+        "min": 14.41,
+        "max": 14.41,
+        "n": 1
+      },
+      "request_ttft_s": {
+        "median": 14.2215,
+        "min": 14.2215,
+        "max": 14.2215,
+        "n": 1
+      },
+      "prep_s": {
+        "median": 0.0002,
+        "min": 0.0002,
+        "max": 0.0002,
+        "n": 1
+      },
+      "engine_ttft_s": {
+        "median": 14.2214,
+        "min": 14.2214,
+        "max": 14.2214,
+        "n": 1
+      },
+      "first_content_s": null,
+      "cached_prompt_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 1
+      },
+      "decode_window_tps": null,
+      "decode_flagged": 1,
+      "spread_ratio": {
+        "ttft_s": null,
+        "decode_tps": null
+      }
+    }
+  },
+  "memory": {
+    "source": "mx_peak",
+    "sources_seen": [
+      "mx_peak"
+    ],
+    "unit": "GB, decimal (1e9 bytes)",
+    "method": "mx.get_peak_memory()",
+    "scope": "in-process MLX allocator (Metal buffers)",
+    "phase": "per-trial: reset before prompt prefill, read after generation",
+    "unavailable_rows": 0,
+    "weights_gb_is": "checkpoint file size, not runtime memory"
+  },
+  "condition": "loaded",
+  "condition_caveats": [
+    "swap in use: 2.86 GB (the model may be paging)"
+  ],
+  "outcome": "completed",
+  "publishable": false,
+  "non_publishable_reasons": [
+    "1 trials < 5 (smoke run)"
+  ]
+}

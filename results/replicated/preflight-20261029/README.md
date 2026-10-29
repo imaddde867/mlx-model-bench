@@ -1,0 +1,7 @@
+# Issue 34 preflight — 2026-10-29
+
+Actual Apple M4 / 16 GiB observations at source commit b1c5100. All four plain-4-bit checkpoints passed Hub SHA-256 verification and P0 loading/determinism checks. Python 3.12.10, MLX 0.32.4, MLX-LM 0.32.2. Offline suite: 232 tests passed. Initial disk free: 64 GiB. AC attached; low-power mode off; no pmset thermal/performance warning. Initial sysinfo reported 0.768 GB swap and unavailable CPU speed-limit telemetry.
+
+The sibling pilot-20261029 directory contains non-publishable bench smoke checks at the original prompts, cap 256, one discarded warmup and one kept trial per regime. Timing/memory are incidental and must not enter performance comparisons. MiniCPM short/medium and Spark all regimes emitted only “Forty” before EOS; diagnostic-tokens.json preserves token events for the short prompt. No replicated study was frozen or run on those prompts.
+
+diagnostic-unit-prompt.json tests one clarified common question on short context only. It is prompt development evidence, not held-out quality evaluation or benchmark evidence. The revised full-context pilots are kept separately. `pilot-unit-20261029` is mixed-input exploratory evidence and excluded: its LFM process consumed the final wording after the prompt was edited while the loop was still running. `pilot-final-20261029` consistently uses the final wording at cap 256; LFM long truncates. `pilot-512-20261029` uses the exact final prompt snapshot at a common cap 512 for all four models. No study was frozen before these pilots.

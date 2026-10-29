@@ -1,0 +1,20 @@
+{
+  "hf_repo": "openbmb/MiniCPM5-2B-MLX",
+  "checkpoint": "mlx-4bit",
+  "files": [
+    {
+      "file": "model.safetensors",
+      "expected_bytes": 1416035216,
+      "expected_sha256": "c207798696a4a454e7ac211b25227625466c693335941cee8904fb922f295cc1",
+      "ok": true,
+      "local_bytes": 1416035216,
+      "local_sha256": "c207798696a4a454e7ac211b25227625466c693335941cee8904fb922f295cc1"
+    }
+  ],
+  "revision": "8a9ad7539ac86281d0ac2b017ba04a5de53fe9a3",
+  "verified": true,
+  "error": null,
+  "model_id": "minicpm5-2b",
+  "local_dir": "models/minicpm5-2b-4bit",
+  "weights_gb": 1.43
+}

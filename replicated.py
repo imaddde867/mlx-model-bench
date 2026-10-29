@@ -31,9 +31,10 @@ import sysinfo
 
 ROOT = Path(__file__).resolve().parent
 REGIMES = ("short", "medium", "long")
-PROMPT_DIR = ROOT / "prompts" / "replicated"
+PROMPT_DIR = ROOT / "prompts" / "replicated-duration"
 N_BLOCKS = 5
 N_TRIALS = 5
+MAX_TOKENS = 512
 VERSION = 2
 PACKAGES = ("mlx", "mlx-lm", "mlx-optiq", "transformers")
 PINNED = {"mlx": "0.32.4", "mlx-lm": "0.32.2"}
@@ -209,7 +210,7 @@ def make_plan(evidence, seed, m=None, source_commit=None):
            "models": models, "prompts": prompts,
            "settings": {"transport": "inproc", "engine": "mlx_lm", "temperature": 0.0,
                         "nonce": False, "prompt_cache": "none (fresh process, no prompt_cache)",
-                        "max_tokens": 256, "warmups_per_regime": 1,
+                        "max_tokens": MAX_TOKENS, "warmups_per_regime": 1,
                         "kept_trials_per_regime": N_TRIALS},
            "seed": seed, "schedule": schedule([m["model_id"] for m in models], seed)}
     doc["plan_id"] = digest(doc)
@@ -230,14 +231,19 @@ def check_plan(plan):
         raise ValueError("fewer than five independent session blocks")
     if [p["regime"] for p in plan["prompts"]] != list(REGIMES):
         raise ValueError("changed prompt regimes")
+    prompt_dir = Path(plan["prompts"][0].get("path", "")).parent
+    if prompt_dir.as_posix() not in ("prompts/replicated", "prompts/replicated-duration"):
+        raise ValueError("wrong replicated prompt path: unknown directory")
     for p in plan["prompts"]:
-        expected = (PROMPT_DIR / f"{p['regime']}.txt").relative_to(ROOT).as_posix()
-        if p.get("path") != expected:
+        if p.get("path") != (prompt_dir / f"{p['regime']}.txt").as_posix():
             raise ValueError(f"wrong replicated prompt path for {p['regime']}")
+    cap = plan["settings"].get("max_tokens")
+    if type(cap) is not int or cap not in (256, 512):
+        raise ValueError("unsupported token cap; expected integer 256 or 512")
     if plan["settings"] != {"transport": "inproc", "engine": "mlx_lm",
           "temperature": 0.0, "nonce": False,
           "prompt_cache": "none (fresh process, no prompt_cache)",
-          "max_tokens": 256, "warmups_per_regime": 1,
+          "max_tokens": cap, "warmups_per_regime": 1,
           "kept_trials_per_regime": N_TRIALS}:
         raise ValueError("changed measurement settings")
 
@@ -417,8 +423,8 @@ def _run_block_locked(folder, block, condition, resume, timeout_s):
                                            if m["model_id"] == model_id),
                    "--transport", "inproc", "--session-id", session_id,
                    "--trials", str(N_TRIALS),
-                   "--max-tokens", "256", "--no-nonce", "--condition", condition,
-                   "--prompts", *REGIMES, "--prompt-dir", str(PROMPT_DIR), "--out", str(raw),
+                   "--max-tokens", str(plan["settings"]["max_tokens"]), "--no-nonce", "--condition", condition,
+                   "--prompts", *REGIMES, "--prompt-dir", str((ROOT / plan["prompts"][0]["path"]).parent), "--out", str(raw),
                    "--evidence", plan["evidence_dir"]]
         sampler = MemorySampler(plan["machine"]["ram_bytes"])
         rc = None
@@ -526,7 +532,7 @@ def validate_session(folder, plan, block, pos, model_id):
         expected_summary = {"model_id": model_id, "checkpoint": model["checkpoint"],
                             "tier": "4bit", "hf_repo": model["hf_repo"],
                             "publisher": model["publisher"], "transport": "inproc",
-                            "engine": "mlx_lm", "trials": N_TRIALS, "max_tokens": 256,
+                            "engine": "mlx_lm", "trials": N_TRIALS, "max_tokens": plan["settings"]["max_tokens"],
                             "greedy": True, "template_kwargs": model["template_kwargs"],
                             "condition": s["operator_condition"],
                             "outcome": "completed", "publishable": True,
@@ -555,7 +561,7 @@ def validate_session(folder, plan, block, pos, model_id):
                 for k, value in {"model_id": model_id, "checkpoint": model["checkpoint"],
                                  "prompt": regime, "trial": i, "discarded": i == 0,
                                  "condition": s["operator_condition"], "ok": True,
-                                 "nonce": False, "max_tokens": 256,
+                                 "nonce": False, "max_tokens": plan["settings"]["max_tokens"],
                                  "template_kwargs": model["template_kwargs"],
                                  "hf_repo": model["hf_repo"],
                                  "publisher": model["publisher"],
@@ -587,7 +593,7 @@ def validate_session(folder, plan, block, pos, model_id):
                 for metric in ("prompt_tokens", "generation_tokens"):
                     if type(row.get(metric)) is not int:
                         errors.append(f"{regime} trial{i}: {metric} must be an integer")
-                if type(row.get("generation_tokens")) is int and row["generation_tokens"] > 256:
+                if type(row.get("generation_tokens")) is int and row["generation_tokens"] > plan["settings"]["max_tokens"]:
                     errors.append(f"{regime} trial{i}: generation exceeds token cap")
                 wall, ttft = row.get("wall_s"), row.get("request_ttft_s")
                 # wall_s is rounded to milliseconds; request_ttft_s to 0.1 ms.

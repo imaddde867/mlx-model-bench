@@ -1,0 +1,19 @@
+{
+  "kind": "non-publishable completion pilot",
+  "source_commit": "b1c5100",
+  "local_prompt_revision": 1,
+  "condition": "loaded",
+  "max_tokens": 256,
+  "prompt_sha256": {
+    "long.txt": "ab499b3eb5a26d7020a48adcb61f48c3eaec615456a74dd57e381857f42032fe",
+    "medium.txt": "aa49ebc44a3537291a34c5e5ea29848bf7265fd0adcef773dd972de06d90c139",
+    "short.txt": "fc264cb16aa1e86f62f29598ead9045aeb4d1654725b087393a4d6a16fbaeeaf"
+  },
+  "eligibility": "excluded: prompt file changed before all models finished; LFM consumed final wording",
+  "per_model_prompt_revision": {
+    "nemotron-3.5-bolt": 1,
+    "minicpm5-2b": 1,
+    "spark-x2.5-4b": 1,
+    "lfm2.5-8b-a1b": 2
+  }
+}

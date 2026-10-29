@@ -20,16 +20,16 @@ on the **16 GiB Apple M4 Mac**, not GitHub Actions, another Mac, or a simulator.
   A nonblocking OS lock prohibits simultaneous blocks in the same experiment.
   Validation independently rejects overlapping UTC session intervals, reordered
   sessions, or reused session UUIDs, even if the individual records look valid.
-- **Within session:** fixed `prompts/replicated/{short,medium,long}.txt` files,
-  the same lighthouse question and requested two-word answer at three context
+- **Within session:** fixed `prompts/replicated-duration/{short,medium,long}.txt` files,
+  the same lighthouse question and requested duration with its unit at three context
   lengths. The medium and long passages reuse historical text without changing
   those files; short uses their first paragraph. The ~1k/~8k labels are
   approximate, not a guarantee for each tokenizer. Record actual counts per
   model. One discarded warmup plus **five kept trials per regime**; greedy,
   template kwargs from `registry.py`, no explicit in-process prompt cache and
-  **no nonce**. The output target is two *words*, not two generated tokens:
+  **no nonce**. The output target is a duration with a number and unit, not a fixed token count:
   tokenizers and internal reasoning differ, and model compliance is not assumed.
-  The common `max_tokens=256` is a cap, not a fixed generated-token length.
+  The common `max_tokens=512` is a cap, not a fixed generated-token length.
   Record actual prompt/completion tokens and stop reasons; no performance metric
   here establishes that the answer is correct. Failure, empty output,
   reasoning-only output and truncation are preserved and prevent a complete
@@ -62,8 +62,29 @@ on the **16 GiB Apple M4 Mac**, not GitHub Actions, another Mac, or a simulator.
   fabricated from TTFT. Later, a held-out task/quality experiment is required
   before claiming time to useful/agentic completion.
 
-**Pilot required before the study:** these new prompts and the common cap have
-not been tested on the four checkpoints. A separate, explicitly non-benchmark
+**Pilot revision (2026-10-29):** the original question asked "for how many years"
+and requested two words. MiniCPM5 returned only "Forty" on short/medium; Spark
+returned "Forty" on all three regimes, followed by EOS. Token traces confirmed
+this was model output, not lost streaming text. Before any study was frozen,
+the common question was clarified to request a number followed by its unit,
+with an unrelated "ten days" format example. A second pilot produced complete
+answers but MiniCPM5 added sentences on medium/long, so the final shared wording
+also says "Reply with only the duration." Models and context passages are
+unchanged. The revised trio lives in `prompts/replicated-duration/`;
+the original `prompts/replicated/` bytes stay fixed for the historical LFM3 fixture.
+The failed pilots remain separate evidence. The intermediate pilot was accidentally
+modified before LFM ran; its mixed-input status is recorded and it is excluded
+from study eligibility. A consistent final-wording pilot at 256 tokens showed
+LFM long-context reasoning truncation. Before freezing, the common cap was
+raised to 512 for **all** models. All three revised prompts must pass a fresh
+four-model pilot at that same cap. This is workload selection informed by a pilot, not held-out evidence of instruction-following quality.
+
+Historical schema-2 plans retain their frozen original prompt directory and
+256-token cap. New plans freeze the revised directory and common 512-token cap;
+these are different workload versions and must not be pooled.
+
+**Pilot required before the study:** the new prompts and common cap must pass
+the four-checkpoint completion pilot before freezing. A separate, explicitly non-benchmark
 text-only pilot must inspect answer text and stop reasons, including LFM's
 reasoning, without publishing timing or memory as performance evidence. If any
 model cannot finish, revise the common cap or prompts *before* freezing a new

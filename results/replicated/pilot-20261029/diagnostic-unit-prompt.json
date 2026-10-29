@@ -1,0 +1,34 @@
+[
+  {
+    "model": "nemotron-3.5-bolt",
+    "question": "Question: How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \"ten days\").",
+    "text": "forty years",
+    "finish_reason": "stop",
+    "generation_tokens": 4,
+    "answer": "forty years"
+  },
+  {
+    "model": "minicpm5-2b",
+    "question": "Question: How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \"ten days\").",
+    "text": "forty years",
+    "finish_reason": "stop",
+    "generation_tokens": 4,
+    "answer": "forty years"
+  },
+  {
+    "model": "spark-x2.5-4b",
+    "question": "Question: How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \"ten days\").",
+    "text": "forty years",
+    "finish_reason": "stop",
+    "generation_tokens": 4,
+    "answer": "forty years"
+  },
+  {
+    "model": "lfm2.5-8b-a1b",
+    "question": "Question: How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \"ten days\").",
+    "text": "<think>\nThe user asks: \"At the northern edge of the bay stands a lighthouse that has not been lit for forty years. ... Question: How long has the lighthouse not been lit? Give the duration as a number followed by its unit (for example, \"ten days\").\"\n\nWe have the sentence: \"has not been lit for forty years.\" So the lighthouse has not been lit for 40 years. So answer: \"forty years\". They want a number followed by its unit. So \"forty years\". That's a number? They gave example \"ten days\". So they want something like \"forty years\". That's a number word, not numeric digits. So answer: \"forty years\". Probably that's acceptable.\n\nThus final answer: forty years.\n</think>\nforty years",
+    "finish_reason": "stop",
+    "generation_tokens": 164,
+    "answer": "forty years"
+  }
+]
