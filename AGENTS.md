@@ -21,7 +21,7 @@ reintroduce it.
 
 ## Machine
 
-Apple M4, 10-core, 16 GB unified, macOS 27.0.1 (host now 27.2). Python 3.12.10, uv 0.10.9.
+Apple M4, 10-core, 16 GB unified, macOS 27.0.1 (host now 27.2). Python 3.12.10 (host now 3.12.13), uv 0.10.9.
 The README reports about 54 GB of downloads (51 GiB on disk) for the full 12-checkpoint roster. Check actual free disk space before fetching.
 
 ## Pins
@@ -121,17 +121,17 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 - [x] P2 — speed/TTFT/memory runs, arms 1–3, valid after cache-bust fix. See `REPORT.md` §1.1.
 - [x] P3 — accuracy (30) + quality (8) prompt sets, blind evaluation, report in `REPORT.md` §1.2–1.5.
 - [x] R0 — harness generalized: registry-driven `bench.py`/`run_p3.py`/`run_bench.py`, multi-model chart, cross-model `blind.py` + `score_quality.py`, results moved to `results/<model>/`.
-- [x] R0.5 — tier matrix: every model at `4bit` / `optiq-4bit` / `8bit` (reference), three arms each (`inproc`, `http`, `optiq` engine attempted), `run_bench.py --tiers` to select. Fairness ledger in `MODELS.md`.
+- [x] R0.5 — tier matrix: every model at `4bit` / `optiq-4bit` / `8bit` (reference), three arms each where they ran (`inproc`, `http`, `optiq` engine attempted; the baseline OptiQ tier is in-process only, and arm 4 is blocked per `P0.md`), `run_bench.py --tiers` to select. Fairness controls in `MODELS.md` §"What stays fixed, so the rows mean something".
 - [x] R0.6 — `readiness.py`: offline READY / NOT READY gate (unit suite, provenance, P0, trials, versions, output collisions) before any matrix run; fixture-tested in `tests/test_readiness.py`. Passing it is not the independently reviewed clean run.
 - [x] R1 — MiniCPM5-2B: fetch (sha256 gate), P0 (determinism gate), P2, P2-optiq, P3.
 - [x] R2 — Spark-X2.5-4B: same. Remember: its 4-bit and 8-bit tiers are community quants, no vendor conversion exists.
 - [x] R3 — LFM2.5-8B-A1B: same. The 9.02 GB 8-bit tier may fail the P0 memory gate on 16 GB — record that, do not drop the row.
 - [x] R3b — baseline 8-bit reference row: `--model nemotron-3.5-bolt --tiers 8bit`. Retrofit parity; the original study omitted it.
 - [x] R4 — cross-model report: 12 in-process checkpoint rows, exploratory blind quality round r1 across all four 4-bit tiers, score distinctions, charts, and report. Historical condition gaps and LFM's larger reasoning budget are disclosed.
-- [x] P4 harness — 20 simulated agent tasks and offline tests. **No model inference or validated P4 scores yet.**
-- [x] R5 — replicated M4 4-bit study published with condition caveats (`results/replicated/`, `REPORT.md`); evidence-backed model choices in `MODELS.md`.
+- [x] P4 harness — 20 simulated agent tasks and offline tests. One unvalidated MiniCPM5-2B `mlx-4bit` pilot run (`results/p4-round1/`, status `pilot_unvalidated`). **No validated P4 scores yet.**
+- [x] R5 — replicated M4 4-bit study published with condition caveats (`results/replicated/m4-4bit-20261029/REPLICATED_STUDY.md`); evidence-backed model choices in `README.md` §"Which model should I try?".
 - [ ] LFM3 isolated comparison (`experimental/lfm3/`, `.venv-lfm3`) — prepared only: protocol, registry entries, `study.py`, tests, plan and P0 preflight exist. The timed batch was terminated (SIGTERM) on 2026-10-29 with no session results recorded; the study refuses in-place reruns, so a rerun needs a new output directory.
-- [x] Housekeeping 2026-11-07 — 256 offline tests pass; `readiness.py` reports BLOCKED, as expected for the existing matrix (output collisions with published rows, `lfm2.5-8b-a1b` 8-bit not downloaded, host drift macOS 27.0.1 → 27.2); `mlx-optiq` is not installed in the current venv. Do not treat BLOCKED as a regression.
+- [x] Housekeeping 2026-11-07 — 256 offline tests pass; `readiness.py` reports BLOCKED, as expected for the existing matrix (output collisions with published rows, `optiq-4bit` and `8bit` tiers not downloaded, host drift macOS 27.0.1 → 27.2 and Python 3.12.10 → 3.12.13); `mlx-optiq` is not installed in the current venv. Do not treat BLOCKED as a regression.
 
 ## Known traps
 

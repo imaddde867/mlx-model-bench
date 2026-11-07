@@ -211,7 +211,7 @@ threshold. The results are a preference signal, not a ranking.
 The repository was renamed from `nemotron-bolt-bench` when the study grew from one model to
 four; its original single-model record is now section 1 of the report, unchanged.
 
-## P4 — agent pilot (not yet measured)
+## P4 — agent pilot (one unvalidated run)
 
 The optional [P4 pilot](run_p4.py) includes 20 small simulated file-tool
 tasks in [prompts/agent/tasks.json](prompts/agent/tasks.json): reading, searching,
@@ -221,7 +221,7 @@ copies of fixture files. No shell, network, or real file modification occurs.
 Tasks require exact final answers, required tool calls and exact final file
 contents. Tool calls use a **JSON text protocol**, not native model API tool
 calls. This is a pilot, not a representative agent benchmark or model ranking.
-**No P4 inference measurements have been recorded.**
+**One exploratory P4 run is recorded** (MiniCPM5-2B `mlx-4bit`, status `pilot_unvalidated` in `results/p4-round1/`); no P4 score is validated.
 
 After checkpoint and P0 verification on the Mac:
 
