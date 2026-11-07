@@ -28,7 +28,7 @@ LABELS = "ABCDEFGH"
 def validate(data, k):
     """Problems with a filled scores file against the sealed key; [] means complete."""
     problems = []
-    rows, expected, key = k["rows"], k["expected_prompt_ids"], k["key"]
+    rows, expected = k["rows"], k["expected_prompt_ids"]
     ids = [r.get("id") for r in data.get("scores", [])]
     for qid in sorted({i for i in ids if ids.count(i) > 1}, key=str):
         problems.append(f"{qid}: duplicate prompt id")

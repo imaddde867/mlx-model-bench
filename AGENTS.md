@@ -21,7 +21,7 @@ reintroduce it.
 
 ## Machine
 
-Apple M4, 10-core, 16 GB unified, macOS 27.0.1. Python 3.12.10, uv 0.10.9.
+Apple M4, 10-core, 16 GB unified, macOS 27.0.1 (host now 27.2). Python 3.12.10, uv 0.10.9.
 The README reports about 54 GB of downloads (51 GiB on disk) for the full 12-checkpoint roster. Check actual free disk space before fetching.
 
 ## Pins
@@ -129,6 +129,9 @@ Per model, read from `chat_template.jinja` at the pinned repo; recorded in
 - [x] R3b — baseline 8-bit reference row: `--model nemotron-3.5-bolt --tiers 8bit`. Retrofit parity; the original study omitted it.
 - [x] R4 — cross-model report: 12 in-process checkpoint rows, exploratory blind quality round r1 across all four 4-bit tiers, score distinctions, charts, and report. Historical condition gaps and LFM's larger reasoning budget are disclosed.
 - [x] P4 harness — 20 simulated agent tasks and offline tests. **No model inference or validated P4 scores yet.**
+- [x] R5 — replicated M4 4-bit study published with condition caveats (`results/replicated/`, `REPORT.md`); evidence-backed model choices in `MODELS.md`.
+- [ ] LFM3 isolated comparison (`experimental/lfm3/`, `.venv-lfm3`) — prepared only: protocol, registry entries, `study.py`, tests, plan and P0 preflight exist. The timed batch was terminated (SIGTERM) on 2026-10-29 with no session results recorded; the study refuses in-place reruns, so a rerun needs a new output directory.
+- [x] Housekeeping 2026-11-07 — 256 offline tests pass; `readiness.py` reports BLOCKED, as expected for the existing matrix (output collisions with published rows, `lfm2.5-8b-a1b` 8-bit not downloaded, host drift macOS 27.0.1 → 27.2); `mlx-optiq` is not installed in the current venv. Do not treat BLOCKED as a regression.
 
 ## Known traps
 

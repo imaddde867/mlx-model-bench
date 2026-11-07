@@ -24,7 +24,7 @@ on, and an unknown kwarg either raises or is dropped depending on the jinja.
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
