@@ -166,7 +166,7 @@ def main():
         ax.grid(axis="y", alpha=0.25)
         ax.spines[["top", "right"]].set_visible(False)
 
-    handles, labels = {}, {}
+    handles = {}
     for ax in axes:
         for h, l in zip(*ax.get_legend_handles_labels()):
             handles[l] = h
