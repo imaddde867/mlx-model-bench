@@ -203,8 +203,9 @@ Read from `~/Downloads/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB-Technical-Report.pdf`.
 `run_p4.py` implements a small 20-task simulated file-agent protocol.
 Tasks specify expected replies, required tool calls and exact file contents.
 Tool operations are performed only against an in-memory fixture. JSON tool
-calls are generated as text, not via a native tool API. No P4 inference
-measurements have been made. This is a separate exploratory evaluation,
+calls are generated as text, not via a native tool API. One exploratory pilot
+run is recorded (`results/p4-round1/`, status `pilot_unvalidated`); no P4 score
+is validated. This is a separate exploratory evaluation,
 not part of the P3 strict-format or blind r1 scores. Further validation
 requires independent model runs, varied tasks and realistic tool integrations.
 
